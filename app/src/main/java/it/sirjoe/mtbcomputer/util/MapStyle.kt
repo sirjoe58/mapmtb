@@ -4,7 +4,14 @@ import android.content.Context
 import android.graphics.Color
 import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import it.sirjoe.mtbcomputer.data.OfflineMaps
 import it.sirjoe.mtbcomputer.data.Prefs
+import org.mapsforge.map.rendertheme.ExternalRenderTheme
+import org.mapsforge.map.rendertheme.XmlRenderTheme
+import org.mapsforge.map.rendertheme.XmlRenderThemeMenuCallback
+import org.mapsforge.map.rendertheme.XmlRenderThemeStyleMenu
+import org.osmdroid.mapsforge.MapsForgeTileProvider
+import org.osmdroid.mapsforge.MapsForgeTileSource
 import org.osmdroid.tileprovider.MapTileProviderBasic
 import org.osmdroid.tileprovider.modules.OfflineTileProvider
 import org.osmdroid.tileprovider.tilesource.FileBasedTileSource
@@ -35,11 +42,50 @@ object MapStyle {
         map.setMaxZoomLevel(19.0)
     }
 
+    /** Nello stile Elevate (e simili) attiva la variante "MTB" se presente. */
+    private object MtbStyleMenu : XmlRenderThemeMenuCallback {
+        override fun getCategories(menu: XmlRenderThemeStyleMenu): Set<String> {
+            val id = menu.layers.keys.firstOrNull { it.contains("mtb", ignoreCase = true) } ?: menu.defaultValue
+            val layer = menu.getLayer(id) ?: return emptySet()
+            val cats = HashSet<String>(layer.categories)
+            for (o in layer.overlays) if (o.isEnabled) cats.addAll(o.categories)
+            return cats
+        }
+    }
+
+    private fun theme(ctx: Context): XmlRenderTheme? {
+        val f = OfflineMaps.themeFile(ctx) ?: return null
+        return try {
+            ExternalRenderTheme(f, MtbStyleMenu)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun applyVector(ctx: Context, map: MapView, files: List<File>): Boolean = try {
+        val t = theme(ctx)
+        val src = if (t != null) {
+            MapsForgeTileSource.createFromFiles(files.toTypedArray(), t, "sirjoe-tema")
+        } else {
+            MapsForgeTileSource.createFromFiles(files.toTypedArray())
+        }
+        map.setTileProvider(MapsForgeTileProvider(SimpleRegisterReceiver(ctx), src, null))
+        map.setUseDataConnection(false)
+        true
+    } catch (e: Throwable) {
+        Toast.makeText(ctx, "Mappa offline non leggibile: ${e.message}", Toast.LENGTH_LONG).show()
+        false
+    }
+
     fun apply(ctx: Context, map: MapView) {
         val base = Prefs.baseMap(ctx)
         val offlineFile = Prefs.offlineMapPath(ctx)?.let { File(it) }?.takeIf { it.exists() }
+        val vectorMaps = OfflineMaps.vectorMaps(ctx)
+        var online = false
 
-        if (base == Prefs.BASE_OFFLINE && offlineFile != null) {
+        if (base == Prefs.BASE_VECTOR && vectorMaps.isNotEmpty() && applyVector(ctx, map, vectorMaps)) {
+            // mappa OpenAndroMaps attiva
+        } else if (base == Prefs.BASE_OFFLINE && offlineFile != null) {
             val provider = OfflineTileProvider(SimpleRegisterReceiver(ctx), arrayOf(offlineFile))
             map.setTileProvider(provider)
             val names = provider.archives.firstOrNull()?.tileSources
@@ -55,13 +101,14 @@ object MapStyle {
             map.setTileProvider(MapTileProviderBasic(ctx, src))
             map.setTileSource(src)
             map.setUseDataConnection(true)
+            online = true
         }
 
         for (o in map.overlays.filterIsInstance<TilesOverlay>()) {
             map.overlays.remove(o)
             o.onDetach(map)
         }
-        if (Prefs.mtbOverlay(ctx) && base != Prefs.BASE_OFFLINE) {
+        if (Prefs.mtbOverlay(ctx) && online) {
             val o = TilesOverlay(MapTileProviderBasic(ctx, MTB_ROUTES), ctx)
             o.setLoadingBackgroundColor(Color.TRANSPARENT)
             o.setLoadingLineColor(Color.TRANSPARENT)
@@ -73,9 +120,11 @@ object MapStyle {
     /** Finestra di scelta della mappa; onChanged viene chiamato dopo la scelta. */
     fun choose(ctx: Context, onChanged: () -> Unit) {
         val hasOffline = Prefs.offlineMapPath(ctx)?.let { File(it).exists() } == true
+        val hasVector = OfflineMaps.vectorMaps(ctx).isNotEmpty()
         val mtbOn = Prefs.mtbOverlay(ctx)
         val items = mutableListOf("OpenTopoMap (sentieri e rilievo)", "OpenStreetMap standard")
-        if (hasOffline) items.add("Mappa offline importata")
+        if (hasVector) items.add("Offline: OpenAndroMaps")
+        if (hasOffline) items.add("Mappa offline importata (MBTiles)")
         items.add(if (mtbOn) "Nascondi itinerari MTB" else "Mostra itinerari MTB")
 
         MaterialAlertDialogBuilder(ctx)
@@ -85,6 +134,7 @@ object MapStyle {
                 when {
                     label.startsWith("OpenTopo") -> Prefs.setBaseMap(ctx, Prefs.BASE_TOPO)
                     label.startsWith("OpenStreetMap") -> Prefs.setBaseMap(ctx, Prefs.BASE_OSM)
+                    label.startsWith("Offline:") -> Prefs.setBaseMap(ctx, Prefs.BASE_VECTOR)
                     label.startsWith("Mappa offline") -> Prefs.setBaseMap(ctx, Prefs.BASE_OFFLINE)
                     else -> {
                         Prefs.setMtbOverlay(ctx, !mtbOn)

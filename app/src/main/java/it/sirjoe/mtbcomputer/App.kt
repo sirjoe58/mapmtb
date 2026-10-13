@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import it.sirjoe.mtbcomputer.service.RecordingService
 import org.osmdroid.config.Configuration
+import org.osmdroid.mapsforge.MapsForgeTileSource
 import java.io.File
 
 class App : Application() {
@@ -19,6 +20,12 @@ class App : Application() {
         val base = File(getExternalFilesDir(null) ?: filesDir, "osmdroid")
         conf.osmdroidBasePath = base
         conf.osmdroidTileCache = File(base, "tiles")
+        // cache delle zone viste online: fino a circa 1 GB, utile anche senza segnale
+        conf.tileFileSystemCacheMaxBytes = 1024L * 1024 * 1024
+        conf.tileFileSystemCacheTrimBytes = 900L * 1024 * 1024
+
+        // motore per le mappe vettoriali offline (OpenAndroMaps / Mapsforge)
+        MapsForgeTileSource.createInstance(this)
 
         val channel = NotificationChannel(
             RecordingService.CHANNEL_ID,

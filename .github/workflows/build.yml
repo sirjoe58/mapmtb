@@ -33,6 +33,9 @@ jobs:
           pip install fitparse
           python tools/check_fit.py
 
+      - name: Versioni librerie mappe
+        run: gradle :app:dependencies --configuration debugRuntimeClasspath | grep -i -E "mapsforge|androidsvg" | sort -u | head -20
+
       - name: Compila APK di debug
         run: gradle assembleDebug --stacktrace
 

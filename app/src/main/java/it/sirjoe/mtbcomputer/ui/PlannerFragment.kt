@@ -124,6 +124,10 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
         }
     }
 
+    fun applyBaseMap() {
+        if (isAdded && view != null) MapStyle.apply(requireContext(), map)
+    }
+
     override fun onResume() {
         super.onResume()
         map.onResume()
