@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Logo grande -->
+        <TextView
+            style="@style/Logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:paddingStart="28dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="28dp"
+            android:paddingBottom="10dp"
+            android:textSize="26sp" />
+
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Impostazioni"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swAutoPause"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Pausa automatica quando sei fermo" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swHeading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Mappa orientata nella direzione di marcia" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swScreen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Schermo sempre acceso durante la registrazione" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swVoice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Avvisi vocali (ogni km, pausa)" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swMtb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Mostra itinerari MTB sulla mappa" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/disclaimer_title"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/disclaimer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:lineSpacingExtra="2dp"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Licenza e crediti"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            android:text="Codice sorgente con licenza MIT.\nMappe: © OpenStreetMap contributors (ODbL), OpenTopoMap (CC-BY-SA).\nItinerari MTB: waymarkedtrails.org.\nLibreria mappe: osmdroid (Apache 2.0)."
+            android:textSize="14sp" />
+    </LinearLayout>
+</ScrollView>

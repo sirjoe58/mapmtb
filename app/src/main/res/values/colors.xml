@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sj_orange">#FF6D00</color>
+    <color name="sj_orange_dark">#E65100</color>
+    <color name="sj_red">#D84315</color>
+    <color name="sj_green">#2E7D32</color>
+    <color name="sj_dark">#1B1B1B</color>
+    <color name="data_bar">#B3000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="fab_bg">#E6FFFFFF</color>
+    <color name="ic_launcher_background">#1E3A2B</color>
+</resources>
