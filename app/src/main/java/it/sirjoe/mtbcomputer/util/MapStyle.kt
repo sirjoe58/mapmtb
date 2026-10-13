@@ -6,6 +6,7 @@ import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.data.OfflineMaps
 import it.sirjoe.mtbcomputer.data.Prefs
+import org.mapsforge.map.model.DisplayModel
 import org.mapsforge.map.rendertheme.ExternalRenderTheme
 import org.mapsforge.map.rendertheme.XmlRenderTheme
 import org.mapsforge.map.rendertheme.XmlRenderThemeMenuCallback
@@ -22,6 +23,7 @@ import org.osmdroid.tileprovider.util.SimpleRegisterReceiver
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.TilesOverlay
+import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import java.io.File
 
 /** Impostazione comune delle mappe (pagina Mappa e pagina Crea). */
@@ -34,8 +36,17 @@ object MapStyle {
         "Itinerari MTB: waymarkedtrails.org, dati (c) OpenStreetMap contributors"
     )
 
-    fun setup(map: MapView) {
+    /** Rotazione con due dita; onRotate viene chiamato quando l'utente gira la mappa. */
+    class Rotation(map: MapView, private val callback: () -> Unit) : RotationGestureOverlay(map) {
+        override fun onRotate(deltaAngle: Float) {
+            super.onRotate(deltaAngle)
+            callback()
+        }
+    }
+
+    fun setup(map: MapView, onUserRotate: () -> Unit = {}) {
         map.setMultiTouchControls(true)
+        map.overlays.add(Rotation(map, onUserRotate).apply { isEnabled = true })
         map.zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
         map.setTilesScaledToDpi(true)
         map.setMinZoomLevel(4.0)
@@ -63,13 +74,19 @@ object MapStyle {
     }
 
     private fun applyVector(ctx: Context, map: MapView, files: List<File>): Boolean = try {
+        // Mapsforge disegna già testi e simboli alla densità dello schermo:
+        // niente ingrandimento aggiuntivo dei riquadri, altrimenti la mappa viene sfocata.
+        val scale = Prefs.vectorScale(ctx)
+        DisplayModel.setDefaultUserScaleFactor(scale)
         val t = theme(ctx)
         val src = if (t != null) {
-            MapsForgeTileSource.createFromFiles(files.toTypedArray(), t, "sirjoe-tema")
+            MapsForgeTileSource.createFromFiles(files.toTypedArray(), t, "sirjoe-tema-$scale")
         } else {
             MapsForgeTileSource.createFromFiles(files.toTypedArray())
         }
         map.setTileProvider(MapsForgeTileProvider(SimpleRegisterReceiver(ctx), src, null))
+        map.setTilesScaledToDpi(false)
+        map.setMaxZoomLevel(21.0)
         map.setUseDataConnection(false)
         true
     } catch (e: Throwable) {
@@ -82,6 +99,8 @@ object MapStyle {
         val offlineFile = Prefs.offlineMapPath(ctx)?.let { File(it) }?.takeIf { it.exists() }
         val vectorMaps = OfflineMaps.vectorMaps(ctx)
         var online = false
+        map.setTilesScaledToDpi(true)
+        map.setMaxZoomLevel(19.0)
 
         if (base == Prefs.BASE_VECTOR && vectorMaps.isNotEmpty() && applyVector(ctx, map, vectorMaps)) {
             // mappa OpenAndroMaps attiva
@@ -126,6 +145,7 @@ object MapStyle {
         if (hasVector) items.add("Offline: OpenAndroMaps")
         if (hasOffline) items.add("Mappa offline importata (MBTiles)")
         items.add(if (mtbOn) "Nascondi itinerari MTB" else "Mostra itinerari MTB")
+        if (hasVector) items.add("Dimensione testi mappa offline…")
 
         MaterialAlertDialogBuilder(ctx)
             .setTitle("Mappa")
@@ -134,6 +154,10 @@ object MapStyle {
                 when {
                     label.startsWith("OpenTopo") -> Prefs.setBaseMap(ctx, Prefs.BASE_TOPO)
                     label.startsWith("OpenStreetMap") -> Prefs.setBaseMap(ctx, Prefs.BASE_OSM)
+                    label.startsWith("Dimensione") -> {
+                        chooseScale(ctx, onChanged)
+                        return@setItems
+                    }
                     label.startsWith("Offline:") -> Prefs.setBaseMap(ctx, Prefs.BASE_VECTOR)
                     label.startsWith("Mappa offline") -> Prefs.setBaseMap(ctx, Prefs.BASE_OFFLINE)
                     else -> {
@@ -141,6 +165,21 @@ object MapStyle {
                         if (!mtbOn) Toast.makeText(ctx, "Itinerari MTB visibili (serve Internet)", Toast.LENGTH_SHORT).show()
                     }
                 }
+                onChanged()
+            }
+            .show()
+    }
+
+    private fun chooseScale(ctx: Context, onChanged: () -> Unit) {
+        val values = floatArrayOf(0.8f, 1.0f, 1.25f, 1.5f)
+        val labels = arrayOf("Piccoli (più dettaglio)", "Normali", "Grandi", "Molto grandi")
+        val cur = Prefs.vectorScale(ctx)
+        val sel = values.indexOfFirst { kotlin.math.abs(it - cur) < 0.01f }.coerceAtLeast(1)
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Testi e simboli della mappa offline")
+            .setSingleChoiceItems(labels, sel) { d, which ->
+                Prefs.setVectorScale(ctx, values[which])
+                d.dismiss()
                 onChanged()
             }
             .show()

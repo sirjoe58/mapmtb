@@ -47,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="56dp"
-            android:text="Mappa orientata nella direzione di marcia" />
+            android:text="Mappa orientata nella direzione di marcia (altre scelte: pulsante bussola sulla mappa)" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/swScreen"
