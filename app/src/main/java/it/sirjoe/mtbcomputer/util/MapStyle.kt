@@ -1,0 +1,98 @@
+package it.sirjoe.mtbcomputer.util
+
+import android.content.Context
+import android.graphics.Color
+import android.widget.Toast
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import it.sirjoe.mtbcomputer.data.Prefs
+import org.osmdroid.tileprovider.MapTileProviderBasic
+import org.osmdroid.tileprovider.modules.OfflineTileProvider
+import org.osmdroid.tileprovider.tilesource.FileBasedTileSource
+import org.osmdroid.tileprovider.tilesource.ITileSource
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
+import org.osmdroid.tileprovider.util.SimpleRegisterReceiver
+import org.osmdroid.views.CustomZoomButtonsController
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.TilesOverlay
+import java.io.File
+
+/** Impostazione comune delle mappe (pagina Mappa e pagina Crea). */
+object MapStyle {
+
+    /** Sovrapposizione degli itinerari MTB segnati (dati OpenStreetMap). */
+    private val MTB_ROUTES = XYTileSource(
+        "WaymarkedTrailsMTB", 0, 18, 256, ".png",
+        arrayOf("https://tile.waymarkedtrails.org/mtb/"),
+        "Itinerari MTB: waymarkedtrails.org, dati (c) OpenStreetMap contributors"
+    )
+
+    fun setup(map: MapView) {
+        map.setMultiTouchControls(true)
+        map.zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
+        map.setTilesScaledToDpi(true)
+        map.setMinZoomLevel(4.0)
+        map.setMaxZoomLevel(19.0)
+    }
+
+    fun apply(ctx: Context, map: MapView) {
+        val base = Prefs.baseMap(ctx)
+        val offlineFile = Prefs.offlineMapPath(ctx)?.let { File(it) }?.takeIf { it.exists() }
+
+        if (base == Prefs.BASE_OFFLINE && offlineFile != null) {
+            val provider = OfflineTileProvider(SimpleRegisterReceiver(ctx), arrayOf(offlineFile))
+            map.setTileProvider(provider)
+            val names = provider.archives.firstOrNull()?.tileSources
+            val src: ITileSource = if (!names.isNullOrEmpty()) {
+                FileBasedTileSource.getSource(names.first())
+            } else {
+                TileSourceFactory.OpenTopo
+            }
+            map.setTileSource(src)
+            map.setUseDataConnection(false)
+        } else {
+            val src = if (base == Prefs.BASE_OSM) TileSourceFactory.MAPNIK else TileSourceFactory.OpenTopo
+            map.setTileProvider(MapTileProviderBasic(ctx, src))
+            map.setTileSource(src)
+            map.setUseDataConnection(true)
+        }
+
+        for (o in map.overlays.filterIsInstance<TilesOverlay>()) {
+            map.overlays.remove(o)
+            o.onDetach(map)
+        }
+        if (Prefs.mtbOverlay(ctx) && base != Prefs.BASE_OFFLINE) {
+            val o = TilesOverlay(MapTileProviderBasic(ctx, MTB_ROUTES), ctx)
+            o.setLoadingBackgroundColor(Color.TRANSPARENT)
+            o.setLoadingLineColor(Color.TRANSPARENT)
+            map.overlays.add(0, o)
+        }
+        map.invalidate()
+    }
+
+    /** Finestra di scelta della mappa; onChanged viene chiamato dopo la scelta. */
+    fun choose(ctx: Context, onChanged: () -> Unit) {
+        val hasOffline = Prefs.offlineMapPath(ctx)?.let { File(it).exists() } == true
+        val mtbOn = Prefs.mtbOverlay(ctx)
+        val items = mutableListOf("OpenTopoMap (sentieri e rilievo)", "OpenStreetMap standard")
+        if (hasOffline) items.add("Mappa offline importata")
+        items.add(if (mtbOn) "Nascondi itinerari MTB" else "Mostra itinerari MTB")
+
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Mappa")
+            .setItems(items.toTypedArray()) { _, which ->
+                val label = items[which]
+                when {
+                    label.startsWith("OpenTopo") -> Prefs.setBaseMap(ctx, Prefs.BASE_TOPO)
+                    label.startsWith("OpenStreetMap") -> Prefs.setBaseMap(ctx, Prefs.BASE_OSM)
+                    label.startsWith("Mappa offline") -> Prefs.setBaseMap(ctx, Prefs.BASE_OFFLINE)
+                    else -> {
+                        Prefs.setMtbOverlay(ctx, !mtbOn)
+                        if (!mtbOn) Toast.makeText(ctx, "Itinerari MTB visibili (serve Internet)", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                onChanged()
+            }
+            .show()
+    }
+}

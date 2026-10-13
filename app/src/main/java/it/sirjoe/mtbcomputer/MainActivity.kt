@@ -2,11 +2,15 @@ package it.sirjoe.mtbcomputer
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.IntentCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -15,25 +19,33 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.RideRepository
+import it.sirjoe.mtbcomputer.share.ShareHelper
+import it.sirjoe.mtbcomputer.share.Strava
 import it.sirjoe.mtbcomputer.ui.DataFragment
 import it.sirjoe.mtbcomputer.ui.InfoFragment
 import it.sirjoe.mtbcomputer.ui.MapFragment
+import it.sirjoe.mtbcomputer.ui.PlannerFragment
 import it.sirjoe.mtbcomputer.ui.TracksFragment
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG_MAP = "map"
+        private const val TAG_PLAN = "plan"
         private const val TAG_DATA = "data"
         private const val TAG_TRACKS = "tracks"
         private const val TAG_INFO = "info"
+        private val ALL_TAGS = listOf(TAG_MAP, TAG_PLAN, TAG_DATA, TAG_TRACKS, TAG_INFO)
 
         fun readDisclaimer(ctx: Context): String =
             ctx.assets.open("avvertenze.txt").bufferedReader(Charsets.UTF_8).use { it.readText() }
     }
 
     private lateinit var nav: BottomNavigationView
+    private var pendingSave: ByteArray? = null
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -42,25 +54,33 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    private val saveLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+        val data = pendingSave
+        pendingSave = null
+        if (uri != null && data != null) {
+            try {
+                contentResolver.openOutputStream(uri)?.use { it.write(data) }
+                Toast.makeText(this, "File salvato", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Errore nel salvataggio: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         nav = findViewById(R.id.bottomNav)
 
         if (savedInstanceState == null) {
-            val map = MapFragment()
-            val data = DataFragment()
-            val tracks = TracksFragment()
-            val info = InfoFragment()
-            supportFragmentManager.beginTransaction()
-                .add(R.id.container, map, TAG_MAP)
-                .add(R.id.container, data, TAG_DATA)
-                .add(R.id.container, tracks, TAG_TRACKS)
-                .add(R.id.container, info, TAG_INFO)
-                .hide(data)
-                .hide(tracks)
-                .hide(info)
-                .commitNow()
+            val t = supportFragmentManager.beginTransaction()
+                .add(R.id.container, MapFragment(), TAG_MAP)
+                .add(R.id.container, PlannerFragment(), TAG_PLAN)
+                .add(R.id.container, DataFragment(), TAG_DATA)
+                .add(R.id.container, TracksFragment(), TAG_TRACKS)
+                .add(R.id.container, InfoFragment(), TAG_INFO)
+            t.commitNow()
+            show(TAG_MAP)
         }
 
         nav.setOnItemSelectedListener { item ->
@@ -82,9 +102,74 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        handleIntent(intent)
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    // ------------------------------------------------- intent in arrivo
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent == null) return
+        val data = intent.data
+        when {
+            // ritorno dall'autorizzazione Strava
+            Strava.isAuthRedirect(data) -> {
+                lifecycleScope.launch {
+                    val msg = try {
+                        "Strava collegato: " + Strava.finishAuth(this@MainActivity, data!!)
+                    } catch (e: Exception) {
+                        "Collegamento Strava non riuscito: ${e.message}"
+                    }
+                    Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
+                    (supportFragmentManager.findFragmentByTag(TAG_INFO) as? InfoFragment)?.refreshStrava()
+                }
+            }
+            // "Apri con" da file manager, email, WhatsApp...
+            intent.action == Intent.ACTION_VIEW && data != null -> importFromOtherApp(listOf(data))
+            intent.action == Intent.ACTION_SEND -> {
+                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                    ?.let { importFromOtherApp(listOf(it)) }
+            }
+            intent.action == Intent.ACTION_SEND_MULTIPLE -> {
+                IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                    ?.let { importFromOtherApp(it) }
+            }
+        }
+        setIntent(Intent(this, MainActivity::class.java))
+    }
+
+    private fun importFromOtherApp(uris: List<Uri>) {
+        lifecycleScope.launch {
+            var count = 0
+            var error: String? = null
+            for (u in uris) {
+                try {
+                    count += withContext(Dispatchers.IO) { ShareHelper.importUri(applicationContext, u).size }
+                } catch (e: Exception) {
+                    error = e.message
+                }
+            }
+            val msg = when {
+                count > 0 -> "Importate $count tracce nella pagina Percorsi"
+                else -> "Import non riuscito: ${error ?: "file non riconosciuto"}"
+            }
+            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
+            if (count > 0) {
+                selectTab(R.id.nav_tracks)
+                (supportFragmentManager.findFragmentByTag(TAG_TRACKS) as? TracksFragment)?.refresh()
+            }
+        }
+    }
+
+    // ----------------------------------------------------------- pagine
+
     private fun tagFor(id: Int): String = when (id) {
+        R.id.nav_plan -> TAG_PLAN
         R.id.nav_data -> TAG_DATA
         R.id.nav_tracks -> TAG_TRACKS
         R.id.nav_info -> TAG_INFO
@@ -94,20 +179,33 @@ class MainActivity : AppCompatActivity() {
     private fun show(tag: String) {
         val fm = supportFragmentManager
         val t = fm.beginTransaction()
-        for (f in listOf(TAG_MAP, TAG_DATA, TAG_TRACKS, TAG_INFO)) {
+        for (f in ALL_TAGS) {
             val frag: Fragment = fm.findFragmentByTag(f) ?: continue
             if (f == tag) t.show(frag) else t.hide(frag)
         }
-        t.commit()
+        t.commitNow()
     }
 
     fun selectTab(id: Int) {
         nav.selectedItemId = id
     }
 
+    fun openPlannerOnRoute() {
+        selectTab(R.id.nav_plan)
+        (supportFragmentManager.findFragmentByTag(TAG_PLAN) as? PlannerFragment)?.zoomToRoute()
+    }
+
     fun onBaseMapChanged() {
         (supportFragmentManager.findFragmentByTag(TAG_MAP) as? MapFragment)?.applyBaseMap()
     }
+
+    /** Salva dei dati in un file scelto dall'utente (Download, Drive...). */
+    fun saveToFile(fileName: String, data: ByteArray) {
+        pendingSave = data
+        saveLauncher.launch(fileName.replace(Regex("[\\\\/:*?\"<>|]"), "_"))
+    }
+
+    // ------------------------------------------------------ permessi
 
     fun askPermissions() {
         val perms = mutableListOf(

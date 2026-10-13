@@ -11,15 +11,16 @@
         android:layout_height="match_parent" />
 
     <!-- Logo in alto a sinistra, piccolo e discreto -->
-    <TextView
+    <ImageView
         android:id="@+id/logo"
-        style="@style/Logo"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="30dp"
         android:layout_gravity="top|start"
         android:layout_margin="10dp"
-        android:alpha="0.9"
-        android:textSize="11sp" />
+        android:adjustViewBounds="true"
+        android:alpha="0.92"
+        android:contentDescription="@string/logo_text"
+        android:src="@drawable/logo_sirjoe" />
 
     <!-- Avvisi percorso (fuori percorso / distanza al traguardo) -->
     <TextView
@@ -126,11 +127,10 @@
                 android:id="@+id/speed"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
+                android:fontFamily="@font/russo_one"
                 android:text="0,0"
                 android:textColor="@color/white"
-                android:textSize="44sp"
-                android:textStyle="bold" />
+                android:textSize="42sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -155,10 +155,10 @@
                     android:id="@+id/distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/russo_one"
                     android:text="0,00 km"
                     android:textColor="@color/white"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:textSize="20sp" />
 
                 <TextView
                     android:id="@+id/clock"

@@ -25,6 +25,14 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
+      - name: Test (formato FIT)
+        run: gradle testDebugUnitTest --stacktrace
+
+      - name: Verifica FIT con fitparse
+        run: |
+          pip install fitparse
+          python tools/check_fit.py
+
       - name: Compila APK di debug
         run: gradle assembleDebug --stacktrace
 

@@ -1,73 +1,76 @@
-<p align="center"><img src="docs/logo-by-sirjoe.png" alt="BY SIRJOE" width="360"></p>
+<p align="center"><img src="docs/logo-by-sirjoe.png" alt="BY SIRJOE" width="380"></p>
 
 # SirJoe MTB
 
-Ciclocomputer e navigatore per mountain bike su Android, con mappa a tutto schermo, cursore a forma di MTB e percorsi fuoristrada. Progetto personale, gratuito e open source, **non destinato alla vendita**.
+Ciclocomputer e navigatore per mountain bike su Android: mappa a tutto schermo, cursore "bici vista da dietro" con freccia che segue il percorso, creazione di percorsi personalizzati, tracce in tutti i formati principali e condivisione su Strava, app e social. Progetto personale, gratuito e open source, **non destinato alla vendita**.
 
 > ⚠️ Prima di usare l'app leggi le [Avvertenze d'uso](AVVERTENZE.md). L'app le mostra al primo avvio e vanno accettate.
 
-## Funzioni
+## Pagine
 
-**Schermata Mappa**
-- Mappa a tutto schermo (OpenTopoMap con sentieri e curve di livello, oppure OpenStreetMap standard).
-- Sovrapposizione degli itinerari MTB segnati.
-- Cursore di navigazione a forma di bici da fuoristrada, con freccia di direzione.
-- Mappa orientata nella direzione di marcia oppure a Nord.
-- Barra dati sottile e semitrasparente in basso: velocità a sinistra, distanza e ora a destra; un tocco mostra tempo in movimento, salita e quota.
-- Pulsanti per mappa, orientamento, centratura, avvio/pausa e fine registrazione.
-- Logo "BY SIRJOE" in alto a sinistra.
+| Pagina | Cosa fa |
+| --- | --- |
+| **Mappa** | Mappa a tutto schermo (OpenTopoMap o OpenStreetMap) con itinerari MTB. Cursore: MTB vista da dietro con una freccia davanti che indica dove andare. Mappa orientata nella direzione di marcia, con la posizione nella parte bassa dello schermo. Barra dati in basso: velocità, distanza, ora. Registrazione, avviso di fuori percorso con vibrazione, distanza al traguardo. |
+| **Crea** | Percorsi personalizzati: tocca la mappa (o usa "+" col mirino) per aggiungere punti. I tratti seguono strade e sentieri reali (BRouter) oppure vanno in linea retta. Annulla, chiudi anello, inverti, salva, segui subito, condividi. Mostra km e dislivello. |
+| **Dati** | Velocità attuale, media e massima, distanza, tempi, ora, quota, dislivello, pendenza, direzione, distanza al traguardo, precisione GPS, profilo altimetrico. |
+| **Percorsi** | Archivio di uscite e percorsi. Importa, esporta, rinomina, modifica nella pagina Crea, condividi. Esporta tutto in un archivio ZIP. Mappe offline MBTiles. |
+| **Info** | Impostazioni, collegamento a Strava, avvertenze, crediti. |
 
-**Pagina Dati**: velocità attuale, media e massima, distanza, tempo in movimento e totale, ora, quota, dislivello positivo e negativo, pendenza, direzione, distanza al traguardo, precisione GPS, profilo altimetrico del percorso.
+## Formati
 
-**Pagina Percorsi**
-- Archivio delle uscite registrate.
-- Import: GPX, KML, KMZ, TCX, GeoJSON, CSV.
-- Export e condivisione: GPX, KML, TCX, GeoJSON, CSV.
-- Segui un percorso: linea sulla mappa, distanza al traguardo, avviso con vibrazione quando esci dal percorso.
-- Mappe offline: importa un file MBTiles (o .sqlite, .zip, .gemf).
+| Formato | Importa | Esporta | Per chi |
+| --- | --- | --- | --- |
+| GPX | ✓ | ✓ | Komoot, Strava, Wikiloc, Outdooractive, RideWithGPS, quasi tutte le app |
+| FIT | ✓ | ✓ (percorso) | Ciclocomputer Garmin Edge, Wahoo, Hammerhead |
+| TCX | ✓ | ✓ | Garmin Connect, Strava |
+| KML / KMZ | ✓ | KML | Google Earth, Google My Maps |
+| GeoJSON | ✓ | ✓ | Siti web e programmi GIS |
+| CSV | ✓ | ✓ | Fogli di calcolo |
+| ZIP | ✓ (più tracce) | ✓ (tutte le tracce) | Backup e invio in blocco |
 
-**Registrazione**: continua a schermo spento (servizio in primo piano con notifica), pausa automatica, filtri sui salti del GPS, avvisi vocali a ogni chilometro.
+Puoi anche aprire un file traccia direttamente da file manager, email, WhatsApp o Telegram con **"Apri con" / "Condividi" → SirJoe MTB**.
+
+## Condivisione
+
+Da **Percorsi → traccia → Condividi**, oppure dal pulsante **Condividi** nella pagina Crea:
+
+- **Carica su Strava**: le uscite registrate vengono pubblicate come attività sul tuo profilo (vedi sotto come collegare Strava).
+- **Immagine per i social**: un'immagine con la forma del percorso, i numeri principali e il logo, con testo e hashtag pronti, per Instagram, Facebook, WhatsApp, Telegram, X e simili.
+- **File per app e piattaforme**: scegli il formato e invialo a Komoot, Garmin Connect, Wahoo, Wikiloc, email, Drive… (compaiono le app installate che accettano il file).
+- **Salva su file** nel telefono.
+
+### Collegare Strava (una volta sola)
+
+Strava permette il caricamento solo tramite un'"applicazione API" personale, gratuita:
+
+1. Da browser vai su **strava.com/settings/api** e crea un'applicazione (nome a piacere, sito anche `https://github.com`).
+2. In **Authorization Callback Domain** scrivi `localhost`.
+3. Nell'app: **Info → Collega Strava**, incolla **Client ID** e **Client Secret** e autorizza.
+
+Client ID e Secret restano solo sul telefono. Strava accetta come attività solo le uscite registrate (con orari); i percorsi creati a mano si condividono come file GPX.
 
 ## Installazione
 
-1. Apri la scheda **Actions** del repository, scegli l'ultima esecuzione di "Compila APK" e scarica l'artefatto **SirJoeMTB-apk**.
-   In alternativa crea un tag (es. `v1.0.0`): l'APK viene allegato automaticamente alla **Release**.
-2. Copia `SirJoeMTB.apk` sul telefono e aprilo. Android chiederà di consentire l'installazione da questa fonte.
-3. Al primo avvio accetta le avvertenze e concedi il permesso di posizione (e delle notifiche, su Android 13+).
+1. Vai su **Releases** (o su **Actions** → ultima esecuzione → artefatto **SirJoeMTB-apk**) e scarica `SirJoeMTB.apk`.
+2. Aprilo sul telefono e consenti l'installazione da questa fonte. Per aggiornare installa il nuovo APK sopra il vecchio: tracce e impostazioni restano.
+3. Al primo avvio accetta le avvertenze e concedi posizione e notifiche.
 
 Requisiti: Android 8.0 o superiore, GPS, Google Play Services.
 
 ## Compilare in locale
 
-Apri la cartella con Android Studio (versione recente) e premi *Run*. Da riga di comando, con Gradle 8.10+ e JDK 17:
-
-```
-gradle assembleDebug
-```
-
-## Struttura del codice
-
-| Cartella | Contenuto |
-| --- | --- |
-| `app/src/main/java/.../ui` | Pagine Mappa, Dati, Percorsi, Info e profilo altimetrico |
-| `app/src/main/java/.../service` | Servizio di registrazione GPS in background |
-| `app/src/main/java/.../data` | Stato condiviso, impostazioni, lettura e scrittura dei formati |
-| `app/src/main/assets/avvertenze.txt` | Testo delle avvertenze mostrato nell'app |
+Apri la cartella con Android Studio e premi *Run*. Da riga di comando, con Gradle 8.10+ e JDK 17: `gradle assembleDebug`. I test (`gradle testDebugUnitTest`) verificano scrittura e lettura del formato FIT; GitHub Actions controlla inoltre i file con la libreria indipendente `fitparse`.
 
 ## Dati e crediti
 
 - Dati cartografici © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), licenza ODbL.
-- Stile mappa [OpenTopoMap](https://opentopomap.org) (CC-BY-SA).
-- Itinerari MTB: [waymarkedtrails.org](https://mtb.waymarkedtrails.org).
+- Stile mappa [OpenTopoMap](https://opentopomap.org) (CC-BY-SA). Itinerari MTB: [waymarkedtrails.org](https://mtb.waymarkedtrails.org).
+- Calcolo dei percorsi: [BRouter](https://brouter.de) (server pubblico).
 - Libreria mappe: [osmdroid](https://github.com/osmdroid/osmdroid) (Apache 2.0).
+- Carattere del logo: Russo One di Jovanny Lemonad, [SIL Open Font License](docs/licenses/OFL-RussoOne.txt).
+- Strava e gli altri nomi citati sono marchi dei rispettivi proprietari; il progetto non è affiliato a loro.
 
-I server di mappe gratuiti sono gestiti da volontari: l'app si identifica correttamente, salva in cache solo ciò che visualizzi e **non scarica aree intere in blocco**. Per l'uso offline importa file MBTiles che hai diritto di usare.
-
-## Roadmap
-
-- Navigazione fuoristrada offline con BRouter e indicazioni di svolta.
-- Sensori Bluetooth: frequenza cardiaca, cadenza, potenza.
-- Formato FIT, statistiche settimanali e mensili, rilevamento caduta.
+I server gratuiti di mappe e calcolo percorsi sono gestiti da volontari: l'app si identifica, salva in cache solo ciò che visualizzi, fa una sola richiesta di calcolo per ogni punto aggiunto e **non scarica aree intere in blocco**.
 
 ## Licenza
 

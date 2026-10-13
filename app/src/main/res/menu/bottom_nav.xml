@@ -5,6 +5,10 @@
         android:icon="@drawable/ic_map"
         android:title="@string/nav_map" />
     <item
+        android:id="@+id/nav_plan"
+        android:icon="@drawable/ic_edit_route"
+        android:title="@string/nav_plan" />
+    <item
         android:id="@+id/nav_data"
         android:icon="@drawable/ic_dashboard"
         android:title="@string/nav_data" />

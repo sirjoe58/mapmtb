@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/planMap"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Mirino al centro: "+" aggiunge un punto esattamente qui -->
+    <View
+        android:layout_width="2dp"
+        android:layout_height="26dp"
+        android:layout_gravity="center"
+        android:alpha="0.7"
+        android:background="@color/sj_dark" />
+
+    <View
+        android:layout_width="26dp"
+        android:layout_height="2dp"
+        android:layout_gravity="center"
+        android:alpha="0.7"
+        android:background="@color/sj_dark" />
+
+    <!-- Riepilogo in alto -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_margin="8dp"
+        android:background="@drawable/bg_banner"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <TextView
+            android:id="@+id/planSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/russo_one"
+            android:text="0,00 km"
+            android:textColor="@color/white"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/planMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#DDFFFFFF"
+            android:textSize="13sp" />
+
+        <ProgressBar
+            android:id="@+id/planBusy"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginTop="4dp"
+            android:indeterminate="true"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Pulsanti laterali -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="10dp"
+        android:orientation="vertical">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/planLayers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="@string/cd_layers"
+            app:backgroundTint="@color/fab_bg"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_layers"
+            app:tint="@color/sj_dark" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/planMyPos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="@string/cd_center"
+            app:backgroundTint="@color/fab_bg"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_my_location"
+            app:tint="@color/sj_dark" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/planAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Aggiungi punto al centro"
+            app:backgroundTint="@color/sj_orange"
+            app:srcCompat="@drawable/ic_add"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <!-- Barra comandi in basso -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#F2FFFFFF"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="6dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planUndo"
+                style="@style/PlanButton"
+                android:text="Annulla"
+                app:icon="@drawable/ic_undo" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planModeBtn"
+                style="@style/PlanButton"
+                android:text="Modalità"
+                app:icon="@drawable/ic_edit_route" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planLoop"
+                style="@style/PlanButton"
+                android:text="Chiudi anello"
+                app:icon="@drawable/ic_loop" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planReverse"
+                style="@style/PlanButton"
+                android:text="Inverti"
+                app:icon="@drawable/ic_swap" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planSave"
+                style="@style/PlanButton"
+                android:text="Salva"
+                app:icon="@drawable/ic_save" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planGo"
+                style="@style/PlanButton"
+                android:text="Segui ora"
+                app:icon="@drawable/ic_play_route" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planShare"
+                style="@style/PlanButton"
+                android:text="Condividi"
+                app:icon="@drawable/ic_share" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planClear"
+                style="@style/PlanButton"
+                android:text="Cancella"
+                app:icon="@drawable/ic_delete" />
+        </LinearLayout>
+    </HorizontalScrollView>
+</FrameLayout>

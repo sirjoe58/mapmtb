@@ -1,16 +1,23 @@
 package it.sirjoe.mtbcomputer.ui
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.BuildConfig
 import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.Prefs
+import it.sirjoe.mtbcomputer.share.Strava
 
-/** Pagina "Info": logo, impostazioni, avvertenze d'uso, licenze. */
+/** Pagina "Info": logo, impostazioni, collegamento Strava, avvertenze d'uso, licenze. */
 class InfoFragment : Fragment(R.layout.fragment_info) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -34,5 +41,97 @@ class InfoFragment : Fragment(R.layout.fragment_info) {
             Prefs.setMtbOverlay(ctx, it)
             (activity as? MainActivity)?.onBaseMapChanged()
         }
+
+        view.findViewById<MaterialButton>(R.id.stravaConnect).setOnClickListener {
+            when {
+                Strava.isConnected(ctx) -> MaterialAlertDialogBuilder(ctx)
+                    .setTitle("Scollegare Strava?")
+                    .setPositiveButton("Scollega") { _, _ ->
+                        Strava.disconnect(ctx)
+                        refreshStrava()
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+                !Strava.hasApp(ctx) -> setupStrava(thenConnect = true)
+                else -> connect()
+            }
+        }
+        view.findViewById<MaterialButton>(R.id.stravaSetup).setOnClickListener { setupStrava(thenConnect = false) }
+        refreshStrava()
+    }
+
+    fun refreshStrava() {
+        val v = view ?: return
+        val ctx = requireContext()
+        val status = v.findViewById<TextView>(R.id.stravaStatus)
+        val btn = v.findViewById<MaterialButton>(R.id.stravaConnect)
+        when {
+            Strava.isConnected(ctx) -> {
+                status.text = "Collegato" + (Strava.athlete(ctx)?.let { " come $it" } ?: "") +
+                    ". Dalla pagina Percorsi: traccia → Condividi → Carica su Strava."
+                btn.text = "Scollega"
+            }
+            Strava.hasApp(ctx) -> {
+                status.text = "Dati app inseriti. Tocca \"Collega Strava\" e autorizza il caricamento."
+                btn.text = "Collega Strava"
+            }
+            else -> {
+                status.text = "Per caricare le uscite su Strava serve una tua \"applicazione API\" Strava, " +
+                    "gratuita e per uso personale. Tocca \"Collega Strava\" per le istruzioni."
+                btn.text = "Collega Strava"
+            }
+        }
+    }
+
+    private fun connect() {
+        try {
+            Strava.startAuth(requireContext())
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Impossibile aprire Strava: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun setupStrava(thenConnect: Boolean) {
+        val ctx = requireContext()
+        val dp = resources.displayMetrics.density
+        val box = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((24 * dp).toInt(), (8 * dp).toInt(), (24 * dp).toInt(), 0)
+        }
+        box.addView(TextView(ctx).apply {
+            text = "1. Da computer o browser apri strava.com/settings/api e crea un'applicazione.\n" +
+                "2. Nome: quello che vuoi (es. SirJoe MTB). Sito: anche https://github.com.\n" +
+                "3. In \"Authorization Callback Domain\" scrivi: localhost\n" +
+                "4. Copia qui sotto Client ID e Client Secret.\n\n" +
+                "I dati restano solo su questo telefono. Non condividere il Client Secret."
+            textSize = 14f
+        })
+        val id = EditText(ctx).apply {
+            hint = "Client ID (numero)"
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(Strava.clientId(ctx))
+        }
+        val secret = EditText(ctx).apply {
+            hint = "Client Secret"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        box.addView(id)
+        box.addView(secret)
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Collegare Strava")
+            .setView(box)
+            .setPositiveButton(if (thenConnect) "Salva e collega" else "Salva") { _, _ ->
+                val i = id.text.toString().trim()
+                val s = secret.text.toString().trim()
+                if (i.isEmpty() || s.isEmpty()) {
+                    Toast.makeText(ctx, "Inserisci Client ID e Client Secret", Toast.LENGTH_LONG).show()
+                    return@setPositiveButton
+                }
+                Strava.saveApp(ctx, i, s)
+                refreshStrava()
+                if (thenConnect) connect()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 }

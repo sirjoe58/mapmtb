@@ -47,6 +47,16 @@ object Geo {
 
     fun distance(a: TrackPoint, b: TrackPoint): Double = distance(a.lat, a.lon, b.lat, b.lon)
 
+    /** Direzione iniziale (gradi da Nord, 0..360) per andare da 1 a 2. */
+    fun bearing(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val p1 = Math.toRadians(lat1)
+        val p2 = Math.toRadians(lat2)
+        val dl = Math.toRadians(lon2 - lon1)
+        val y = sin(dl) * cos(p2)
+        val x = cos(p1) * sin(p2) - sin(p1) * cos(p2) * cos(dl)
+        return (Math.toDegrees(atan2(y, x)) + 360.0) % 360.0
+    }
+
     /** Distanze cumulative dal primo punto, in metri. */
     fun cumulative(points: List<TrackPoint>): DoubleArray {
         val out = DoubleArray(points.size)

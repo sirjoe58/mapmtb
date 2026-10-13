@@ -1,64 +1,50 @@
 package it.sirjoe.mtbcomputer.ui
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.OpenableColumns
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
+import it.sirjoe.mtbcomputer.data.PlannerState
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.RideRepository
-import it.sirjoe.mtbcomputer.data.Track
-import it.sirjoe.mtbcomputer.data.TrackFormat
-import it.sirjoe.mtbcomputer.data.TrackIO
+import it.sirjoe.mtbcomputer.data.RouteSummary
 import it.sirjoe.mtbcomputer.data.TrackStorage
+import it.sirjoe.mtbcomputer.share.ShareHelper
+import it.sirjoe.mtbcomputer.share.TrackActions
 import it.sirjoe.mtbcomputer.util.Format
-import it.sirjoe.mtbcomputer.util.Geo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
 
-/** Pagina "Percorsi": archivio tracce, import/export in tutti i formati, mappe offline. */
+/** Pagina "Percorsi": archivio tracce, import/export in tutti i formati, condivisione, mappe offline. */
 class TracksFragment : Fragment() {
 
     private lateinit var list: ListView
     private lateinit var empty: TextView
     private var files: List<File> = emptyList()
-    private var pendingExport: String? = null
 
-    private val importTrack = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) importTrackFrom(uri)
+    private val importTrack = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        for (u in uris) importTrackFrom(u)
     }
     private val importMap = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importMapFrom(uri)
-    }
-    private val saveFile = registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
-        val text = pendingExport
-        pendingExport = null
-        if (uri != null && text != null) {
-            try {
-                requireContext().contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
-                toast("File salvato")
-            } catch (e: Exception) {
-                toast("Errore nel salvataggio: ${e.message}")
-            }
-        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -72,8 +58,11 @@ class TracksFragment : Fragment() {
             text = label
             setOnClickListener { onClick() }
         }
-        root.addView(button("Importa traccia (GPX, KML, KMZ, TCX, GeoJSON, CSV)") {
+        root.addView(button("Importa tracce (GPX, FIT, KML, KMZ, TCX, GeoJSON, CSV, ZIP)") {
             importTrack.launch(arrayOf("*/*"))
+        })
+        root.addView(button("Esporta tutte le tracce (ZIP)") {
+            if (!ShareHelper.shareAll(requireContext())) toast("Nessuna traccia da esportare")
         })
         root.addView(button("Importa mappa offline (MBTiles)") {
             importMap.launch(arrayOf("*/*"))
@@ -83,12 +72,12 @@ class TracksFragment : Fragment() {
             toast("Percorso rimosso")
         })
         root.addView(TextView(ctx).apply {
-            text = "Le mie tracce"
+            text = "Le mie tracce  (tocca per aprire)"
             textSize = 16f
             setPadding(0, (12 * dp).toInt(), 0, (4 * dp).toInt())
         })
         empty = TextView(ctx).apply {
-            text = "Nessuna traccia. Registra un'uscita o importa un file."
+            text = "Nessuna traccia. Registra un'uscita, crea un percorso o importa un file."
             setPadding(0, (8 * dp).toInt(), 0, 0)
         }
         root.addView(empty)
@@ -108,8 +97,8 @@ class TracksFragment : Fragment() {
         if (!hidden) refresh()
     }
 
-    private fun refresh() {
-        if (!isAdded) return
+    fun refresh() {
+        if (!isAdded || view == null) return
         files = TrackStorage.list(requireContext())
         list.adapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_list_item_1,
@@ -124,26 +113,15 @@ class TracksFragment : Fragment() {
 
     // ---------------------------------------------------------------- import
 
-    private fun displayName(uri: Uri): String {
-        requireContext().contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-            ?.use { c -> if (c.moveToFirst()) return c.getString(0) ?: "traccia" }
-        return uri.lastPathSegment ?: "traccia"
-    }
-
     private fun importTrackFrom(uri: Uri) {
         val ctx = requireContext().applicationContext
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val saved = withContext(Dispatchers.IO) {
-                    val name = displayName(uri)
-                    val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                        ?: throw IllegalArgumentException("Impossibile leggere il file")
-                    if (bytes.size > 50 * 1024 * 1024) throw IllegalArgumentException("File troppo grande (max 50 MB)")
-                    val track = TrackIO.parse(bytes, name)
-                    TrackStorage.save(ctx, track)
-                    track
-                }
-                toast("Importata: ${saved.name} (${saved.points.size} punti)")
+                val tracks = withContext(Dispatchers.IO) { ShareHelper.importUri(ctx, uri) }
+                toast(
+                    if (tracks.size == 1) "Importata: ${tracks[0].name} (${tracks[0].points.size} punti)"
+                    else "Importate ${tracks.size} tracce"
+                )
                 refresh()
             } catch (e: Exception) {
                 toast("Import non riuscito: ${e.message}")
@@ -156,7 +134,7 @@ class TracksFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val dest = withContext(Dispatchers.IO) {
-                    val name = displayName(uri)
+                    val name = ShareHelper.displayName(ctx, uri)
                     val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
                     if (ext !in listOf("mbtiles", "sqlite", "zip", "gemf")) {
                         throw IllegalArgumentException("Formato non supportato: usa un file .mbtiles, .sqlite, .zip o .gemf")
@@ -182,61 +160,62 @@ class TracksFragment : Fragment() {
     // --------------------------------------------------------------- azioni
 
     private fun onTrackClick(file: File) {
+        val act = activity as? MainActivity ?: return
         val track = try {
             TrackStorage.load(file)
         } catch (e: Exception) {
             toast("File non leggibile: ${e.message}")
             return
         }
-        val km = Format.distanceKm(Geo.cumulative(track.points).lastOrNull() ?: 0.0)
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(track.name)
-            .setMessage("$km km  -  ${track.points.size} punti")
-            .setItems(arrayOf("Mostra e segui sulla mappa", "Esporta / condividi", "Elimina")) { _, which ->
+        val s = RouteSummary.of(track.points)
+        val info = StringBuilder("${Format.distanceKm(s.distanceM)} km")
+        s.ascentM?.let { info.append("  ·  ↗ ${Format.meters(it)} m") }
+        val t0 = track.points.first().time
+        val t1 = track.points.last().time
+        if (t0 != null && t1 != null && t1 > t0) info.append("  ·  ${Format.duration(t1 - t0)}")
+
+        val items = arrayOf(
+            "Mostra e segui sulla mappa",
+            "Modifica / allunga nella pagina Crea",
+            "Condividi (Strava, social, app…)",
+            "Rinomina",
+            "Elimina"
+        )
+        MaterialAlertDialogBuilder(act)
+            .setTitle("${track.name}\n$info")
+            .setItems(items) { _, which ->
                 when (which) {
                     0 -> {
                         RideRepository.setRoute(track)
-                        (activity as? MainActivity)?.selectTab(R.id.nav_map)
+                        act.selectTab(R.id.nav_map)
                     }
-                    1 -> chooseFormat(track)
-                    2 -> confirmDelete(file)
+                    1 -> {
+                        PlannerState.loadFrom(track)
+                        act.openPlannerOnRoute()
+                    }
+                    2 -> TrackActions.shareMenu(act, track)
+                    3 -> rename(file)
+                    4 -> confirmDelete(file)
                 }
             }
             .show()
     }
 
-    private fun chooseFormat(track: Track) {
-        val formats = TrackFormat.values()
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Formato")
-            .setItems(formats.map { it.label }.toTypedArray()) { _, which ->
-                val f = formats[which]
-                val text = TrackIO.write(track, f)
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(track.name + "." + f.ext)
-                    .setPositiveButton("Condividi") { _, _ -> share(track.name, f, text) }
-                    .setNegativeButton("Salva su file") { _, _ ->
-                        pendingExport = text
-                        saveFile.launch(track.name + "." + f.ext)
-                    }
-                    .show()
-            }
-            .show()
-    }
-
-    private fun share(name: String, format: TrackFormat, text: String) {
-        val ctx = requireContext()
-        val dir = File(ctx.cacheDir, "export").apply { mkdirs() }
-        val safe = name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
-        val f = File(dir, "$safe.${format.ext}")
-        f.writeText(text)
-        val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".fileprovider", f)
-        val send = Intent(Intent.ACTION_SEND).apply {
-            type = format.mime
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    private fun rename(file: File) {
+        val input = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setText(file.nameWithoutExtension)
+            selectAll()
         }
-        startActivity(Intent.createChooser(send, "Condividi traccia"))
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Nuovo nome")
+            .setView(input)
+            .setPositiveButton("OK") { _, _ ->
+                TrackStorage.rename(file, input.text.toString())
+                refresh()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun confirmDelete(file: File) {

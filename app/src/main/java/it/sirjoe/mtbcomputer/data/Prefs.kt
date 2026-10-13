@@ -37,4 +37,21 @@ object Prefs {
 
     fun offlineMapPath(ctx: Context): String? = p(ctx).getString("offline_map", null)
     fun setOfflineMapPath(ctx: Context, v: String?) = p(ctx).edit().putString("offline_map", v).apply()
+
+    // Pagina "Crea"
+    fun plannerRouting(ctx: Context) = p(ctx).getBoolean("planner_routing", true)
+    fun setPlannerRouting(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("planner_routing", v).apply()
+
+    fun plannerProfile(ctx: Context): BRouterClient.Profile {
+        val id = p(ctx).getString("planner_profile", null)
+        return BRouterClient.Profile.values().firstOrNull { it.id == id } ?: BRouterClient.Profile.TREKKING
+    }
+    fun setPlannerProfile(ctx: Context, v: BRouterClient.Profile) =
+        p(ctx).edit().putString("planner_profile", v.id).apply()
+
+    // Strava (dati dell'applicazione personale dell'utente e token di accesso)
+    fun str(ctx: Context, key: String): String? = p(ctx).getString(key, null)
+    fun putStr(ctx: Context, key: String, v: String?) = p(ctx).edit().putString(key, v).apply()
+    fun long(ctx: Context, key: String): Long = p(ctx).getLong(key, 0L)
+    fun putLong(ctx: Context, key: String, v: Long) = p(ctx).edit().putLong(key, v).apply()
 }

@@ -1,16 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="480" height="140" viewBox="0 0 480 140">
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="150" viewBox="0 0 520 150">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#FF6D00"/>
-      <stop offset="1" stop-color="#D84315"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF8F00"/>
+      <stop offset="0.55" stop-color="#FF6D00"/>
+      <stop offset="1" stop-color="#C62828"/>
     </linearGradient>
   </defs>
-  <rect x="6" y="6" width="468" height="128" rx="64" fill="url(#g)" stroke="#FFFFFF" stroke-width="5"/>
-  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" transform="translate(40,30) scale(1.25)">
-    <circle cx="14" cy="40" r="11" stroke-width="4"/>
-    <circle cx="50" cy="40" r="11" stroke-width="4"/>
-    <path d="M14,40 L29,40 L25,22 Z M29,40 L45,23 M25,22 L45,23 M25,22 L25,18 M20,18 L30,18 M45,23 L44,16 L50,15" stroke-width="3.2"/>
-    <path d="M46,25 L50,40" stroke-width="4.5"/>
+  <rect x="6" y="6" width="508" height="138" rx="69" fill="url(#g)" stroke="#FFFFFF" stroke-width="5"/>
+  <path d="M38,108 L74,58 L94,82 L110,66 L138,108" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+  <g transform="skewX(-10)">
+    <text x="160" y="98" font-family="Russo One" font-size="30" fill="#FFF3E0" letter-spacing="2">BY</text>
+    <text x="222" y="102" font-family="Russo One" font-size="62" fill="#FFFFFF" letter-spacing="3">SIRJOE</text>
   </g>
-  <text x="290" y="88" text-anchor="middle" font-family="Roboto Condensed, Arial Narrow, Arial, sans-serif" font-weight="700" font-size="50" letter-spacing="6" fill="#FFFFFF">BY SIRJOE</text>
+  <rect x="206" y="114" width="276" height="5" rx="2.5" fill="#FFFFFF" fill-opacity="0.85"/>
 </svg>

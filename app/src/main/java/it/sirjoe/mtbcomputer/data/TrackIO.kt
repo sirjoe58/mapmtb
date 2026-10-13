@@ -14,7 +14,8 @@ import java.util.zip.ZipInputStream
 
 /** Formati supportati per import ed export delle tracce. */
 enum class TrackFormat(val ext: String, val mime: String, val label: String) {
-    GPX("gpx", "application/gpx+xml", "GPX (universale)"),
+    GPX("gpx", "application/gpx+xml", "GPX (universale: Komoot, Strava, Wikiloc...)"),
+    FIT("fit", "application/vnd.ant.fit", "FIT (Garmin, Wahoo, Hammerhead)"),
     KML("kml", "application/vnd.google-earth.kml+xml", "KML (Google Earth)"),
     TCX("tcx", "application/vnd.garmin.tcx+xml", "TCX (Garmin)"),
     GEOJSON("geojson", "application/geo+json", "GeoJSON"),
@@ -23,13 +24,15 @@ enum class TrackFormat(val ext: String, val mime: String, val label: String) {
 
 /**
  * Lettura e scrittura delle tracce.
- * Import: GPX, KML, KMZ, TCX, GeoJSON, CSV. Export: GPX, KML, TCX, GeoJSON, CSV.
+ * Import: GPX, FIT, KML, KMZ, TCX, GeoJSON, CSV. Export: GPX, FIT, KML, TCX, GeoJSON, CSV.
  */
 object TrackIO {
 
     fun parse(bytes: ByteArray, fileName: String): Track {
         val lower = fileName.lowercase(Locale.ROOT)
         val base = fileName.substringBeforeLast('.').ifBlank { "Traccia" }
+
+        if (lower.endsWith(".fit") || FitCodec.isFit(bytes)) return FitCodec.decode(bytes, base)
 
         if (lower.endsWith(".kmz") || isZip(bytes)) {
             val kml = unzipFirstKml(bytes)
@@ -251,12 +254,13 @@ object TrackIO {
 
     // -------------------------------------------------------------- scrittura
 
-    fun write(track: Track, format: TrackFormat): String = when (format) {
-        TrackFormat.GPX -> writeGpx(track)
-        TrackFormat.KML -> writeKml(track)
-        TrackFormat.TCX -> writeTcx(track)
-        TrackFormat.GEOJSON -> writeGeoJson(track)
-        TrackFormat.CSV -> writeCsv(track)
+    fun write(track: Track, format: TrackFormat): ByteArray = when (format) {
+        TrackFormat.GPX -> writeGpx(track).toByteArray()
+        TrackFormat.FIT -> FitCodec.encodeCourse(track)
+        TrackFormat.KML -> writeKml(track).toByteArray()
+        TrackFormat.TCX -> writeTcx(track).toByteArray()
+        TrackFormat.GEOJSON -> writeGeoJson(track).toByteArray()
+        TrackFormat.CSV -> writeCsv(track).toByteArray()
     }
 
     private fun n(v: Double, digits: Int) = String.format(Locale.US, "%.${digits}f", v)
