@@ -1,0 +1,43 @@
+name: Compila APK
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Compila APK di debug
+        run: gradle assembleDebug --stacktrace
+
+      - name: Rinomina APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk SirJoeMTB.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SirJoeMTB-apk
+          path: SirJoeMTB.apk
+
+      - name: Pubblica release (solo per i tag v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SirJoeMTB.apk

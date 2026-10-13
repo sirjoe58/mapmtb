@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SirJoe MTB</string>
+    <string name="logo_text">BY SIRJOE</string>
+
+    <string name="nav_map">Mappa</string>
+    <string name="nav_data">Dati</string>
+    <string name="nav_tracks">Percorsi</string>
+    <string name="nav_info">Info</string>
+
+    <string name="channel_recording">Registrazione uscita</string>
+    <string name="notif_recording">Registrazione in corso</string>
+    <string name="notif_paused">Registrazione in pausa</string>
+    <string name="need_location">Serve il permesso di posizione per registrare</string>
+    <string name="ride_saved">Uscita salvata: %1$s (%2$s km)</string>
+
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_km_value">%1$s km</string>
+    <string name="stop_title">Terminare l\'uscita?</string>
+    <string name="stop_msg">La traccia verrà salvata nella pagina Percorsi.</string>
+    <string name="yes_stop">Termina e salva</string>
+    <string name="cancel">Annulla</string>
+
+    <string name="disclaimer_title">Avvertenze d\'uso</string>
+    <string name="accept">Ho letto e accetto</string>
+    <string name="exit">Esci</string>
+
+    <string name="cd_record">Avvia o metti in pausa la registrazione</string>
+    <string name="cd_stop">Termina registrazione</string>
+    <string name="cd_center">Centra sulla mia posizione</string>
+    <string name="cd_layers">Scegli la mappa</string>
+    <string name="cd_heading">Orientamento mappa</string>
+</resources>
