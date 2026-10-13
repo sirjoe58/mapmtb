@@ -24,15 +24,23 @@ SirJoe MTB è un'app gratuita e open source per USO PERSONALE e non commerciale.
 
 5. PRIVACY
 • Posizioni e tracce restano solo sul tuo telefono. L'app non ha account, non raccoglie dati e non li invia a nessuno.
-• Le uniche connessioni sono verso i server delle mappe per scaricare i riquadri (tile).
+• Le uniche connessioni sono verso i server delle mappe (riquadri), il server BRouter quando crei un percorso che segue i sentieri, e Strava solo se lo colleghi tu.
 • Se condividi una traccia, ricorda che contiene luoghi e orari: condividila solo con chi vuoi. Non registrare né condividere la posizione di altre persone senza il loro consenso.
 
-6. USO CORRETTO DEI DATI E DEI SERVIZI DI TERZI
-• Dati cartografici © OpenStreetMap contributors, licenza ODbL. Stile OpenTopoMap (CC-BY-SA). Itinerari MTB: waymarkedtrails.org. Le attribuzioni devono restare visibili.
-• I server di mappe gratuiti sono offerti da volontari: l'app li usa con moderazione e non scarica intere aree in blocco. Non modificare l'app per aggirare questi limiti.
+6. PERCORSI CREATI E CONDIVISIONE
+• I percorsi creati nella pagina "Crea" sono calcolati in automatico (BRouter, dati OpenStreetMap) o disegnati a mano: possono passare su tratti chiusi, privati, pericolosi o vietati alle bici. Controllali prima di partire e sul posto vale sempre la segnaletica.
+• Una traccia condivisa mostra dove sei stato, a che ora e spesso dove abiti (partenza e arrivo). Prima di pubblicarla su Strava o sui social valuta la visibilità e usa le "zone di privacy" di Strava.
+• Condividi solo tracce tue o che hai il diritto di condividere, e non pubblicare tracce o foto che identificano altre persone senza il loro consenso.
+• Non pubblicare percorsi che invitano a passare su sentieri vietati alle bici, in aree protette chiuse o in proprietà private.
+• Il collegamento a Strava usa l'API ufficiale con una tua applicazione personale: rispetta le condizioni d'uso di Strava. Client ID e Client Secret restano solo sul telefono; non condividerli.
+• Strava, Komoot, Garmin, Wahoo, Wikiloc, Instagram, Facebook, WhatsApp, Telegram e X sono marchi dei rispettivi proprietari; questa app non è affiliata a nessuno di loro.
+
+7. USO CORRETTO DEI DATI E DEI SERVIZI DI TERZI
+• Dati cartografici © OpenStreetMap contributors, licenza ODbL. Stile OpenTopoMap (CC-BY-SA). Itinerari MTB: waymarkedtrails.org. Calcolo percorsi: BRouter (brouter.de). Le attribuzioni devono restare visibili.
+• I server di mappe e di calcolo percorsi gratuiti sono offerti da volontari: l'app li usa con moderazione (una richiesta per ogni punto aggiunto) e non scarica intere aree in blocco. Non modificare l'app per aggirare questi limiti.
 • Per l'uso offline importa file MBTiles che hai il diritto di usare (creati da te o con licenza che lo consente).
 • Tracce scaricate da Strava, Komoot, Wikiloc o altri siti restano soggette alle condizioni di quei servizi e ai diritti dei loro autori: importale solo per uso personale.
 
-7. NESSUNA GARANZIA
+8. NESSUNA GARANZIA
 • L'app è fornita "così com'è", senza garanzie di alcun tipo, come previsto dalla licenza MIT. L'autore non è responsabile per danni, incidenti, sanzioni o smarrimenti derivanti dal suo uso.
 • Chi usa l'app lo fa sotto la propria responsabilità.

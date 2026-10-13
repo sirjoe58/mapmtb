@@ -4,6 +4,7 @@
     <string name="logo_text">BY SIRJOE</string>
 
     <string name="nav_map">Mappa</string>
+    <string name="nav_plan">Crea</string>
     <string name="nav_data">Dati</string>
     <string name="nav_tracks">Percorsi</string>
     <string name="nav_info">Info</string>

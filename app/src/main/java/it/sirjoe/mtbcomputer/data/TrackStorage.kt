@@ -29,8 +29,15 @@ object TrackStorage {
             f = File(dir(ctx), "$safe ($i).gpx")
             i++
         }
-        f.writeText(TrackIO.write(track, TrackFormat.GPX))
+        f.writeBytes(TrackIO.write(track, TrackFormat.GPX))
         return f
+    }
+
+    fun rename(file: File, newName: String): File {
+        val safe = newName.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().take(60).ifBlank { return file }
+        val dest = File(file.parentFile, "$safe.gpx")
+        if (dest.exists()) return file
+        return if (file.renameTo(dest)) dest else file
     }
 
     fun load(file: File): Track {

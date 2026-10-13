@@ -10,17 +10,14 @@
         android:padding="16dp">
 
         <!-- Logo grande -->
-        <TextView
-            style="@style/Logo"
+        <ImageView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="96dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
-            android:paddingStart="28dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="28dp"
-            android:paddingBottom="10dp"
-            android:textSize="26sp" />
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/logo_text"
+            android:src="@drawable/logo_sirjoe" />
 
         <TextView
             android:id="@+id/version"
@@ -77,6 +74,44 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
+            android:text="Strava"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/stravaStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/stravaConnect"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:backgroundTint="#FC4C02"
+                android:text="Collega Strava" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/stravaSetup"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Dati app Strava" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
             android:text="@string/disclaimer_title"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -102,7 +137,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp"
-            android:text="Codice sorgente con licenza MIT.\nMappe: © OpenStreetMap contributors (ODbL), OpenTopoMap (CC-BY-SA).\nItinerari MTB: waymarkedtrails.org.\nLibreria mappe: osmdroid (Apache 2.0)."
+            android:text="Codice sorgente con licenza MIT.\nMappe: © OpenStreetMap contributors (ODbL), OpenTopoMap (CC-BY-SA).\nItinerari MTB: waymarkedtrails.org.\nCalcolo percorsi: BRouter (brouter.de).\nLibreria mappe: osmdroid (Apache 2.0).\nCarattere del logo: Russo One (SIL Open Font License).\nStrava è un marchio di Strava, Inc.; questa app non è affiliata a Strava."
             android:textSize="14sp" />
     </LinearLayout>
 </ScrollView>

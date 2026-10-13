@@ -9,13 +9,11 @@
         <item name="android:statusBarColor">@color/sj_dark</item>
     </style>
 
-    <style name="Logo">
-        <item name="android:background">@drawable/bg_logo</item>
-        <item name="android:text">@string/logo_text</item>
-        <item name="android:textColor">@color/white</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">0.15</item>
-        <item name="android:gravity">center</item>
-        <item name="android:fontFamily">sans-serif-condensed</item>
+    <style name="PlanButton" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:minHeight">52dp</item>
     </style>
+
 </resources>

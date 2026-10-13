@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.drawable.BitmapDrawable
 import android.location.Location
 import android.os.Bundle
@@ -38,48 +39,39 @@ import it.sirjoe.mtbcomputer.data.Track
 import it.sirjoe.mtbcomputer.service.RecordingService
 import it.sirjoe.mtbcomputer.util.Format
 import it.sirjoe.mtbcomputer.util.Geo
+import it.sirjoe.mtbcomputer.util.MapStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.osmdroid.tileprovider.MapTileProviderBasic
-import org.osmdroid.tileprovider.modules.OfflineTileProvider
-import org.osmdroid.tileprovider.tilesource.FileBasedTileSource
-import org.osmdroid.tileprovider.tilesource.ITileSource
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.tileprovider.tilesource.XYTileSource
-import org.osmdroid.tileprovider.util.SimpleRegisterReceiver
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.ScaleBarOverlay
-import org.osmdroid.views.overlay.TilesOverlay
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/** Pagina principale: mappa a tutto schermo con cursore MTB e barra dati discreta. */
+/**
+ * Pagina principale: mappa a tutto schermo, cursore "bici vista da dietro"
+ * con freccia davanti che indica dove andare, barra dati discreta in basso.
+ */
 class MapFragment : Fragment(R.layout.fragment_map) {
 
     companion object {
-        /** Sovrapposizione degli itinerari MTB segnati (dati OpenStreetMap). */
-        private val MTB_ROUTES = XYTileSource(
-            "WaymarkedTrailsMTB", 0, 18, 256, ".png",
-            arrayOf("https://tile.waymarkedtrails.org/mtb/"),
-            "Itinerari MTB: waymarkedtrails.org, dati (c) OpenStreetMap contributors"
-        )
         private const val OFF_ROUTE_M = 60.0
         private const val BACK_ON_ROUTE_M = 35.0
+        /** La freccia punta al punto del percorso che si trova circa 40 m più avanti. */
+        private const val LOOK_AHEAD_M = 40.0
+        /** Dimensione del disegno del cursore (unità 160x160). */
+        private const val ICON_UNITS = 160f
     }
 
     private lateinit var map: MapView
     private lateinit var marker: Marker
     private val trackLine = Polyline()
     private val routeLine = Polyline()
-    private var mtbOverlay: TilesOverlay? = null
     private lateinit var fused: FusedLocationProviderClient
 
     private lateinit var speedTv: TextView
@@ -129,11 +121,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         btnRecord = view.findViewById(R.id.btnRecord)
         btnStop = view.findViewById(R.id.btnStop)
 
-        map.setMultiTouchControls(true)
-        map.zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
-        map.setTilesScaledToDpi(true)
-        map.setMinZoomLevel(4.0)
-        map.setMaxZoomLevel(19.0)
+        MapStyle.setup(map)
         map.controller.setZoom(6.0)
         map.controller.setCenter(GeoPoint(42.5, 12.5))
 
@@ -149,9 +137,10 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         map.overlays.add(ScaleBarOverlay(map).apply { setAlignBottom(false) })
 
         marker = Marker(map)
-        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        // la posizione corrisponde al punto d'appoggio della ruota posteriore
+        marker.setAnchor(0.5f, 0.8f)
         marker.setOnMarkerClickListener { _, _ -> true }
-        marker.icon = bikeIcon(0f)
+        marker.icon = navIcon(0)
 
         applyBaseMap()
 
@@ -163,11 +152,11 @@ class MapFragment : Fragment(R.layout.fragment_map) {
 
         view.findViewById<View>(R.id.btnCenter).setOnClickListener {
             follow = true
-            RideRepository.location.value?.let {
-                map.controller.animateTo(GeoPoint(it.latitude, it.longitude))
-            }
+            RideRepository.location.value?.let { onLocation(it) }
         }
-        view.findViewById<View>(R.id.btnLayers).setOnClickListener { chooseMap() }
+        view.findViewById<View>(R.id.btnLayers).setOnClickListener {
+            MapStyle.choose(requireContext()) { applyBaseMap() }
+        }
         view.findViewById<View>(R.id.btnHeading).setOnClickListener {
             val v = !Prefs.headingUp(requireContext())
             Prefs.setHeadingUp(requireContext(), v)
@@ -176,7 +165,6 @@ class MapFragment : Fragment(R.layout.fragment_map) {
                 if (v) "Mappa orientata nella direzione di marcia" else "Mappa orientata a Nord",
                 Toast.LENGTH_SHORT
             ).show()
-            if (!v) map.mapOrientation = 0f
             RideRepository.location.value?.let { onLocation(it) }
         }
         btnRecord.setOnClickListener { onRecordClick() }
@@ -213,6 +201,10 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         super.onPause()
     }
 
+    fun applyBaseMap() {
+        if (isAdded) MapStyle.apply(requireContext(), map)
+    }
+
     // ------------------------------------------------------------- posizione
 
     @SuppressLint("MissingPermission")
@@ -230,45 +222,72 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     ) == PackageManager.PERMISSION_GRANTED
 
     private fun onLocation(loc: Location) {
+        if (!isAdded) return
         val gp = GeoPoint(loc.latitude, loc.longitude)
         if (loc.hasBearing() && loc.hasSpeed() && loc.speed > 1.0f) lastBearing = loc.bearing
 
-        if (Prefs.headingUp(requireContext())) {
-            map.mapOrientation = -lastBearing
-            marker.icon = bikeIcon(0f)
-        } else {
-            if (map.mapOrientation != 0f) map.mapOrientation = 0f
-            marker.icon = bikeIcon(lastBearing)
+        val headingUp = Prefs.headingUp(requireContext())
+        val screenUp = if (headingUp) lastBearing else 0f
+        if (follow) map.mapOrientation = -screenUp
+
+        // In modalità "direzione di marcia" la posizione sta nella parte bassa dello schermo
+        if (map.height > 0) {
+            map.setMapCenterOffset(0, if (headingUp && follow) (map.height * 0.22f).toInt() else 0)
         }
+
+        // direzione da seguire: verso il percorso, oppure la direzione di marcia
+        val target = updateRouteProgress(loc)
+        val wanted = target ?: lastBearing.toDouble()
+        val arrow = (((wanted + map.mapOrientation) % 360) + 360) % 360
+        marker.icon = navIcon(arrow.roundToInt())
         marker.position = gp
 
         if (firstFix) {
             firstFix = false
             if (!map.overlays.contains(marker)) map.overlays.add(marker)
             if (follow) {
-                map.controller.setZoom(16.0)
+                map.controller.setZoom(17.0)
                 map.controller.setCenter(gp)
             }
         } else if (follow) {
             map.controller.animateTo(gp)
         }
 
-        updateRouteProgress(loc)
         updateData()
         map.invalidate()
     }
 
-    /** Icona MTB ruotata (in modalita' Nord in alto) e messa in cache ogni 5 gradi. */
-    private fun bikeIcon(bearing: Float): BitmapDrawable {
-        val key = (((bearing / 5f).roundToInt() * 5) % 360 + 360) % 360
+    /**
+     * Cursore: bici MTB vista da dietro, con una freccia davanti che ruota
+     * verso la direzione da prendere. In cache ogni 5 gradi.
+     */
+    private fun navIcon(arrowDeg: Int): BitmapDrawable {
+        val key = (((arrowDeg / 5f).roundToInt() * 5) % 360 + 360) % 360
         return iconCache.getOrPut(key) {
-            val d = ContextCompat.getDrawable(requireContext(), R.drawable.ic_mtb_marker)!!
-            val size = (56 * resources.displayMetrics.density).toInt()
+            val size = (80 * resources.displayMetrics.density).toInt()
             val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
             val c = Canvas(bmp)
-            c.rotate(key.toFloat(), size / 2f, size / 2f)
-            d.setBounds(0, 0, size, size)
-            d.draw(c)
+            val bike = ContextCompat.getDrawable(requireContext(), R.drawable.ic_mtb_rear)!!
+            bike.setBounds(0, 0, size, size)
+            bike.draw(c)
+
+            val k = size / ICON_UNITS
+            c.save()
+            c.scale(k, k)
+            c.rotate(key.toFloat(), 80f, 17f)
+            val p = Path().apply {
+                moveTo(80f, 0f); lineTo(98f, 30f); lineTo(80f, 22f); lineTo(62f, 30f); close()
+            }
+            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#FF6D00") }
+            val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 3.5f
+                strokeJoin = Paint.Join.ROUND
+                color = Color.WHITE
+            }
+            c.drawPath(p, fill)
+            c.drawPath(p, stroke)
+            c.restore()
             BitmapDrawable(resources, bmp)
         }
     }
@@ -327,6 +346,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
                     Toast.makeText(ctx, R.string.need_location, Toast.LENGTH_LONG).show()
                     return
                 }
+                follow = true
                 RecordingService.send(ctx, RecordingService.ACTION_START)
             }
             s.paused -> RecordingService.send(ctx, RecordingService.ACTION_RESUME)
@@ -342,72 +362,6 @@ class MapFragment : Fragment(R.layout.fragment_map) {
                 RecordingService.send(requireContext(), RecordingService.ACTION_STOP)
             }
             .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    // ---------------------------------------------------------------- mappe
-
-    fun applyBaseMap() {
-        val ctx = requireContext()
-        val base = Prefs.baseMap(ctx)
-        val offlineFile = Prefs.offlineMapPath(ctx)?.let { File(it) }?.takeIf { it.exists() }
-
-        if (base == Prefs.BASE_OFFLINE && offlineFile != null) {
-            val provider = OfflineTileProvider(SimpleRegisterReceiver(ctx), arrayOf(offlineFile))
-            map.setTileProvider(provider)
-            val names = provider.archives.firstOrNull()?.tileSources
-            val src: ITileSource = if (!names.isNullOrEmpty()) {
-                FileBasedTileSource.getSource(names.first())
-            } else {
-                TileSourceFactory.OpenTopo
-            }
-            map.setTileSource(src)
-            map.setUseDataConnection(false)
-        } else {
-            val src = if (base == Prefs.BASE_OSM) TileSourceFactory.MAPNIK else TileSourceFactory.OpenTopo
-            map.setTileProvider(MapTileProviderBasic(ctx, src))
-            map.setTileSource(src)
-            map.setUseDataConnection(true)
-        }
-
-        mtbOverlay?.let {
-            map.overlays.remove(it)
-            it.onDetach(map)
-        }
-        mtbOverlay = null
-        if (Prefs.mtbOverlay(ctx) && base != Prefs.BASE_OFFLINE) {
-            val o = TilesOverlay(MapTileProviderBasic(ctx, MTB_ROUTES), ctx)
-            o.setLoadingBackgroundColor(Color.TRANSPARENT)
-            o.setLoadingLineColor(Color.TRANSPARENT)
-            map.overlays.add(0, o)
-            mtbOverlay = o
-        }
-        map.invalidate()
-    }
-
-    private fun chooseMap() {
-        val ctx = requireContext()
-        val hasOffline = Prefs.offlineMapPath(ctx)?.let { File(it).exists() } == true
-        val mtbOn = Prefs.mtbOverlay(ctx)
-        val items = mutableListOf(
-            "OpenTopoMap (sentieri e rilievo)",
-            "OpenStreetMap standard"
-        )
-        if (hasOffline) items.add("Mappa offline importata")
-        items.add(if (mtbOn) "Nascondi itinerari MTB" else "Mostra itinerari MTB")
-
-        MaterialAlertDialogBuilder(ctx)
-            .setTitle("Mappa")
-            .setItems(items.toTypedArray()) { _, which ->
-                val label = items[which]
-                when {
-                    label.startsWith("OpenTopo") -> Prefs.setBaseMap(ctx, Prefs.BASE_TOPO)
-                    label.startsWith("OpenStreetMap") -> Prefs.setBaseMap(ctx, Prefs.BASE_OSM)
-                    label.startsWith("Mappa offline") -> Prefs.setBaseMap(ctx, Prefs.BASE_OFFLINE)
-                    else -> Prefs.setMtbOverlay(ctx, !mtbOn)
-                }
-                applyBaseMap()
-            }
             .show()
     }
 
@@ -440,18 +394,24 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         follow = false
         map.post {
             map.mapOrientation = 0f
+            map.setMapCenterOffset(0, 0)
             map.zoomToBoundingBox(BoundingBox(n, e, s, w), true, 80)
         }
+        bannerTv.setBackgroundResource(R.drawable.bg_banner)
         bannerTv.text = track.name + " - " + Format.distanceKm(routeCum!!.last()) + " km"
         bannerTv.visibility = View.VISIBLE
+        Toast.makeText(requireContext(), "Tocca il pulsante \"centra\" per partire", Toast.LENGTH_LONG).show()
         map.invalidate()
     }
 
-    /** Distanza al traguardo e avviso "fuori percorso". */
-    private fun updateRouteProgress(loc: Location) {
+    /**
+     * Aggiorna distanza al traguardo e avviso "fuori percorso".
+     * Restituisce la direzione (gradi da Nord) in cui andare, o null senza percorso.
+     */
+    private fun updateRouteProgress(loc: Location): Double? {
         val pts = routePoints
-        val cum = routeCum ?: return
-        if (pts.isEmpty()) return
+        val cum = routeCum ?: return null
+        if (pts.isEmpty()) return null
         var best = Double.MAX_VALUE
         var bestIdx = 0
         for (i in pts.indices) {
@@ -476,6 +436,15 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             bannerTv.text = "Al traguardo: " + Format.distanceKm(remaining) + " km"
             bannerTv.setBackgroundResource(R.drawable.bg_banner)
         }
+
+        // Fuori percorso: la freccia indica il punto più vicino per rientrare.
+        // Sul percorso: indica il punto qualche decina di metri più avanti.
+        var j = bestIdx
+        if (!offRoute) {
+            while (j < pts.lastIndex && cum[j] - cum[bestIdx] < LOOK_AHEAD_M) j++
+        }
+        if (Geo.distance(loc.latitude, loc.longitude, pts[j].latitude, pts[j].longitude) < 3.0) return null
+        return Geo.bearing(loc.latitude, loc.longitude, pts[j].latitude, pts[j].longitude)
     }
 
     private fun vibrate() {
