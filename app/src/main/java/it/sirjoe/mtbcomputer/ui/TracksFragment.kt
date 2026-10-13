@@ -1,5 +1,6 @@
 package it.sirjoe.mtbcomputer.ui
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
@@ -18,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.MainActivity
+import it.sirjoe.mtbcomputer.data.OfflineMaps
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.PlannerState
 import it.sirjoe.mtbcomputer.data.Prefs
@@ -31,7 +33,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Locale
 
 /** Pagina "Percorsi": archivio tracce, import/export in tutti i formati, condivisione, mappe offline. */
 class TracksFragment : Fragment() {
@@ -64,9 +65,7 @@ class TracksFragment : Fragment() {
         root.addView(button("Esporta tutte le tracce (ZIP)") {
             if (!ShareHelper.shareAll(requireContext())) toast("Nessuna traccia da esportare")
         })
-        root.addView(button("Importa mappa offline (MBTiles)") {
-            importMap.launch(arrayOf("*/*"))
-        })
+        root.addView(button("Mappe offline (OpenAndroMaps)…") { offlineMenu() })
         root.addView(button("Rimuovi percorso attivo dalla mappa") {
             RideRepository.setRoute(null)
             toast("Percorso rimosso")
@@ -131,30 +130,76 @@ class TracksFragment : Fragment() {
 
     private fun importMapFrom(uri: Uri) {
         val ctx = requireContext().applicationContext
+        toast("Copia della mappa in corso… può richiedere qualche minuto")
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val dest = withContext(Dispatchers.IO) {
-                    val name = ShareHelper.displayName(ctx, uri)
-                    val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
-                    if (ext !in listOf("mbtiles", "sqlite", "zip", "gemf")) {
-                        throw IllegalArgumentException("Formato non supportato: usa un file .mbtiles, .sqlite, .zip o .gemf")
-                    }
-                    val dir = File(ctx.filesDir, "maps").apply { mkdirs() }
-                    dir.listFiles()?.forEach { it.delete() }
-                    val out = File(dir, name)
-                    ctx.contentResolver.openInputStream(uri)?.use { input ->
-                        out.outputStream().use { input.copyTo(it) }
-                    } ?: throw IllegalArgumentException("Impossibile leggere il file")
-                    out
-                }
-                Prefs.setOfflineMapPath(ctx, dest.absolutePath)
-                Prefs.setBaseMap(ctx, Prefs.BASE_OFFLINE)
+                val msg = withContext(Dispatchers.IO) { OfflineMaps.import(ctx, uri) }
                 (activity as? MainActivity)?.onBaseMapChanged()
-                toast("Mappa offline attiva: ${dest.name}")
+                toast(msg)
             } catch (e: Exception) {
                 toast("Import mappa non riuscito: ${e.message}")
             }
         }
+    }
+
+    private fun offlineMenu() {
+        val ctx = requireContext()
+        val items = arrayOf(
+            "Scarica mappe e stile da openandromaps.org",
+            "Importa mappa (.map o .zip) o stile Elevate (.zip)",
+            "Elimina mappe offline",
+            "Elimina stile (torna allo stile standard)"
+        )
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Mappe offline")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> howToDownload()
+                    1 -> importMap.launch(arrayOf("*/*"))
+                    2 -> MaterialAlertDialogBuilder(ctx)
+                        .setTitle("Eliminare tutte le mappe offline?")
+                        .setMessage(OfflineMaps.describe(ctx))
+                        .setPositiveButton("Elimina") { _, _ ->
+                            OfflineMaps.deleteVector(ctx)
+                            OfflineMaps.deleteRaster(ctx)
+                            Prefs.setBaseMap(ctx, Prefs.BASE_TOPO)
+                            (activity as? MainActivity)?.onBaseMapChanged()
+                            toast("Mappe offline eliminate")
+                        }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+                    3 -> {
+                        OfflineMaps.deleteTheme(ctx)
+                        (activity as? MainActivity)?.onBaseMapChanged()
+                        toast("Stile standard")
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun howToDownload() {
+        val ctx = requireContext()
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Mappe OpenAndroMaps")
+            .setMessage(
+                "1. Sul sito vai su Download → Europa → Italia e scarica la tua zona " +
+                    "(file .zip della versione \"Android/Mapsforge\").\n\n" +
+                    "2. Nella sezione dei temi scarica lo stile \"Elevate\" (file .zip).\n\n" +
+                    "3. Torna qui: Mappe offline → Importa, prima la mappa e poi lo stile.\n\n" +
+                    "Lo stile si imposta da solo sulla variante MTB. Scarica col Wi-Fi: " +
+                    "le mappe regionali pesano centinaia di MB.\n\n" +
+                    "Ora installate:\n" + OfflineMaps.describe(ctx)
+            )
+            .setPositiveButton("Apri il sito") { _, _ ->
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.openandromaps.org")))
+                } catch (e: Exception) {
+                    toast("Nessun browser disponibile")
+                }
+            }
+            .setNegativeButton("Chiudi", null)
+            .show()
     }
 
     // --------------------------------------------------------------- azioni

@@ -197,6 +197,7 @@ class MainActivity : AppCompatActivity() {
 
     fun onBaseMapChanged() {
         (supportFragmentManager.findFragmentByTag(TAG_MAP) as? MapFragment)?.applyBaseMap()
+        (supportFragmentManager.findFragmentByTag(TAG_PLAN) as? PlannerFragment)?.applyBaseMap()
     }
 
     /** Salva dei dati in un file scelto dall'utente (Download, Drive...). */

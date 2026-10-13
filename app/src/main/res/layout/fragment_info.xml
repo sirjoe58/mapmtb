@@ -137,7 +137,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp"
-            android:text="Codice sorgente con licenza MIT.\nMappe: © OpenStreetMap contributors (ODbL), OpenTopoMap (CC-BY-SA).\nItinerari MTB: waymarkedtrails.org.\nCalcolo percorsi: BRouter (brouter.de).\nLibreria mappe: osmdroid (Apache 2.0).\nCarattere del logo: Russo One (SIL Open Font License).\nStrava è un marchio di Strava, Inc.; questa app non è affiliata a Strava."
+            android:text="Codice sorgente con licenza MIT.\nMappe: © OpenStreetMap contributors (ODbL), OpenTopoMap (CC-BY-SA).\nMappe offline: OpenAndroMaps, stile Elevate, motore Mapsforge.\nItinerari MTB: waymarkedtrails.org.\nCalcolo percorsi: BRouter (brouter.de).\nLibreria mappe: osmdroid (Apache 2.0).\nCarattere del logo: Russo One (SIL Open Font License).\nStrava è un marchio di Strava, Inc.; questa app non è affiliata a Strava."
             android:textSize="14sp" />
     </LinearLayout>
 </ScrollView>

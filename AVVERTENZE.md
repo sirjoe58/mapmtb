@@ -42,7 +42,7 @@ SirJoe MTB è un'app gratuita e open source per USO PERSONALE e non commerciale.
 ## 7. USO CORRETTO DEI DATI E DEI SERVIZI DI TERZI
 - Dati cartografici © OpenStreetMap contributors, licenza ODbL. Stile OpenTopoMap (CC-BY-SA). Itinerari MTB: waymarkedtrails.org. Calcolo percorsi: BRouter (brouter.de). Le attribuzioni devono restare visibili.
 - I server di mappe e di calcolo percorsi gratuiti sono offerti da volontari: l'app li usa con moderazione (una richiesta per ogni punto aggiunto) e non scarica intere aree in blocco. Non modificare l'app per aggirare questi limiti.
-- Per l'uso offline importa file MBTiles che hai il diritto di usare (creati da te o con licenza che lo consente).
+- Per l'uso offline importa mappe che hai il diritto di usare: le mappe OpenAndroMaps e lo stile Elevate sono gratuiti per uso personale secondo le condizioni del loro sito; i file MBTiles devono essere creati da te o avere una licenza che lo consente. Non ridistribuire le mappe scaricate.
 - Tracce scaricate da Strava, Komoot, Wikiloc o altri siti restano soggette alle condizioni di quei servizi e ai diritti dei loro autori: importale solo per uso personale.
 
 ## 8. NESSUNA GARANZIA

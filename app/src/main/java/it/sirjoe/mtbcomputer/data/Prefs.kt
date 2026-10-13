@@ -10,6 +10,7 @@ object Prefs {
     const val BASE_TOPO = "topo"
     const val BASE_OSM = "osm"
     const val BASE_OFFLINE = "offline"
+    const val BASE_VECTOR = "vector"
 
     private fun p(ctx: Context): SharedPreferences =
         ctx.applicationContext.getSharedPreferences(NAME, Context.MODE_PRIVATE)
