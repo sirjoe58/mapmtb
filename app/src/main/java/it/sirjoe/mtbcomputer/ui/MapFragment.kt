@@ -84,8 +84,13 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     private lateinit var extraAlt: TextView
     private lateinit var btnRecord: FloatingActionButton
     private lateinit var btnStop: FloatingActionButton
+    private lateinit var btnHeading: FloatingActionButton
 
     private var follow = true
+    /** L'utente ha girato la mappa con due dita: l'orientamento automatico si sospende. */
+    private var userRotated = false
+    private var downX = 0f
+    private var downY = 0f
     private var firstFix = true
     private var lastBearing = 0f
     private var offRoute = false
@@ -121,7 +126,10 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         btnRecord = view.findViewById(R.id.btnRecord)
         btnStop = view.findViewById(R.id.btnStop)
 
-        MapStyle.setup(map)
+        MapStyle.setup(map) {
+            userRotated = true
+            updateCompass()
+        }
         map.controller.setZoom(6.0)
         map.controller.setCenter(GeoPoint(42.5, 12.5))
 
@@ -144,28 +152,43 @@ class MapFragment : Fragment(R.layout.fragment_map) {
 
         applyBaseMap()
 
-        // Se l'utente sposta la mappa, smette di seguire la posizione
+        // Trascinando con un dito la mappa smette di seguire la posizione
+        // (lo zoom con due dita invece non la sgancia).
         map.setOnTouchListener { _, e ->
-            if (e.action == MotionEvent.ACTION_MOVE) follow = false
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = e.x; downY = e.y
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val moved = Math.hypot((e.x - downX).toDouble(), (e.y - downY).toDouble())
+                    if (e.pointerCount == 1 && moved > 24 * resources.displayMetrics.density && follow) {
+                        follow = false
+                        map.setMapCenterOffset(0, 0)
+                    }
+                }
+            }
             false
         }
 
         view.findViewById<View>(R.id.btnCenter).setOnClickListener {
             follow = true
-            RideRepository.location.value?.let { onLocation(it) }
+            userRotated = false
+            val l = RideRepository.location.value
+            if (l != null) onLocation(l) else Toast.makeText(requireContext(), "In attesa del GPS…", Toast.LENGTH_SHORT).show()
         }
         view.findViewById<View>(R.id.btnLayers).setOnClickListener {
             MapStyle.choose(requireContext()) { applyBaseMap() }
         }
-        view.findViewById<View>(R.id.btnHeading).setOnClickListener {
-            val v = !Prefs.headingUp(requireContext())
-            Prefs.setHeadingUp(requireContext(), v)
-            Toast.makeText(
-                requireContext(),
-                if (v) "Mappa orientata nella direzione di marcia" else "Mappa orientata a Nord",
-                Toast.LENGTH_SHORT
-            ).show()
+        btnHeading = view.findViewById(R.id.btnHeading)
+        btnHeading.setOnClickListener { chooseOrientation() }
+        // tocco lungo sulla bussola: Nord in alto subito
+        btnHeading.setOnLongClickListener {
+            Prefs.setOrientation(requireContext(), Prefs.ORIENT_NORTH)
+            userRotated = false
+            map.mapOrientation = 0f
             RideRepository.location.value?.let { onLocation(it) }
+            updateCompass()
+            true
         }
         btnRecord.setOnClickListener { onRecordClick() }
         btnStop.setOnClickListener { confirmStop() }
@@ -226,14 +249,16 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         val gp = GeoPoint(loc.latitude, loc.longitude)
         if (loc.hasBearing() && loc.hasSpeed() && loc.speed > 1.0f) lastBearing = loc.bearing
 
-        val headingUp = Prefs.headingUp(requireContext())
-        val screenUp = if (headingUp) lastBearing else 0f
-        if (follow) map.mapOrientation = -screenUp
+        val mode = Prefs.orientation(requireContext())
+        val auto = !userRotated && mode != Prefs.ORIENT_FREE && (follow || mode == Prefs.ORIENT_NORTH)
+        if (auto) map.mapOrientation = if (mode == Prefs.ORIENT_HEADING) -lastBearing else 0f
+        val headingUp = auto && mode == Prefs.ORIENT_HEADING
 
         // In modalità "direzione di marcia" la posizione sta nella parte bassa dello schermo
         if (map.height > 0) {
             map.setMapCenterOffset(0, if (headingUp && follow) (map.height * 0.22f).toInt() else 0)
         }
+        updateCompass()
 
         // direzione da seguire: verso il percorso, oppure la direzione di marcia
         val target = updateRouteProgress(loc)
@@ -255,6 +280,40 @@ class MapFragment : Fragment(R.layout.fragment_map) {
 
         updateData()
         map.invalidate()
+    }
+
+    /** La freccia del pulsante bussola indica sempre il Nord sullo schermo. */
+    private fun updateCompass() {
+        if (::btnHeading.isInitialized) btnHeading.rotation = map.mapOrientation
+    }
+
+    private fun chooseOrientation() {
+        val ctx = requireContext()
+        val modes = arrayOf(Prefs.ORIENT_HEADING, Prefs.ORIENT_NORTH, Prefs.ORIENT_FREE)
+        val labels = arrayOf(
+            "Direzione di marcia (la mappa gira con te)",
+            "Nord in alto",
+            "Libera (la giri tu con due dita)"
+        )
+        val sel = modes.indexOf(Prefs.orientation(ctx)).coerceAtLeast(0)
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Orientamento della mappa")
+            .setSingleChoiceItems(labels, sel) { d, which ->
+                Prefs.setOrientation(ctx, modes[which])
+                userRotated = false
+                if (modes[which] == Prefs.ORIENT_NORTH) map.mapOrientation = 0f
+                d.dismiss()
+                RideRepository.location.value?.let { onLocation(it) }
+                updateCompass()
+                map.invalidate()
+            }
+            .setNegativeButton("Chiudi", null)
+            .show()
+        Toast.makeText(
+            ctx,
+            "Suggerimento: ruota la mappa con due dita; il pulsante ◎ riporta l'orientamento scelto",
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     /**

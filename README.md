@@ -10,7 +10,7 @@ Ciclocomputer e navigatore per mountain bike su Android: mappa a tutto schermo, 
 
 | Pagina | Cosa fa |
 | --- | --- |
-| **Mappa** | Mappa a tutto schermo (OpenTopoMap o OpenStreetMap) con itinerari MTB. Cursore: MTB vista da dietro con una freccia davanti che indica dove andare. Mappa orientata nella direzione di marcia, con la posizione nella parte bassa dello schermo. Barra dati in basso: velocità, distanza, ora. Registrazione, avviso di fuori percorso con vibrazione, distanza al traguardo. |
+| **Mappa** | Mappa a tutto schermo (OpenTopoMap o OpenStreetMap) con itinerari MTB. Cursore: MTB vista da dietro con una freccia davanti che indica dove andare. Orientamento a scelta dal pulsante bussola: direzione di marcia, Nord in alto o libero; la mappa si sposta con un dito e si gira con due dita (tocco lungo sulla bussola = Nord in alto). Barra dati in basso: velocità, distanza, ora. Registrazione, avviso di fuori percorso con vibrazione, distanza al traguardo. |
 | **Crea** | Percorsi personalizzati: tocca la mappa (o usa "+" col mirino) per aggiungere punti. I tratti seguono strade e sentieri reali (BRouter) oppure vanno in linea retta. Annulla, chiudi anello, inverti, salva, segui subito, condividi. Mostra km e dislivello. |
 | **Dati** | Velocità attuale, media e massima, distanza, tempi, ora, quota, dislivello, pendenza, direzione, distanza al traguardo, precisione GPS, profilo altimetrico. |
 | **Percorsi** | Archivio di uscite e percorsi. Importa, esporta, rinomina, modifica nella pagina Crea, condividi. Esporta tutto in un archivio ZIP. Mappe offline. |
@@ -22,7 +22,7 @@ L'app legge le mappe vettoriali gratuite **[OpenAndroMaps](https://www.openandro
 
 1. Su openandromaps.org scarica la mappa della tua zona (Europa → Italia, file `.zip` per Android/Mapsforge) e lo stile Elevate (`.zip`). Meglio col Wi-Fi: le mappe regionali pesano centinaia di MB.
 2. Nell'app: **Percorsi → Mappe offline → Importa**, prima la mappa e poi lo stile.
-3. Dal pulsante mappe (livelli) scegli **Offline: OpenAndroMaps**.
+3. Dal pulsante mappe (livelli) scegli **Offline: OpenAndroMaps**. Dallo stesso menu puoi regolare la dimensione di testi e simboli.
 
 Sono supportati anche file MBTiles/.sqlite/.gemf a immagini. Inoltre le zone viste online restano in memoria (fino a circa 1 GB) e si vedono anche senza segnale.
 

@@ -88,6 +88,7 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
         }
         view.findViewById<View>(R.id.planMyPos).setOnClickListener {
             val l = RideRepository.location.value
+            map.mapOrientation = 0f
             if (l == null) toast("Posizione non ancora disponibile") else {
                 map.controller.setZoom(15.0)
                 map.controller.animateTo(GeoPoint(l.latitude, l.longitude))
