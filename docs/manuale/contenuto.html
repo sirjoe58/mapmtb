@@ -1,0 +1,390 @@
+<!-- Corpo del manuale. Le sezioni h1/h2 con id finiscono nell'indice. -->
+
+<section class="part" id="p1">
+  <div class="part-kicker">Parte I</div>
+  <h1 class="part-title" id="t-p1">SirJoe MTB per Android</h1>
+  <p class="part-lead">Il ciclocomputer e navigatore da manubrio: mappa a tutto schermo, registrazione delle uscite, creazione dei percorsi, mappe offline, condivisione, fantasma e avvisi salite.</p>
+</section>
+
+<h2 id="a1">1. Installazione e aggiornamento</h2>
+<p><b>Requisiti:</b> Android 6.0 o successivo (va bene anche il Redmi 4X), GPS, circa 60 MB liberi più lo spazio per le mappe offline.</p>
+<ol>
+  <li>Sul telefono apri <b>github.com/sirjoe58/mapmtb</b> → <b>Releases</b> e scarica l'ultimo file, ad esempio <code>SirJoeMTB-v1.6.0.apk</code>. Ogni versione ha un nome diverso, così sai sempre quale stai installando.</li>
+  <li>Apri il file scaricato. La prima volta Android chiede di <b>consentire l'installazione da questa fonte</b> (browser o file manager): consenti e torna indietro.</li>
+  <li>Tocca <b>Installa</b>.</li>
+</ol>
+<div class="box tip"><b>Aggiornare:</b> installa il nuovo APK <i>sopra</i> quello vecchio, senza disinstallare. Tracce, segnaposto, mappe offline e impostazioni restano. Dalla versione 1.4.1 tutte le versioni sono firmate con la stessa chiave: se compare "app in conflitto" hai ancora una versione precedente alla 1.4.1, che va disinstallata una sola volta.</div>
+
+<h3>Impostazioni consigliate sui telefoni Xiaomi / Redmi (MIUI)</h3>
+<p>MIUI tende a chiudere le app in background. Per non perdere la registrazione con lo schermo spento:</p>
+<ul>
+  <li><b>Impostazioni → App → Gestisci app → SirJoe MTB → Risparmio batteria → Nessuna restrizione</b>.</li>
+  <li>Nella stessa pagina attiva <b>Avvio automatico</b>.</li>
+  <li><b>Autorizzazioni → Posizione → Consenti sempre</b> (o "durante l'uso" se preferisci, ma tieni l'app in primo piano).</li>
+  <li><b>Altre autorizzazioni → Mostra sulla schermata di blocco</b>: serve alla sosta automatica per riaccendere lo schermo quando riparti.</li>
+  <li>Nel menu delle app recenti puoi "bloccare" SirJoe MTB (icona lucchetto) così la pulizia della memoria non la chiude.</li>
+</ul>
+
+<h2 id="a2">2. Primo avvio</h2>
+<ol>
+  <li>Compaiono le <b>Avvertenze d'uso</b> (le trovi anche alla fine di questo manuale). Leggile e tocca <b>Ho letto e accetto</b>; con <b>Esci</b> l'app si chiude.</li>
+  <li>Concedi il permesso di <b>posizione</b> (preferibilmente "precisa") e, su Android 13 e successivi, quello delle <b>notifiche</b>, che serve alla notifica fissa durante la registrazione.</li>
+  <li>Aspetta all'aperto qualche decina di secondi il primo fix GPS: il cursore compare sulla mappa.</li>
+</ol>
+<p>In basso ci sono cinque pagine: <b>Mappa</b>, <b>Crea</b>, <b>Dati</b>, <b>Percorsi</b>, <b>Info</b>.</p>
+
+<h2 id="a3">3. Pagina Mappa</h2>
+<figure>
+  <svg viewBox="0 0 520 330" class="diagram">
+    <rect x="150" y="5" width="220" height="320" rx="22" class="phone"/>
+    <rect x="162" y="30" width="196" height="250" class="screen"/>
+    <path d="M175 250 C210 210 230 200 250 160 S300 90 340 60" class="route"/>
+    <path d="M175 250 C190 235 200 228 214 215" class="track"/>
+    <g transform="translate(214 214)"><polygon points="0,-16 9,6 0,1 -9,6" class="cursor"/></g>
+    <rect x="215" y="36" width="90" height="18" rx="9" class="banner"/>
+    <text x="260" y="49" class="tiny w" text-anchor="middle">Al traguardo 12,4 km</text>
+    <circle cx="343" cy="110" r="9" class="btn"/><circle cx="343" cy="135" r="9" class="btn"/>
+    <circle cx="343" cy="160" r="9" class="btn"/><circle cx="343" cy="190" r="11" class="rec"/>
+    <rect x="162" y="280" width="196" height="30" class="bar"/>
+    <text x="180" y="300" class="small w">18,6 km/h</text><text x="250" y="300" class="small w">12,40 km</text><text x="315" y="300" class="small w">10:42</text>
+    <text x="166" y="44" class="tiny">BY SIRJOE</text>
+    <line x1="370" y1="110" x2="420" y2="90" class="lead"/><text x="424" y="93" class="lbl">Mappe e livelli</text>
+    <line x1="370" y1="135" x2="420" y2="125" class="lead"/><text x="424" y="128" class="lbl">Orientamento (bussola)</text>
+    <line x1="370" y1="160" x2="420" y2="160" class="lead"/><text x="424" y="163" class="lbl">Centra su di me</text>
+    <line x1="370" y1="190" x2="420" y2="195" class="lead"/><text x="424" y="198" class="lbl">Registra / Pausa / Stop</text>
+    <line x1="150" y1="295" x2="100" y2="295" class="lead"/><text x="96" y="298" class="lbl" text-anchor="end">Barra dati</text>
+    <line x1="214" y1="214" x2="100" y2="200" class="lead"/><text x="96" y="203" class="lbl" text-anchor="end">Cursore MTB</text>
+    <line x1="290" y1="110" x2="100" y2="120" class="lead"/><text x="96" y="123" class="lbl" text-anchor="end">Percorso da seguire</text>
+    <line x1="200" y1="226" x2="100" y2="250" class="lead"/><text x="96" y="253" class="lbl" text-anchor="end">Traccia registrata</text>
+    <line x1="215" y1="45" x2="100" y2="50" class="lead"/><text x="96" y="53" class="lbl" text-anchor="end">Avvisi percorso</text>
+  </svg>
+  <figcaption>Schema della pagina Mappa.</figcaption>
+</figure>
+
+<h3>Il cursore e il percorso</h3>
+<p>La tua posizione è una <b>mountain bike vista da dietro</b> con una <b>freccia davanti</b>: quando segui un percorso la freccia indica la direzione da prendere, altrimenti la direzione di marcia. La linea blu è il percorso da seguire, la linea arancione è la traccia che stai registrando.</p>
+
+<h3>Muovere, ruotare, zoomare</h3>
+<ul>
+  <li><b>Un dito</b>: sposti la mappa. La mappa smette di seguirti; il pulsante <b>Centra</b> la riaggancia alla tua posizione.</li>
+  <li><b>Due dita</b>: zoom (pizzico) e rotazione.</li>
+  <li><b>Bussola</b>: tocco = scegli l'orientamento: <i>Direzione di marcia</i> (la mappa gira con te), <i>Nord in alto</i>, <i>Libera</i> (la giri tu con due dita). <b>Tocco lungo</b> = Nord in alto subito.</li>
+</ul>
+
+<h3>Scegliere la mappa</h3>
+<p>Il pulsante <b>Mappe/livelli</b> offre: <i>OpenTopoMap</i> (sentieri e rilievo, consigliata), <i>OpenStreetMap standard</i>, <i>Offline: OpenAndroMaps</i> e <i>Mappa offline importata (MBTiles)</i> se ne hai caricate, <i>Mostra/Nascondi itinerari MTB</i> (rete waymarkedtrails, serve Internet) e <i>Dimensione testi mappa offline</i> (piccoli, normali, grandi, molto grandi). Le zone viste online restano in memoria (fino a circa 1 GB) e si vedono anche senza segnale.</p>
+
+<h3>Avvisi durante la navigazione</h3>
+<ul>
+  <li><b>Al traguardo</b>: distanza che manca lungo il percorso.</li>
+  <li><b>Fuori percorso</b>: se ti allontani più di circa 60 m il banner diventa rosso e il telefono vibra; torna verde quando rientri.</li>
+  <li><b>Fantasma e salite</b>: un secondo banner mostra distacco dal fantasma e salita in arrivo (capitolo 10).</li>
+</ul>
+
+<h2 id="a4">4. Registrare un'uscita</h2>
+<ol>
+  <li>Nella pagina Mappa tocca il pulsante <b>Registra</b> (play). Parte la notifica fissa "Registrazione in corso": l'app continua a registrare anche con lo schermo spento.</li>
+  <li>Lo stesso pulsante mette in <b>pausa</b> e riprende.</li>
+  <li>Il pulsante <b>Stop</b> chiede conferma: <b>Termina e salva</b>. L'uscita compare nella pagina <b>Percorsi</b> con data e ora nel nome.</li>
+</ol>
+<h3>Pausa automatica e sosta automatica</h3>
+<p><b>Pausa automatica</b>: sotto i 3 km/h circa il tempo in movimento si ferma, così la media non si abbassa ai semafori o alle fontane.</p>
+<p><b>Sosta automatica</b>: se resti fermo per il tempo scelto in Info (da 30 secondi a 5 minuti) l'app va in sosta: luminosità al minimo, schermo libero di spegnersi, GPS più lento per risparmiare batteria, voce "Sosta". Quando riparti (due posizioni di fila in movimento, oltre 7 km/h o 30 m dal punto di sosta) si risveglia da sola, riaccende lo schermo sopra la schermata di blocco e riprende registrazione e navigazione ("Si riparte"). Il tratto fatto mentre si risvegliava viene conteggiato.</p>
+<h3>Avvisi vocali</h3>
+<p>Con gli avvisi vocali attivi la voce italiana del telefono annuncia avvio, pausa, ripresa, sosta e ogni chilometro, oltre agli avvisi di fantasma e salite. Se non senti nulla controlla che sia installata la sintesi vocale Google con la lingua italiana.</p>
+
+<h2 id="a5">5. Pagina Dati</h2>
+<p>Riquadri grandi, leggibili sul manubrio:</p>
+<table>
+  <tr><th>Dato</th><th>Significato</th></tr>
+  <tr><td>Velocità, Media, Massima</td><td>In km/h; la media usa il tempo in movimento.</td></tr>
+  <tr><td>Distanza</td><td>Km registrati.</td></tr>
+  <tr><td>Tempo in movimento / totale</td><td>Il totale include le soste, non le pause manuali.</td></tr>
+  <tr><td>Ora</td><td>Ora del telefono.</td></tr>
+  <tr><td>Quota, Dislivello + e −</td><td>Dal GPS, con un filtro di 3 m contro il rumore.</td></tr>
+  <tr><td>Pendenza</td><td>Calcolata ogni 30 m circa.</td></tr>
+  <tr><td>Direzione</td><td>Punto cardinale di marcia.</td></tr>
+  <tr><td>Al traguardo</td><td>Km che mancano al termine del percorso seguito.</td></tr>
+  <tr><td>Precisione GPS</td><td>In metri: sotto 10 m è ottima.</td></tr>
+</table>
+<p>Sotto i riquadri c'è il <b>profilo altimetrico</b> del percorso che stai seguendo.</p>
+
+<h2 id="a6">6. Pagina Crea: percorsi e segnaposto</h2>
+<h3>Disegnare un percorso</h3>
+<ul>
+  <li><b>Tocca la mappa</b> per aggiungere punti, oppure centra il <b>mirino</b> e premi <b>+</b> per metterlo esattamente lì. Il primo punto è la partenza.</li>
+  <li>Con <b>Modalità</b> scegli come vengono collegati i punti: lungo strade e sentieri reali (calcolo BRouter, serve Internet) con il tipo di percorso scelto, oppure in <b>linea retta</b>.</li>
+  <li>Pulsanti: <b>Annulla</b> l'ultimo punto, <b>Chiudi anello</b> (torna alla partenza), <b>Inverti</b>, <b>Cancella</b>, <b>Salva</b>, <b>Segui ora</b> (lo mette subito sulla mappa da seguire), <b>Condividi</b>.</li>
+  <li>In alto vedi km e dislivello del percorso in costruzione.</li>
+</ul>
+<h3>Tipi di percorso</h3>
+<table>
+  <tr><th>Tipo</th><th>Quando usarlo</th></tr>
+  <tr><td>Fuoristrada / MTB</td><td>Sentieri e sterrati il più possibile.</td></tr>
+  <tr><td>Equilibrato</td><td>Mix di sterrati, ciclabili e strade tranquille.</td></tr>
+  <tr><td>Il più veloce</td><td>Strade scorrevoli, per i trasferimenti.</td></tr>
+  <tr><td>Il più corto</td><td>Distanza minima, anche se più ripido o sconnesso.</td></tr>
+  <tr><td>Il più lungo</td><td>Tra le alternative calcolate sceglie il giro più ampio.</td></tr>
+</table>
+<h3>Segnaposto (waypoint)</h3>
+<ul>
+  <li><b>Tocco lungo sulla mappa</b> = nuovo segnaposto. Tieni premuto un segnaposto per <b>spostarlo</b>, toccalo per il menu: <i>Naviga qui dalla mia posizione</i>, <i>Aggiungi al percorso in costruzione</i>, <i>Modifica nome, nota e tipo</i>, <i>Elimina</i>.</li>
+  <li>Tipi con colori diversi: Generico, Fontana/acqua, Rifugio/ristoro, Panorama, Officina/bici, Parcheggio/partenza, Pericolo/attenzione.</li>
+  <li>Il pulsante <b>Segnaposto</b> apre: nuovo segnaposto al mirino, elenco, <b>percorso automatico tra segnaposto</b>, esporta/condividi in GPX, elimina tutti.</li>
+</ul>
+<h3>Percorso automatico tra segnaposto</h3>
+<p>Scegli in ordine i punti da collegare (puoi partire da <i>La mia posizione</i> e aggiungere <i>Ritorno alla partenza</i> per un anello), poi il tipo di percorso: corto, veloce, lungo o fuoristrada. L'app calcola i tratti uno per uno e ti mostra il risultato, pronto da salvare o seguire.</p>
+<div class="box warn">I percorsi calcolati usano i dati di OpenStreetMap e possono passare su tratti chiusi, privati o vietati alle bici: controllali prima e sul posto vale la segnaletica.</div>
+
+<h2 id="a7">7. Pagina Percorsi: archivio, import ed export</h2>
+<p>Elenco di uscite registrate e percorsi salvati. In alto i pulsanti: <b>Importa tracce e segnaposto</b>, <b>SirJoe Link: scambia con il PC</b>, <b>Esporta tutte le tracce (ZIP)</b>, <b>Mappe offline</b>, <b>Rimuovi percorso attivo dalla mappa</b>.</p>
+<p>Toccando una traccia vedi km, dislivello e durata e puoi: <i>Mostra e segui sulla mappa</i>, <i>Sfida il fantasma</i> (solo uscite registrate), <i>Modifica / allunga nella pagina Crea</i>, <i>Condividi</i>, <i>Rinomina</i>, <i>Elimina</i>.</p>
+<h3>Formati supportati</h3>
+<table>
+  <tr><th>Formato</th><th>Importa</th><th>Esporta</th><th>Per chi</th></tr>
+  <tr><td>GPX</td><td>sì</td><td>sì</td><td>Komoot, Strava, Wikiloc, Outdooractive, quasi tutte le app</td></tr>
+  <tr><td>FIT</td><td>sì</td><td>sì (percorso)</td><td>Garmin Edge, Wahoo, Hammerhead</td></tr>
+  <tr><td>TCX</td><td>sì</td><td>sì</td><td>Garmin Connect, Strava</td></tr>
+  <tr><td>KML / KMZ</td><td>sì</td><td>KML</td><td>Google Earth, Google My Maps</td></tr>
+  <tr><td>GeoJSON</td><td>sì</td><td>sì</td><td>Siti web e programmi GIS</td></tr>
+  <tr><td>CSV</td><td>sì</td><td>sì</td><td>Fogli di calcolo</td></tr>
+  <tr><td>ZIP</td><td>sì (più tracce)</td><td>sì (tutte)</td><td>Backup e invio in blocco</td></tr>
+</table>
+<p>Puoi anche aprire un file direttamente da file manager, email, WhatsApp o Telegram con <b>Apri con</b> o <b>Condividi → SirJoe MTB</b>. I segnaposto contenuti in un GPX finiscono nella pagina Crea.</p>
+
+<h2 id="a8">8. Mappe offline (OpenAndroMaps)</h2>
+<p>Le mappe vettoriali gratuite di OpenAndroMaps con lo stile <b>Elevate</b> (impostato automaticamente sulla variante MTB) mostrano sentieri con difficoltà, curve di livello e itinerari ciclabili, senza Internet.</p>
+<ol>
+  <li>Dal PC o dal telefono, su <b>openandromaps.org</b> → Downloads → Europa → <b>Italia</b> (o la tua regione) scarica il file <code>.zip</code> della mappa per Android/Mapsforge. Scarica anche lo stile <b>Elevate</b> (<code>.zip</code>). Usa il Wi-Fi: le mappe regionali pesano centinaia di MB.</li>
+  <li>Se le hai scaricate sul PC, copiale nella cartella Download del telefono col cavo USB.</li>
+  <li>Nell'app: <b>Percorsi → Mappe offline → Importa</b>, prima la mappa, poi lo stile.</li>
+  <li>Dal pulsante <b>Mappe/livelli</b> scegli <b>Offline: OpenAndroMaps</b>. Se testi e simboli sono troppo piccoli o grandi usa <b>Dimensione testi mappa offline</b>.</li>
+</ol>
+<p>Dallo stesso menu puoi eliminare le mappe o lo stile. Sono supportati anche file a immagini MBTiles, .sqlite e .gemf.</p>
+
+<h2 id="a9">9. Condivisione e Strava</h2>
+<p>Da <b>Percorsi → traccia → Condividi</b> o dal pulsante <b>Condividi</b> della pagina Crea:</p>
+<ul>
+  <li><b>Carica su Strava</b>: pubblica l'uscita registrata come attività.</li>
+  <li><b>Immagine per i social</b>: forma del percorso, numeri principali e logo BY SIRJOE, con testo e hashtag pronti (Instagram, Facebook, WhatsApp, Telegram, X…).</li>
+  <li><b>File per app e piattaforme</b>: scegli il formato e invialo a Komoot, Garmin Connect, Wahoo, Wikiloc, email, Drive…</li>
+  <li><b>Salva su file</b> nel telefono.</li>
+</ul>
+<h3>Collegare Strava (una volta sola)</h3>
+<ol>
+  <li>Da browser vai su <b>strava.com/settings/api</b> e crea un'applicazione personale (nome a piacere, sito anche <code>https://github.com</code>).</li>
+  <li>In <b>Authorization Callback Domain</b> scrivi <code>localhost</code>.</li>
+  <li>Nell'app: <b>Info → Collega Strava</b>, incolla <b>Client ID</b> e <b>Client Secret</b>, autorizza lasciando la spunta di caricamento attività.</li>
+</ol>
+<p>Client ID e Secret restano solo sul telefono. Strava accetta solo uscite registrate (con orari): i percorsi disegnati si condividono come file GPX. Prima di pubblicare usa le "zone di privacy" di Strava se parti da casa.</p>
+
+<h2 id="a10">10. Fantasma e avvisi salite</h2>
+<h3>Sfida il fantasma</h3>
+<p>Ti alleni contro te stesso: il fantasma è una tua uscita precedente che riparte insieme a te.</p>
+<ol>
+  <li>In <b>Percorsi</b> tocca un'uscita registrata e scegli <b>Sfida il fantasma (rifai questa uscita)</b>. L'app apre la Mappa con il percorso da seguire.</li>
+  <li>Avvia la registrazione: un cerchio viola trasparente mostra dove si trova il fantasma in quel momento.</li>
+  <li>Il banner indica <b>Avanti di…</b> o <b>Indietro di…</b> (secondi o minuti), calcolato confrontando i tempi nello stesso punto del percorso. Ogni chilometro la voce dice "Sei avanti di 25 secondi sul fantasma" o "indietro".</li>
+</ol>
+<p>Funziona con le uscite registrate di almeno un minuto (servono gli orari). Il distacco si aggiorna solo quando sei sul percorso (entro circa 80 m). Se lo scegli con <i>Mostra e segui</i> il fantasma non compare.</p>
+<h3>Avvisi salite</h3>
+<p>Quando segui un percorso con le quote, l'app trova in anticipo le salite (almeno 300 m, almeno 25 m di dislivello, pendenza media dal 5%) e:</p>
+<ul>
+  <li>circa 250 m prima ti avvisa a voce: <b>"Tra 200 metri salita al 9 per cento per 800 metri"</b>;</li>
+  <li>durante la salita il banner mostra pendenza media e metri che mancano alla cima.</li>
+</ul>
+<p>Le quote vengono dal file del percorso: i percorsi creati con BRouter e le uscite registrate le hanno. Con una linea retta senza quote non ci sono avvisi. Entrambe le funzioni si spengono in <b>Info</b>.</p>
+
+<h2 id="a11">11. Pagina Info e impostazioni</h2>
+<table>
+  <tr><th>Impostazione</th><th>Effetto</th></tr>
+  <tr><td>Pausa automatica quando sei fermo</td><td>Ferma il tempo in movimento sotto i 3 km/h.</td></tr>
+  <tr><td>Sosta automatica</td><td>Spegne lo schermo da fermo e riprende da sola; con il ritardo regolabile.</td></tr>
+  <tr><td>Schermo sempre acceso durante la registrazione</td><td>Utile col telefono sul manubrio; consuma più batteria.</td></tr>
+  <tr><td>Mappa orientata nella direzione di marcia</td><td>Scelta predefinita; altre scelte dalla bussola.</td></tr>
+  <tr><td>Mostra itinerari MTB sulla mappa</td><td>Sovrapposizione waymarkedtrails (online).</td></tr>
+  <tr><td>Avvisi vocali</td><td>Voce a ogni km, pausa, sosta.</td></tr>
+  <tr><td>Avvisa prima delle salite del percorso</td><td>Capitolo 10.</td></tr>
+  <tr><td>Fantasma</td><td>Capitolo 10.</td></tr>
+  <tr><td>Strava</td><td>Dati app, Collega / Scollega.</td></tr>
+</table>
+<p>In fondo trovi di nuovo le <b>Avvertenze d'uso</b>, licenza e crediti.</p>
+
+<section class="part" id="p2">
+  <div class="part-kicker">Parte II</div>
+  <h1 class="part-title" id="t-p2">SirJoe MTB Planner per Windows</h1>
+  <p class="part-lead">Il programma per PC con cui preparare i percorsi su uno schermo grande, anche disegnandoli con la tavoletta grafica, e analizzare le uscite fatte.</p>
+</section>
+
+<h2 id="b1">12. Installazione</h2>
+<p>Da <b>github.com/sirjoe58/mapmtb → Releases</b>, nella release <b>planner-v1.2.0</b>, scegli:</p>
+<ul>
+  <li><code>SirJoe-MTB-Planner-1.2.0-portable.exe</code>: si avvia con un doppio clic, senza installazione (anche da chiavetta USB);</li>
+  <li><code>SirJoe-MTB-Planner-1.2.0-setup.exe</code>: installazione classica con collegamento sul desktop e nel menu Start.</li>
+</ul>
+<div class="box tip">Il programma non è firmato digitalmente (è un progetto personale): Windows SmartScreen può mostrare "Windows ha protetto il PC". Clicca <b>Ulteriori informazioni → Esegui comunque</b>. Al primo uso di SirJoe Link Windows chiede l'accesso alla rete: scegli <b>Reti private</b>.</div>
+<p>Requisiti: Windows 10 o 11 a 64 bit, Internet per mappe, ricerca e calcolo dei percorsi.</p>
+
+<h2 id="b2">13. La finestra del Planner</h2>
+<figure>
+  <svg viewBox="0 0 520 260" class="diagram">
+    <rect x="10" y="10" width="500" height="240" rx="8" class="phone"/>
+    <rect x="10" y="10" width="500" height="28" rx="8" class="bar"/>
+    <text x="22" y="29" class="small w">MTB Planner</text>
+    <text x="120" y="29" class="tiny w">Percorso  Segnaposto  Uscite  Archivio  Info</text>
+    <rect x="10" y="38" width="150" height="212" class="side"/>
+    <rect x="160" y="38" width="350" height="22" class="tool"/>
+    <text x="170" y="53" class="tiny">+ Punti percorso   Disegna   Segnaposto   OpenTopoMap   Itinerari MTB   SirJoe Link</text>
+    <rect x="160" y="60" width="350" height="140" class="screen"/>
+    <path d="M190 180 C230 120 270 160 310 100 S400 90 470 80" class="route"/>
+    <circle cx="190" cy="180" r="4" class="pt"/><circle cx="310" cy="100" r="4" class="pt"/><circle cx="470" cy="80" r="4" class="pt"/>
+    <rect x="160" y="200" width="350" height="50" class="side"/>
+    <path d="M170 240 L220 230 L270 212 L330 220 L400 208 L500 236" class="prof"/>
+    <text x="20" y="60" class="tiny">Nome, tipo di percorso</text><text x="20" y="80" class="tiny">km, salita, tempo</text>
+    <text x="20" y="100" class="tiny">Annulla, Inverti, Anello</text><text x="20" y="120" class="tiny">Salva con nome…</text><text x="20" y="140" class="tiny">Esporta / Apri file</text>
+    <text x="300" y="247" class="tiny" text-anchor="middle">Profilo altimetrico</text>
+  </svg>
+  <figcaption>Schema della finestra: pannello laterale a schede, barra strumenti, mappa e profilo.</figcaption>
+</figure>
+<ul>
+  <li><b>Schede a sinistra</b>: Percorso, Segnaposto, Uscite, Archivio, Info.</li>
+  <li><b>Barra sopra la mappa</b>: modalità <i>Punti percorso</i>, <i>Disegna</i>, <i>Segnaposto</i>; scelta tra OpenTopoMap e OpenStreetMap; itinerari MTB; ricerca luoghi; pulsante <b>SirJoe Link</b>.</li>
+  <li><b>In basso</b>: profilo altimetrico; passando il mouse sul profilo vedi a che punto del percorso corrisponde.</li>
+</ul>
+
+<h2 id="b3">14. Creare un percorso a punti</h2>
+<ol>
+  <li>Scegli il <b>Tipo di percorso</b> (Fuoristrada/MTB, Equilibrato, Il più veloce, Il più corto, Il più lungo, Linea retta). <b>Ricalcola tutto con questo tipo</b> rifà i tratti già messi.</li>
+  <li>Con la modalità <b>Punti percorso</b>: <b>clic</b> sulla mappa aggiunge un punto, <b>trascina</b> un punto per spostarlo, <b>clic destro</b> su un punto lo toglie, <b>clic sulla linea</b> inserisce un punto in mezzo.</li>
+  <li>Il pannello mostra km, metri di salita e discesa, tempo stimato. Con <b>Colora il percorso per pendenza</b> la linea passa dal verde (piano) al rosso e viola (ripido) e compare l'elenco delle salite.</li>
+  <li>Comandi: <b>Annulla</b> (Ctrl+Z), <b>Inverti</b>, <b>Chiudi anello</b>, <b>Cancella</b>, <b>Nuovo percorso</b>.</li>
+</ol>
+<p>Per trovare una località usa il campo di <b>ricerca</b>: scrivi il nome, premi Invio e scegli il risultato.</p>
+
+<h2 id="b4">15. Disegno a mano libera con la tavoletta grafica</h2>
+<ol>
+  <li>Nella barra scegli <b>Disegna</b>.</li>
+  <li>Tieni premuta la penna (o il tasto sinistro del mouse) e traccia il percorso sulla mappa.</li>
+  <li>Al rilascio il tratto viene semplificato. Con un tipo di percorso viene <b>agganciato ai sentieri</b> reali; con <b>Linea retta</b> resta esattamente come l'hai disegnato.</li>
+</ol>
+<p>Puoi alternare tratti disegnati e punti cliccati. Funziona con tavolette Wacom, XP-Pen, Huion e con gli schermi touch con penna.</p>
+
+<h2 id="b5">16. Segnaposto</h2>
+<ul>
+  <li>Attiva <b>Segnaposto</b> nella barra e clicca dove vuoi metterli. Trascinali per spostarli, cliccali per modificarne <b>nome, nota e tipo</b> (stessi colori dell'app) o per <b>aggiungerli al percorso</b>.</li>
+  <li>Nella scheda <b>Segnaposto</b> l'elenco ha le spunte: <b>Percorso automatico tra segnaposto</b> collega quelli spuntati nell'ordine dell'elenco, con <b>Ritorna al primo (anello)</b> se vuoi.</li>
+  <li><b>Esporta solo segnaposto</b> crea un GPX con i soli punti. Normalmente vengono esportati insieme al percorso.</li>
+</ul>
+
+<h2 id="b6">17. Salvare, archiviare, importare ed esportare</h2>
+<table>
+  <tr><th>Comando</th><th>Cosa fa</th></tr>
+  <tr><td>Salva con nome… (Ctrl+S)</td><td>Salva percorso e segnaposto in GPX (il formato per l'app) con la finestra di Windows, dove scegli cartella e nome.</td></tr>
+  <tr><td>Esporta in questo formato…</td><td>Scegli prima il formato nel menu: GPX (percorso + segnaposto), FIT (Garmin, Wahoo, Hammerhead), KML, TCX, GeoJSON, CSV.</td></tr>
+  <tr><td>Salva in archivio…</td><td>Lo tiene nella scheda Archivio del PC, con il nome che scegli (Salva / Salva come nuovo).</td></tr>
+  <tr><td>Apri / importa file… (Ctrl+O)</td><td>GPX, KML, GeoJSON, TCX, FIT, CSV. Puoi anche trascinare i file nella finestra.</td></tr>
+</table>
+<p>I percorsi in archivio vengono offerti automaticamente al telefono tramite SirJoe Link.</p>
+
+<h2 id="b7">18. Uscite e Sala analisi</h2>
+<p>La scheda <b>Uscite</b> raccoglie le uscite registrate dal telefono, ricevute con SirJoe Link o aggiunte con <b>Aggiungi da file…</b> (<b>Apri cartella</b> mostra dove sono salvate). Clicca un'uscita per aprire la <b>Sala analisi</b>:</p>
+<ul>
+  <li><b>Numeri</b>: km, tempo totale e in movimento, media, massima, metri di salita.</li>
+  <li><b>Colora la traccia per</b> velocità, pendenza o altitudine, con legenda.</li>
+  <li><b>Replay</b>: il pallino ripercorre l'uscita a ×30, ×60, ×120 o ×300; con il cursore vai a un momento preciso e vedi tempo, km, velocità e quota.</li>
+  <li><b>Confronto con un percorso pianificato</b>: scegli un percorso dell'archivio; il percorso compare tratteggiato, le deviazioni sono evidenziate in viola e vedi quanta parte dell'uscita è stata sul percorso.</li>
+  <li><b>Salite</b>: elenco con lunghezza, dislivello, pendenza media e massima.</li>
+  <li><b>Video per i social</b>: <b>Crea video</b> registra un'animazione verticale di 20 secondi (1080×1350) con il giro che si disegna, i numeri e il logo BY SIRJOE, pronta per Instagram, Facebook e WhatsApp. Al termine scegli dove salvarla (MP4, o WebM se il PC non supporta MP4).</li>
+</ul>
+
+<section class="part" id="p3">
+  <div class="part-kicker">Parte III</div>
+  <h1 class="part-title" id="t-p3">Usare le due app insieme</h1>
+  <p class="part-lead">SirJoe Link collega telefono e PC direttamente, nella rete di casa, senza cloud e senza account.</p>
+</section>
+
+<h2 id="c1">19. SirJoe Link</h2>
+<figure>
+  <svg viewBox="0 0 520 170" class="diagram">
+    <rect x="20" y="30" width="170" height="110" rx="8" class="phone"/><rect x="32" y="42" width="146" height="78" class="screen"/>
+    <rect x="80" y="55" width="50" height="50" class="qr"/><text x="105" y="158" class="small" text-anchor="middle">PC: Planner</text>
+    <rect x="390" y="20" width="80" height="130" rx="14" class="phone"/><rect x="398" y="36" width="64" height="96" class="screen"/>
+    <text x="430" y="162" class="small" text-anchor="middle">Telefono</text>
+    <path d="M200 70 L380 70" class="arrow"/><path d="M380 105 L200 105" class="arrow"/>
+    <text x="290" y="62" class="small" text-anchor="middle">percorsi e segnaposto (GPX)</text>
+    <text x="290" y="123" class="small" text-anchor="middle">uscite registrate</text>
+    <text x="290" y="88" class="tiny" text-anchor="middle">Wi-Fi di casa · QR con codice segreto</text>
+  </svg>
+  <figcaption>Cosa passa tra PC e telefono.</figcaption>
+</figure>
+<h3>Collegarsi</h3>
+<ol>
+  <li>PC e telefono devono essere sulla <b>stessa rete Wi-Fi</b>.</li>
+  <li>Nel Planner premi <b>SirJoe Link</b> (in alto a destra): compare un QR code con il nome del PC e l'indirizzo di rete. Se il PC ha più reti, scegli quella del Wi-Fi nel menu <b>Rete</b>.</li>
+  <li>La prima volta Windows chiede di consentire l'accesso: scegli <b>Reti private</b> e <b>Consenti</b>.</li>
+  <li>Sul telefono: <b>Percorsi → SirJoe Link: scambia con il PC → Inquadra QR</b> e punta il codice. La prima volta concedi la fotocamera. Puoi anche inquadrarlo con l'app Fotocamera del telefono: si apre direttamente SirJoe MTB.</li>
+  <li>Compare <b>Collegato a NOME-PC</b>. Le volte successive puoi usare <b>Ricollega a NOME-PC</b> senza inquadrare, finché la finestra Link sul PC è aperta.</li>
+</ol>
+<h3>Ricevere percorsi sul telefono</h3>
+<p>Scegli <b>Ricevi percorsi dal PC</b>: l'elenco contiene il percorso aperto nel Planner e quelli dell'archivio. Spunta quelli che vuoi e tocca <b>Ricevi</b>: arrivano nella pagina Percorsi, i segnaposto nella pagina Crea.</p>
+<h3>Inviare le uscite al PC</h3>
+<p>Scegli <b>Invia le mie uscite al PC</b>, spunta le uscite e tocca <b>Invia</b>. Sul PC compaiono subito nella scheda <b>Uscite</b>, pronte per la Sala analisi; la sezione <b>Attività</b> della finestra Link mostra cosa è passato.</p>
+<h3>Sicurezza</h3>
+<ul>
+  <li>Il collegamento è attivo solo mentre la finestra Link è aperta sul PC.</li>
+  <li>Ogni richiesta deve contenere il codice segreto del QR; il telefono accetta solo indirizzi della rete locale.</li>
+  <li>Non mostrare il QR ad altri e non usare Link su Wi-Fi pubblici o condivisi.</li>
+</ul>
+<div class="box tip"><b>Fuori casa:</b> puoi collegare il PC all'<b>hotspot del telefono</b>; PC e telefono sono così sulla stessa rete e Link funziona anche senza router.</div>
+
+<h2 id="c2">20. Flussi di lavoro tipici</h2>
+<h3>Preparare un giro a casa e farlo</h3>
+<ol>
+  <li>Planner: disegna il percorso (anche con la tavoletta), aggiungi fontane e rifugi come segnaposto, <b>Salva in archivio</b>.</li>
+  <li>Telefono: SirJoe Link → Ricevi percorsi. Poi Percorsi → il giro → <b>Mostra e segui sulla mappa</b>.</li>
+  <li>Sul posto: Registra. Avvisi salite, fuori percorso e distanza al traguardo ti guidano.</li>
+</ol>
+<h3>Analizzare e condividere</h3>
+<ol>
+  <li>Al rientro: Stop → Termina e salva. SirJoe Link → Invia le mie uscite al PC.</li>
+  <li>Planner, scheda Uscite: colori per pendenza, confronto con il percorso pianificato, salite, replay.</li>
+  <li><b>Crea video</b> per i social, e dal telefono <b>Carica su Strava</b>.</li>
+</ol>
+<h3>Allenarsi contro se stessi</h3>
+<p>Rifai un giro già registrato con <b>Sfida il fantasma</b>, poi confronta le due uscite sul PC.</p>
+
+<section class="part" id="p4">
+  <div class="part-kicker">Parte IV</div>
+  <h1 class="part-title" id="t-p4">Problemi, avvertenze e crediti</h1>
+</section>
+
+<h2 id="d1">21. Risoluzione dei problemi</h2>
+<table class="faq">
+  <tr><th>Problema</th><th>Soluzione</th></tr>
+  <tr><td>"Errore durante l'analisi del pacchetto"</td><td>Usa la versione 1.5.1 o successiva (compatibile con Android 6 e 7) e controlla che il download sia completo.</td></tr>
+  <tr><td>"App non installata: in conflitto"</td><td>C'è una versione precedente alla 1.4.1: disinstallala una volta, poi gli aggiornamenti si installano sopra. Prima esporta le tracce (ZIP).</td></tr>
+  <tr><td>La registrazione si interrompe con lo schermo spento</td><td>Vedi le impostazioni MIUI del capitolo 1: nessuna restrizione batteria, avvio automatico, posizione "consenti sempre".</td></tr>
+  <tr><td>Il GPS è impreciso</td><td>Aspetta il fix all'aperto prima di partire; in valli strette e boschi fitti la precisione cala. Guarda "Precisione GPS" nella pagina Dati.</td></tr>
+  <tr><td>Il percorso non si calcola</td><td>Serve Internet per BRouter. Riprova o usa "Linea retta". Punti troppo lontani da strade/sentieri possono non essere collegabili.</td></tr>
+  <tr><td>Le mappe offline sono brutte o illeggibili</td><td>Importa anche lo stile Elevate e regola "Dimensione testi mappa offline". Usa la versione 1.5.0 o successiva.</td></tr>
+  <tr><td>Nessun avviso vocale</td><td>Attiva gli avvisi in Info, alza il volume multimediale, installa la sintesi vocale italiana.</td></tr>
+  <tr><td>Nessun avviso salite</td><td>Il percorso deve avere le quote e devi essere sul percorso (entro circa 80 m).</td></tr>
+  <tr><td>SirJoe Link: "PC non raggiungibile"</td><td>Stessa rete Wi-Fi; finestra Link aperta sul PC; Windows Defender Firewall → consenti SirJoe MTB Planner su <b>Reti private</b>; la rete di casa in Windows deve essere impostata come "Privata". Alcuni router con "isolamento client" o reti ospiti bloccano il collegamento.</td></tr>
+  <tr><td>Strava: "Autorizzazione negata" o errore</td><td>Callback Domain deve essere <code>localhost</code>; durante l'autorizzazione lascia la spunta per caricare attività.</td></tr>
+  <tr><td>Il Planner non si avvia (SmartScreen)</td><td>Ulteriori informazioni → Esegui comunque.</td></tr>
+  <tr><td>Il video non si crea</td><td>Lascia la finestra del Planner in primo piano durante i 20 secondi di registrazione.</td></tr>
+</table>
+
+<h2 id="d2">22. Avvertenze d'uso</h2>
+<div class="avvertenze">%%AVVERTENZE%%</div>
+
+<h2 id="d3">23. Crediti e licenze</h2>
+<ul>
+  <li>SirJoe MTB e SirJoe MTB Planner: progetto personale di Sergio Mantovani ("SirJoe"), gratuito e open source con licenza MIT, non destinato alla vendita. Codice su github.com/sirjoe58/mapmtb.</li>
+  <li>Mappe: © OpenStreetMap contributors (ODbL); OpenTopoMap (CC-BY-SA); itinerari MTB waymarkedtrails.org.</li>
+  <li>Mappe offline: OpenAndroMaps e stile Elevate (gratuiti per uso personale secondo le loro condizioni); motore Mapsforge.</li>
+  <li>Calcolo percorsi: BRouter (brouter.de). Ricerca luoghi: Nominatim.</li>
+  <li>Librerie: osmdroid (Apache 2.0), Leaflet (BSD-2), Electron (MIT), ZXing (Apache 2.0), qrcode (MIT).</li>
+  <li>Carattere del logo: Russo One (SIL Open Font License).</li>
+  <li>Strava, Komoot, Garmin, Wahoo, Wikiloc, Instagram, Facebook, WhatsApp, Telegram, X, Windows e Android sono marchi dei rispettivi proprietari; questo progetto non è affiliato a nessuno di loro.</li>
+</ul>
