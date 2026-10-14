@@ -58,9 +58,10 @@
 
       <h3>Salva ed esporta</h3>
       <div class="grid2">
-        <button id="saveRoute" class="btn primary">Salva in archivio</button>
-        <button id="newRoute" class="btn">Nuovo percorso</button>
+        <button id="saveAs" class="btn primary" title="Ctrl+S">Salva con nome…</button>
+        <button id="saveRoute" class="btn" title="Salva nell'archivio interno del programma">Salva in archivio…</button>
       </div>
+      <button id="newRoute" class="btn ghost small">Nuovo percorso</button>
       <label class="field">
         <span>Formato di esportazione</span>
         <select id="exportFormat">
@@ -73,8 +74,8 @@
         </select>
       </label>
       <div class="grid2">
-        <button id="export" class="btn primary">Esporta file</button>
-        <button id="importBtn" class="btn">Importa file…</button>
+        <button id="export" class="btn">Esporta in questo formato…</button>
+        <button id="importBtn" class="btn" title="Ctrl+O">Apri / importa file…</button>
       </div>
       <input id="importFile" type="file" accept=".gpx,.kml,.geojson,.json,.tcx,.fit,.csv" multiple hidden>
 
@@ -84,7 +85,7 @@
         Con <b>✏️ Disegna</b> tracci il percorso a mano libera con la penna della tavoletta grafica
         (o col mouse): con un tipo di percorso viene agganciato ai sentieri, con <i>Linea retta</i>
         resta come l'hai disegnato.
-        Per mandarlo al telefono: <i>Esporta GPX</i>, copia il file sul telefono e in SirJoe MTB
+        Per mandarlo al telefono: <i>Salva con nome</i> (GPX), copia il file sul telefono e in SirJoe MTB
         apri <i>Percorsi → Importa</i>.
       </div>
     </section>
@@ -164,6 +165,20 @@
         <button value="addroute" class="btn">Aggiungi al percorso</button>
         <span class="spacer"></span>
         <button value="cancel" class="btn">Annulla</button>
+        <button value="save" class="btn primary">Salva</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- nome del percorso da salvare -->
+  <dialog id="nameDialog">
+    <form method="dialog" class="dlg">
+      <h3>Salva in archivio</h3>
+      <label class="field"><span>Nome del percorso</span><input id="ndName" required></label>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn" formnovalidate>Annulla</button>
+        <span class="spacer"></span>
+        <button value="new" class="btn" id="ndNew">Salva come nuovo</button>
         <button value="save" class="btn primary">Salva</button>
       </div>
     </form>

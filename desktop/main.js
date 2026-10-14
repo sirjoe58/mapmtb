@@ -1,6 +1,9 @@
 // SirJoe MTB Planner - processo principale (Electron)
-const { app, BrowserWindow, ipcMain, net, shell, session } = require('electron');
+const { app, BrowserWindow, ipcMain, net, shell, session, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
+
+let lastDir = null;
 
 const UA = `SirJoeMTBPlanner/${app.getVersion()} (uso personale)`;
 
@@ -38,6 +41,36 @@ app.whenReady().then(() => {
     return { ok: res.ok, status: res.status, text };
   });
   ipcMain.handle('app-version', () => app.getVersion());
+
+  // "Salva con nome": scegli nome e cartella
+  ipcMain.handle('save-file', async (e, { name, data, ext }) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const safe = String(name).replace(/[\\/:*?"<>|]/g, '_');
+    const r = await dialog.showSaveDialog(win, {
+      title: 'Salva con nome',
+      defaultPath: path.join(lastDir || app.getPath('documents'), safe),
+      buttonLabel: 'Salva',
+      filters: [{ name: ext.toUpperCase(), extensions: [ext] }, { name: 'Tutti i file', extensions: ['*'] }]
+    });
+    if (r.canceled || !r.filePath) return null;
+    await fs.promises.writeFile(r.filePath, typeof data === 'string' ? data : Buffer.from(data));
+    lastDir = path.dirname(r.filePath);
+    return r.filePath;
+  });
+
+  // "Apri": uno o più file traccia
+  ipcMain.handle('open-files', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const r = await dialog.showOpenDialog(win, {
+      title: 'Apri percorso o traccia',
+      defaultPath: lastDir || app.getPath('documents'),
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Tracce', extensions: ['gpx', 'kml', 'geojson', 'json', 'tcx', 'fit', 'csv'] }, { name: 'Tutti i file', extensions: ['*'] }]
+    });
+    if (r.canceled) return [];
+    lastDir = path.dirname(r.filePaths[0]);
+    return Promise.all(r.filePaths.map(async (f) => ({ name: path.basename(f), data: new Uint8Array(await fs.promises.readFile(f)) })));
+  });
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
