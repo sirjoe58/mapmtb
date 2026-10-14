@@ -6,6 +6,8 @@ Ciclocomputer e navigatore per mountain bike su Android: mappa a tutto schermo, 
 
 > ⚠️ Prima di usare l'app leggi le [Avvertenze d'uso](AVVERTENZE.md). L'app le mostra al primo avvio e vanno accettate.
 
+📘 **[Manuale d'uso completo (PDF)](docs/manuale/SirJoe-MTB-Manuale.pdf)**: app Android e Planner per Windows, divisi per applicazione e capitoli.
+
 ## Pagine
 
 | Pagina | Cosa fa |
