@@ -18,12 +18,16 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.BRouterClient
+import it.sirjoe.mtbcomputer.data.Placemark
+import it.sirjoe.mtbcomputer.data.Placemarks
 import it.sirjoe.mtbcomputer.data.PlannerState
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.RideRepository
 import it.sirjoe.mtbcomputer.data.RouteSummary
+import it.sirjoe.mtbcomputer.data.TrackIO
 import it.sirjoe.mtbcomputer.data.TrackPoint
 import it.sirjoe.mtbcomputer.data.TrackStorage
+import it.sirjoe.mtbcomputer.share.ShareHelper
 import it.sirjoe.mtbcomputer.share.TrackActions
 import it.sirjoe.mtbcomputer.util.Format
 import it.sirjoe.mtbcomputer.util.MapStyle
@@ -52,6 +56,7 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
     private lateinit var busy: ProgressBar
     private val line = Polyline()
     private val wpMarkers = ArrayList<Marker>()
+    private val placeMarkers = ArrayList<Marker>()
     private var working = false
     private var centered = false
 
@@ -77,7 +82,11 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
                 return true
             }
 
-            override fun longPressHelper(p: GeoPoint): Boolean = false
+            // tocco lungo sulla mappa: nuovo segnaposto
+            override fun longPressHelper(p: GeoPoint): Boolean {
+                newPlacemark(p)
+                return true
+            }
         }))
         map.overlays.add(line)
         MapStyle.apply(requireContext(), map)
@@ -94,6 +103,7 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
                 map.controller.animateTo(GeoPoint(l.latitude, l.longitude))
             }
         }
+        view.findViewById<View>(R.id.planPlaces).setOnClickListener { placesMenu() }
         view.findViewById<View>(R.id.planUndo).setOnClickListener { if (!working) PlannerState.undo() }
         view.findViewById<View>(R.id.planModeBtn).setOnClickListener { chooseMode() }
         view.findViewById<View>(R.id.planLoop).setOnClickListener {
@@ -120,7 +130,206 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
         updateModeText()
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                PlannerState.version.collect { redraw() }
+                launch { PlannerState.version.collect { redraw() } }
+                launch { Placemarks.items.collect { redrawPlaces() } }
+            }
+        }
+        Placemarks.load(requireContext())
+    }
+
+    // ---------------------------------------------------------- segnaposto
+
+    private fun newPlacemark(g: GeoPoint) {
+        val ctx = requireContext()
+        val p = Placemark(name = Placemarks.nextName(ctx), lat = g.latitude, lon = g.longitude)
+        PlacemarkUi.edit(ctx, p, isNew = true) { Placemarks.add(ctx, it) }
+    }
+
+    private fun redrawPlaces() {
+        if (!isAdded || view == null) return
+        val ctx = requireContext()
+        for (m in placeMarkers) map.overlays.remove(m)
+        placeMarkers.clear()
+        for (p in Placemarks.load(ctx)) {
+            val m = PlacemarkUi.marker(map, ctx, p)
+            // tieni premuto il segnaposto per spostarlo
+            m.isDraggable = true
+            m.setOnMarkerDragListener(object : Marker.OnMarkerDragListener {
+                override fun onMarkerDrag(marker: Marker) {}
+                override fun onMarkerDragStart(marker: Marker) {}
+                override fun onMarkerDragEnd(marker: Marker) {
+                    Placemarks.get(ctx, p.id)?.let {
+                        Placemarks.update(ctx, it.copy(lat = marker.position.latitude, lon = marker.position.longitude, ele = null))
+                    }
+                }
+            })
+            m.setOnMarkerClickListener { _, _ ->
+                placeActions(p.id)
+                true
+            }
+            map.overlays.add(m)
+            placeMarkers.add(m)
+        }
+        map.invalidate()
+    }
+
+    private fun placeActions(id: String) {
+        val ctx = requireContext()
+        val act = activity as? MainActivity ?: return
+        val p = Placemarks.get(ctx, id) ?: return
+        val items = arrayOf(
+            "Naviga qui dalla mia posizione",
+            "Aggiungi al percorso in costruzione",
+            "Modifica nome, nota e tipo",
+            "Elimina"
+        )
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle(p.name + PlacemarkUi.distanceText(p) + if (p.note.isNotBlank()) "\n" + p.note else "")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> PlacemarkUi.navigateTo(act, p)
+                    1 -> addPoint(GeoPoint(p.lat, p.lon))
+                    2 -> PlacemarkUi.edit(ctx, p, isNew = false) { Placemarks.update(ctx, it) }
+                    3 -> MaterialAlertDialogBuilder(ctx)
+                        .setTitle("Eliminare \"${p.name}\"?")
+                        .setPositiveButton("Elimina") { _, _ -> Placemarks.remove(ctx, p.id) }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+                }
+            }
+            .show()
+    }
+
+    private fun placesMenu() {
+        val ctx = requireContext()
+        val act = activity as? MainActivity ?: return
+        val n = Placemarks.load(ctx).size
+        val items = arrayOf(
+            "Nuovo segnaposto al centro (mirino)",
+            "Elenco segnaposto ($n)",
+            "Percorso automatico tra segnaposto…",
+            "Esporta / condividi segnaposto (GPX)",
+            "Elimina tutti i segnaposto"
+        )
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Segnaposto")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> newPlacemark(map.mapCenter as GeoPoint)
+                    1 -> placesList()
+                    2 -> routeBetweenPlaces()
+                    3 -> {
+                        val list = Placemarks.load(ctx)
+                        if (list.isEmpty()) toast("Nessun segnaposto") else
+                            MaterialAlertDialogBuilder(ctx)
+                                .setTitle("Segnaposto in GPX")
+                                .setPositiveButton("Condividi") { _, _ -> ShareHelper.shareWaypoints(ctx, list) }
+                                .setNegativeButton("Salva su file") { _, _ ->
+                                    act.saveToFile("Segnaposto SirJoe MTB.gpx", TrackIO.writeWaypointsGpx(list))
+                                }
+                                .show()
+                    }
+                    4 -> if (n > 0) MaterialAlertDialogBuilder(ctx)
+                        .setTitle("Eliminare tutti i $n segnaposto?")
+                        .setPositiveButton("Elimina") { _, _ -> Placemarks.clear(ctx) }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+                }
+            }
+            .show()
+        toast("Suggerimento: tocco lungo sulla mappa = nuovo segnaposto; tieni premuto un segnaposto per spostarlo")
+    }
+
+    private fun placesList() {
+        val ctx = requireContext()
+        val list = Placemarks.load(ctx)
+        if (list.isEmpty()) {
+            toast("Nessun segnaposto: fai un tocco lungo sulla mappa per crearne uno")
+            return
+        }
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Segnaposto")
+            .setItems(list.map { it.name + " (" + it.type.label + ")" + PlacemarkUi.distanceText(it) }.toTypedArray()) { _, which ->
+                val p = list[which]
+                map.controller.setZoom(16.0)
+                map.controller.animateTo(GeoPoint(p.lat, p.lon))
+                placeActions(p.id)
+            }
+            .show()
+    }
+
+    /** Percorso automatico che passa per i segnaposto scelti, nell'ordine dell'elenco. */
+    private fun routeBetweenPlaces() {
+        val ctx = requireContext()
+        val list = Placemarks.load(ctx)
+        if (list.isEmpty()) {
+            toast("Crea prima almeno un segnaposto (tocco lungo sulla mappa)")
+            return
+        }
+        val labels = arrayOf("La mia posizione (partenza)") + list.map { it.name }.toTypedArray() +
+            arrayOf("Ritorno alla partenza (anello)")
+        val checked = BooleanArray(labels.size)
+        checked[0] = RideRepository.location.value != null
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Punti da collegare (in ordine)")
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked -> checked[which] = isChecked }
+            .setPositiveButton("Avanti") { _, _ ->
+                val pts = ArrayList<TrackPoint>()
+                val names = ArrayList<String>()
+                if (checked[0]) {
+                    val l = RideRepository.location.value
+                    if (l == null) toast("Posizione non disponibile: parto dal primo segnaposto") else {
+                        pts.add(TrackPoint(l.latitude, l.longitude)); names.add("Posizione")
+                    }
+                }
+                list.forEachIndexed { i, p -> if (checked[i + 1]) { pts.add(p.toPoint()); names.add(p.name) } }
+                if (checked.last() && pts.size >= 2) {
+                    pts.add(pts.first()); names.add(names.first())
+                }
+                if (pts.size < 2) {
+                    toast("Scegli almeno due punti")
+                    return@setPositiveButton
+                }
+                PlacemarkUi.chooseRouteType(ctx) { profile -> buildRoute(pts, names, profile) }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun buildRoute(pts: List<TrackPoint>, names: List<String>, profile: BRouterClient.Profile) {
+        if (working) return
+        working = true
+        busy.visibility = View.VISIBLE
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val legs = BRouterClient.routeThrough(pts, profile) { i, n ->
+                    modeTv.text = "Calcolo tratto $i di $n…"
+                }
+                PlannerState.clear()
+                PlannerState.addFirst(pts.first())
+                legs.forEachIndexed { i, leg ->
+                    PlannerState.addSegment(leg.lastOrNull() ?: pts[i + 1], if (leg.size >= 2) leg else listOf(pts[i], pts[i + 1]))
+                }
+                PlannerState.name = names.first() + " → " + names.last()
+                zoomToRoute()
+                val s = RouteSummary.of(PlannerState.allPoints())
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Percorso pronto")
+                    .setMessage(
+                        "${profile.label}\n${Format.distanceKm(s.distanceM)} km" +
+                            (s.ascentM?.let { "  ·  ↗ ${Format.meters(it)} m" } ?: "") +
+                            "\n\nPuoi modificarlo, salvarlo o seguirlo subito."
+                    )
+                    .setPositiveButton("Segui ora") { _, _ -> startFollowing() }
+                    .setNeutralButton("Salva") { _, _ -> save(followAfter = false) }
+                    .setNegativeButton("Chiudi", null)
+                    .show()
+            } catch (e: Exception) {
+                toast("Percorso non calcolato: ${e.message}")
+            } finally {
+                working = false
+                busy.visibility = View.GONE
+                updateModeText()
             }
         }
     }
@@ -234,7 +443,7 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
     private fun chooseMode() {
         val ctx = requireContext()
         val profiles = BRouterClient.Profile.values()
-        val items = profiles.map { "Segui sentieri – " + it.label } + "Linea retta (senza Internet)"
+        val items = profiles.map { "Segue la mappa – " + it.label } + "Linea retta (senza Internet)"
         MaterialAlertDialogBuilder(ctx)
             .setTitle("Come collegare i punti")
             .setItems(items.toTypedArray()) { _, which ->

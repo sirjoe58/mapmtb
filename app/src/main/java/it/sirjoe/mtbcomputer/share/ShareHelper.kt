@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
+import it.sirjoe.mtbcomputer.data.FitCodec
+import it.sirjoe.mtbcomputer.data.Placemarks
 import it.sirjoe.mtbcomputer.data.RouteSummary
 import it.sirjoe.mtbcomputer.data.Track
 import it.sirjoe.mtbcomputer.data.TrackFormat
@@ -69,6 +71,18 @@ object ShareHelper {
         launch(ctx, send, "Condividi sui social")
     }
 
+    /** Segnaposto in un file GPX, verso altre app o persone. */
+    fun shareWaypoints(ctx: Context, list: List<it.sirjoe.mtbcomputer.data.Placemark>) {
+        val f = File(exportDir(ctx), "Segnaposto SirJoe MTB.gpx")
+        f.writeBytes(TrackIO.writeWaypointsGpx(list))
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "application/gpx+xml"
+            putExtra(Intent.EXTRA_STREAM, uriFor(ctx, f))
+            putExtra(Intent.EXTRA_SUBJECT, "Segnaposto SirJoe MTB")
+        }
+        launch(ctx, send, "Invia segnaposto")
+    }
+
     /** Tutte le tracce in un unico archivio ZIP (GPX), per backup o per inviarle in blocco. */
     fun shareAll(ctx: Context): Boolean {
         val files = TrackStorage.list(ctx)
@@ -101,6 +115,7 @@ object ShareHelper {
 
     /** Importa una o più tracce da un file (anche ZIP) e le salva nell'archivio. */
     fun importUri(ctx: Context, uri: Uri): List<Track> {
+        lastImportedWaypoints = 0
         val name = displayName(ctx, uri)
         val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw IllegalArgumentException("Impossibile leggere il file")
@@ -125,9 +140,23 @@ object ShareHelper {
             }
             if (out.isEmpty()) throw IllegalArgumentException("Nessuna traccia valida nello ZIP")
         } else {
-            out.add(TrackIO.parse(bytes, name))
+            // segnaposto (<wpt>) di un GPX: vanno nell'elenco segnaposto della pagina Crea
+            val wpts = if (name.lowercase().endsWith(".gpx") || !FitCodec.isFit(bytes)) TrackIO.parseWaypoints(bytes) else emptyList()
+            if (wpts.isNotEmpty()) Placemarks.addAll(ctx, wpts)
+            try {
+                out.add(TrackIO.parse(bytes, name))
+            } catch (e: Exception) {
+                if (wpts.isEmpty()) throw e
+                lastImportedWaypoints = wpts.size
+                return out
+            }
+            lastImportedWaypoints = wpts.size
         }
         for (t in out) TrackStorage.save(ctx, t)
         return out
     }
+
+    /** Numero di segnaposto trovati nell'ultimo file importato. */
+    @Volatile
+    var lastImportedWaypoints = 0
 }

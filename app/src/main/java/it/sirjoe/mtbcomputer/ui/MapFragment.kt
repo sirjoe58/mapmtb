@@ -33,6 +33,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
+import it.sirjoe.mtbcomputer.data.Placemarks
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.RideRepository
 import it.sirjoe.mtbcomputer.data.Track
@@ -97,6 +98,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     private var routePoints: List<GeoPoint> = emptyList()
     private var routeCum: DoubleArray? = null
     private var drawnPoints = 0
+    private val placeMarkers = ArrayList<Marker>()
     private val iconCache = HashMap<Int, BitmapDrawable>()
     private val clockFmt = SimpleDateFormat("HH:mm", Locale.ITALY)
 
@@ -202,6 +204,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
                 launch { RideRepository.stats.collect { updateData() } }
                 launch { RideRepository.pointCount.collect { updateTrackLine(it) } }
                 launch { RideRepository.route.collect { showRoute(it) } }
+                launch { Placemarks.items.collect { redrawPlaces() } }
                 launch {
                     while (true) {
                         clockTv.text = clockFmt.format(Date())
@@ -222,6 +225,34 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         fused.removeLocationUpdates(callback)
         map.onPause()
         super.onPause()
+    }
+
+    /** Segnaposto sulla mappa: toccandone uno si può navigare fin lì. */
+    private fun redrawPlaces() {
+        if (!isAdded || view == null) return
+        val ctx = requireContext()
+        for (m in placeMarkers) map.overlays.remove(m)
+        placeMarkers.clear()
+        for (p in Placemarks.load(ctx)) {
+            val m = PlacemarkUi.marker(map, ctx, p)
+            m.setOnMarkerClickListener { _, _ ->
+                val act = activity as? MainActivity
+                if (act != null) {
+                    MaterialAlertDialogBuilder(ctx)
+                        .setTitle(p.name + PlacemarkUi.distanceText(p))
+                        .setMessage(p.type.label + if (p.note.isNotBlank()) "\n\n" + p.note else "")
+                        .setPositiveButton("Naviga qui") { _, _ -> PlacemarkUi.navigateTo(act, p) }
+                        .setNegativeButton("Chiudi", null)
+                        .show()
+                }
+                true
+            }
+            // sotto al cursore della bici
+            val idx = map.overlays.indexOf(marker).let { if (it < 0) map.overlays.size else it }
+            map.overlays.add(idx, m)
+            placeMarkers.add(m)
+        }
+        map.invalidate()
     }
 
     fun applyBaseMap() {

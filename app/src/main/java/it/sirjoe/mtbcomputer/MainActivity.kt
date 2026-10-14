@@ -184,8 +184,10 @@ class MainActivity : AppCompatActivity() {
                     error = e.message
                 }
             }
+            val w = ShareHelper.lastImportedWaypoints
             val msg = when {
-                count > 0 -> "Importate $count tracce nella pagina Percorsi"
+                count > 0 -> "Importate $count tracce nella pagina Percorsi" + if (w > 0) " e $w segnaposto" else ""
+                w > 0 -> "Importati $w segnaposto: li trovi nella pagina Crea"
                 else -> "Import non riuscito: ${error ?: "file non riconosciuto"}"
             }
             Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
