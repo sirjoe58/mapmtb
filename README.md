@@ -79,7 +79,7 @@ Scaricalo da **Releases** → "SirJoe MTB Planner per Windows": `…-portable.ex
 2. Aprilo sul telefono e consenti l'installazione da questa fonte. Per aggiornare installa il nuovo APK sopra il vecchio: tracce, mappe e impostazioni restano (dalla 1.4.1 tutte le versioni sono firmate con la stessa chiave, in `keystore/`; serve solo per questo progetto personale).
 3. Al primo avvio accetta le avvertenze e concedi posizione e notifiche.
 
-Requisiti: Android 8.0 o superiore, GPS, Google Play Services.
+Requisiti: Android 6.0 o superiore (ad esempio Redmi 4X), GPS, Google Play Services.
 
 ## Compilare in locale
 

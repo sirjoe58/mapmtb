@@ -3,6 +3,7 @@ package it.sirjoe.mtbcomputer
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.os.Build
 import it.sirjoe.mtbcomputer.service.RecordingService
 import org.osmdroid.config.Configuration
 import org.osmdroid.mapsforge.MapsForgeTileSource
@@ -27,11 +28,14 @@ class App : Application() {
         // motore per le mappe vettoriali offline (OpenAndroMaps / Mapsforge)
         MapsForgeTileSource.createInstance(this)
 
-        val channel = NotificationChannel(
-            RecordingService.CHANNEL_ID,
-            getString(R.string.channel_recording),
-            NotificationManager.IMPORTANCE_LOW
-        )
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        // i canali di notifica esistono da Android 8
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                RecordingService.CHANNEL_ID,
+                getString(R.string.channel_recording),
+                NotificationManager.IMPORTANCE_LOW
+            )
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        }
     }
 }
