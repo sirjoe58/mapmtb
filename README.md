@@ -63,7 +63,7 @@ Client ID e Secret restano solo sul telefono. Strava accetta come attività solo
 ## Installazione
 
 1. Vai su **Releases** (o su **Actions** → ultima esecuzione → artefatto **SirJoeMTB-apk**) e scarica `SirJoeMTB.apk`.
-2. Aprilo sul telefono e consenti l'installazione da questa fonte. Per aggiornare installa il nuovo APK sopra il vecchio: tracce e impostazioni restano.
+2. Aprilo sul telefono e consenti l'installazione da questa fonte. Per aggiornare installa il nuovo APK sopra il vecchio: tracce, mappe e impostazioni restano (dalla 1.4.1 tutte le versioni sono firmate con la stessa chiave, in `keystore/`; serve solo per questo progetto personale).
 3. Al primo avvio accetta le avvertenze e concedi posizione e notifiche.
 
 Requisiti: Android 8.0 o superiore, GPS, Google Play Services.
