@@ -541,17 +541,29 @@ function routeName() {
   return $('routeName').value.trim() || 'Percorso ' + new Date().toLocaleDateString('it-IT');
 }
 
+/** Salva nell'archivio interno chiedendo il nome */
 function saveToLibrary() {
   if (state.points.length < 2) return toast('Aggiungi almeno due punti');
+  $('ndName').value = routeName();
+  $('ndNew').hidden = !state.id;
+  $('nameDialog').showModal();
+  setTimeout(() => $('ndName').select(), 30);
+}
+$('nameDialog').addEventListener('close', () => {
+  const v = $('nameDialog').returnValue;
+  if (v !== 'save' && v !== 'new') return;
+  const name = $('ndName').value.trim() || routeName();
+  $('routeName').value = name;
+  if (v === 'new') state.id = null;
   const lib = store.get('library', []);
-  const item = { id: state.id || Date.now().toString(36), name: routeName(), date: Date.now(), profile: state.profile, points: state.points, legs: state.legs };
+  const item = { id: state.id || Date.now().toString(36), name, date: Date.now(), profile: state.profile, points: state.points, legs: state.legs };
   const i = lib.findIndex((x) => x.id === item.id);
   if (i >= 0) lib[i] = item; else lib.unshift(item);
   state.id = item.id;
   store.set('library', lib);
   renderLibrary();
-  toast('Salvato in archivio: ' + item.name);
-}
+  toast('Salvato in archivio: ' + name);
+});
 
 function renderLibrary() {
   const lib = store.get('library', []);
@@ -586,7 +598,16 @@ function renderLibrary() {
   }
 }
 
-function download(name, data, mime) {
+/** Salva un file: nel programma per Windows apre la finestra "Salva con nome" */
+async function download(name, data, mime) {
+  const ext = (name.split('.').pop() || 'gpx').toLowerCase();
+  if (window.sirjoe && window.sirjoe.saveFile) {
+    try {
+      const path = await window.sirjoe.saveFile(name, data, ext);
+      if (path) toast('Salvato: ' + path);
+      return !!path;
+    } catch (e) { toast('Salvataggio non riuscito: ' + e.message); return false; }
+  }
   const blob = new Blob([data], { type: mime });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -594,6 +615,23 @@ function download(name, data, mime) {
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  return true;
+}
+
+/** "Salva con nome": GPX con percorso e segnaposto, pronto per l'app */
+async function saveAs() {
+  const pts = allPoints();
+  if (pts.length < 2 && !state.places.length) return toast('Niente da salvare: crea prima un percorso');
+  const ok = await download(routeName() + '.gpx', Formats.gpx(routeName(), pts, state.places), 'application/gpx+xml');
+  if (ok && !(window.sirjoe && window.sirjoe.saveFile)) toast('GPX pronto: copialo sul telefono e importalo in SirJoe MTB (Percorsi → Importa)');
+}
+
+/** "Apri": finestra di Windows per scegliere i file */
+async function openFiles() {
+  if (window.sirjoe && window.sirjoe.openFiles) {
+    const files = await window.sirjoe.openFiles();
+    await importFiles(files.map((f) => ({ name: f.name, arrayBuffer: async () => f.data.buffer.slice(f.data.byteOffset, f.data.byteOffset + f.data.byteLength) })));
+  } else $('importFile').click();
 }
 
 function exportFile() {
@@ -603,7 +641,6 @@ function exportFile() {
   try {
     const out = Formats.write(fmt, routeName(), pts, state.places);
     download(routeName() + '.' + out.ext, out.data, out.mime);
-    if (fmt === 'gpx') toast('GPX pronto: copialo sul telefono e importalo in SirJoe MTB (Percorsi → Importa)');
   } catch (e) { toast('Esportazione non riuscita: ' + e.message); }
 }
 
@@ -677,7 +714,8 @@ $('newRoute').addEventListener('click', () => {
   render();
 });
 $('export').addEventListener('click', exportFile);
-$('importBtn').addEventListener('click', () => $('importFile').click());
+$('importBtn').addEventListener('click', openFiles);
+$('saveAs').addEventListener('click', saveAs);
 $('importFile').addEventListener('change', (e) => { importFiles(Array.from(e.target.files)); e.target.value = ''; });
 $('routePlaces').addEventListener('click', routeThroughPlaces);
 $('exportPlaces').addEventListener('click', () => {
@@ -690,7 +728,10 @@ $('mtbOverlay').addEventListener('change', (e) => {
   if (e.target.checked) mtbLayer.addTo(map); else map.removeLayer(mtbLayer);
 });
 document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { e.preventDefault(); undo(); }
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'z' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); saveAs(); }
+  if ((e.ctrlKey || e.metaKey) && k === 'o') { e.preventDefault(); openFiles(); }
 });
 
 // trascina i file sulla finestra per importarli
