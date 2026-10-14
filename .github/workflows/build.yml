@@ -37,6 +37,9 @@ jobs:
       - name: Versioni librerie mappe
         run: gradle :app:dependencies --configuration debugRuntimeClasspath | grep -i -E "mapsforge|androidsvg" | sort -u | head -20
 
+      - name: Controllo compatibilità Android 6+
+        run: gradle lintDebug
+
       - name: Compila APK di debug
         run: gradle assembleDebug --stacktrace
 

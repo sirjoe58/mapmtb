@@ -540,6 +540,12 @@ class MapFragment : Fragment(R.layout.fragment_map) {
 
     private fun vibrate() {
         val v = requireContext().getSystemService(Vibrator::class.java) ?: return
-        v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 300, 150, 300), -1))
+        val pattern = longArrayOf(0, 300, 150, 300)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            v.vibrate(VibrationEffect.createWaveform(pattern, -1))
+        } else {
+            @Suppress("DEPRECATION")
+            v.vibrate(pattern, -1)
+        }
     }
 }

@@ -9,10 +9,10 @@ android {
 
     defaultConfig {
         applicationId = "it.sirjoe.mtbcomputer"
-        minSdk = 26
+        minSdk = 23
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.5.0"
+        versionCode = 8
+        versionName = "1.5.1"
     }
 
     // Chiave di firma fissa: ogni nuova versione si installa sopra la precedente
@@ -41,6 +41,8 @@ android {
     }
 
     compileOptions {
+        // date e orari (java.time) anche su Android 6 e 7
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -54,7 +56,9 @@ android {
     }
 
     lint {
-        abortOnError = false
+        // controlla che non si usino funzioni non disponibili sui telefoni più vecchi
+        checkOnly += setOf("NewApi", "InlinedApi")
+        abortOnError = true
     }
 }
 
@@ -68,6 +72,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("org.osmdroid:osmdroid-mapsforge:6.1.20")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
 
     testImplementation("junit:junit:4.13.2")
 }
