@@ -33,7 +33,7 @@ SirJoe MTB è un'app gratuita e open source per USO PERSONALE e non commerciale.
 - Se condividi una traccia, ricorda che contiene luoghi e orari: condividila solo con chi vuoi. Non registrare né condividere la posizione di altre persone senza il loro consenso.
 
 ## 6. PERCORSI CREATI E CONDIVISIONE
-- I percorsi creati nella pagina "Crea" sono calcolati in automatico (BRouter, dati OpenStreetMap) o disegnati a mano: possono passare su tratti chiusi, privati, pericolosi o vietati alle bici. Controllali prima di partire e sul posto vale sempre la segnaletica.
+- I percorsi creati nella pagina "Crea" (anche quelli automatici tra segnaposto, inclusa l'opzione "fuoristrada") sono calcolati in automatico (BRouter, dati OpenStreetMap) o disegnati a mano: possono passare su tratti chiusi, privati, pericolosi o vietati alle bici. Controllali prima di partire e sul posto vale sempre la segnaletica.
 - Una traccia condivisa mostra dove sei stato, a che ora e spesso dove abiti (partenza e arrivo). Prima di pubblicarla su Strava o sui social valuta la visibilità e usa le "zone di privacy" di Strava.
 - Condividi solo tracce tue o che hai il diritto di condividere, e non pubblicare tracce o foto che identificano altre persone senza il loro consenso.
 - Non pubblicare percorsi che invitano a passare su sentieri vietati alle bici, in aree protette chiuse o in proprietà private.

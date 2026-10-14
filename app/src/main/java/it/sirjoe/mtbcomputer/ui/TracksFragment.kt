@@ -59,7 +59,7 @@ class TracksFragment : Fragment() {
             text = label
             setOnClickListener { onClick() }
         }
-        root.addView(button("Importa tracce (GPX, FIT, KML, KMZ, TCX, GeoJSON, CSV, ZIP)") {
+        root.addView(button("Importa tracce e segnaposto (GPX, FIT, KML, KMZ, TCX, GeoJSON, CSV, ZIP)") {
             importTrack.launch(arrayOf("*/*"))
         })
         root.addView(button("Esporta tutte le tracce (ZIP)") {
@@ -117,9 +117,14 @@ class TracksFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val tracks = withContext(Dispatchers.IO) { ShareHelper.importUri(ctx, uri) }
+                val w = ShareHelper.lastImportedWaypoints
+                val wTxt = if (w > 0) " + $w segnaposto (pagina Crea)" else ""
                 toast(
-                    if (tracks.size == 1) "Importata: ${tracks[0].name} (${tracks[0].points.size} punti)"
-                    else "Importate ${tracks.size} tracce"
+                    when {
+                        tracks.isEmpty() -> "Importati $w segnaposto: li trovi nella pagina Crea"
+                        tracks.size == 1 -> "Importata: ${tracks[0].name} (${tracks[0].points.size} punti)$wTxt"
+                        else -> "Importate ${tracks.size} tracce$wTxt"
+                    }
                 )
                 refresh()
             } catch (e: Exception) {

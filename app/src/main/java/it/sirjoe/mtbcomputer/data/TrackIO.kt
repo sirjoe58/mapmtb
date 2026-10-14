@@ -252,6 +252,81 @@ object TrackIO {
         return Track(base, pts)
     }
 
+    // ------------------------------------------------------- segnaposto GPX
+
+    /** Legge i segnaposto (<wpt>) di un file GPX. */
+    fun parseWaypoints(bytes: ByteArray): List<Placemark> {
+        val text = String(bytes, Charsets.UTF_8).trimStart('\uFEFF', ' ', '\n', '\r', '\t')
+        if (!text.startsWith("<")) return emptyList()
+        val out = ArrayList<Placemark>()
+        try {
+            val parser = Xml.newPullParser()
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+            parser.setInput(StringReader(text))
+            var inWpt = false
+            var lat: Double? = null
+            var lon: Double? = null
+            var name: String? = null
+            var note = ""
+            var ele: Double? = null
+            var type = PlaceType.GENERIC
+            val buf = StringBuilder()
+            var ev = parser.eventType
+            while (ev != XmlPullParser.END_DOCUMENT) {
+                when (ev) {
+                    XmlPullParser.START_TAG -> {
+                        buf.setLength(0)
+                        if (local(parser.name) == "wpt") {
+                            inWpt = true
+                            lat = parser.getAttributeValue(null, "lat")?.toDoubleOrNull()
+                            lon = parser.getAttributeValue(null, "lon")?.toDoubleOrNull()
+                            name = null; note = ""; ele = null; type = PlaceType.GENERIC
+                        }
+                    }
+                    XmlPullParser.TEXT -> buf.append(parser.text)
+                    XmlPullParser.END_TAG -> {
+                        val t = buf.toString().trim()
+                        if (inWpt) when (local(parser.name)) {
+                            "name" -> name = t
+                            "desc", "cmt" -> if (note.isEmpty()) note = t
+                            "ele" -> ele = t.toDoubleOrNull()
+                            "type" -> type = PlaceType.of(t)
+                            "wpt" -> {
+                                val la = lat
+                                val lo = lon
+                                if (la != null && lo != null) {
+                                    out.add(Placemark(name = name ?: "Segnaposto", note = note, lat = la, lon = lo, ele = ele, type = type))
+                                }
+                                inWpt = false
+                            }
+                        }
+                        buf.setLength(0)
+                    }
+                }
+                ev = parser.next()
+            }
+        } catch (_: Exception) {
+        }
+        return out
+    }
+
+    /** Scrive i segnaposto in un file GPX (leggibile da Komoot, Garmin, Locus, OsmAnd...). */
+    fun writeWaypointsGpx(list: List<Placemark>): ByteArray {
+        val sb = StringBuilder()
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+        sb.append("<gpx version=\"1.1\" creator=\"SirJoe MTB\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n")
+        for (p in list) {
+            sb.append("  <wpt lat=\"").append(n(p.lat, 7)).append("\" lon=\"").append(n(p.lon, 7)).append("\">")
+            p.ele?.let { sb.append("<ele>").append(n(it, 1)).append("</ele>") }
+            sb.append("<name>").append(esc(p.name)).append("</name>")
+            if (p.note.isNotBlank()) sb.append("<desc>").append(esc(p.note)).append("</desc>")
+            sb.append("<type>").append(p.type.id).append("</type>")
+            sb.append("</wpt>\n")
+        }
+        sb.append("</gpx>\n")
+        return sb.toString().toByteArray()
+    }
+
     // -------------------------------------------------------------- scrittura
 
     fun write(track: Track, format: TrackFormat): ByteArray = when (format) {

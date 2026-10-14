@@ -65,7 +65,7 @@ object Prefs {
 
     fun plannerProfile(ctx: Context): BRouterClient.Profile {
         val id = p(ctx).getString("planner_profile", null)
-        return BRouterClient.Profile.values().firstOrNull { it.id == id } ?: BRouterClient.Profile.TREKKING
+        return BRouterClient.Profile.values().firstOrNull { it.id == id } ?: BRouterClient.Profile.OFFROAD
     }
     fun setPlannerProfile(ctx: Context, v: BRouterClient.Profile) =
         p(ctx).edit().putString("planner_profile", v.id).apply()
