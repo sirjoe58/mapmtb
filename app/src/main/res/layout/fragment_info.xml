@@ -77,6 +77,20 @@
             android:text="Avvisi vocali (ogni km, pausa)" />
 
         <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swClimbs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Avvisa prima delle salite del percorso" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swGhost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Fantasma: sfida le tue uscite precedenti" />
+
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/swMtb"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

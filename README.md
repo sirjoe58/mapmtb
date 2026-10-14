@@ -15,6 +15,7 @@ Ciclocomputer e navigatore per mountain bike su Android: mappa a tutto schermo, 
 | **Sosta automatica** | Da fermo per un tempo a scelta (30 s – 5 min) l'app va in sosta: luminosità al minimo, schermo libero di spegnersi, GPS più lento. Quando riparti si risveglia da sola, riaccende lo schermo e riprende registrazione e navigazione. |
 | **Dati** | Velocità attuale, media e massima, distanza, tempi, ora, quota, dislivello, pendenza, direzione, distanza al traguardo, precisione GPS, profilo altimetrico. |
 | **Percorsi** | Archivio di uscite e percorsi. Importa, esporta, rinomina, modifica nella pagina Crea, condividi. Esporta tutto in un archivio ZIP. Mappe offline. |
+| **Fantasma e salite** | *Sfida il fantasma* (dal menu di un'uscita registrata): un'icona 👻 rifà la tua uscita precedente in tempo reale e la voce ti dice ogni km se sei avanti o indietro. Sui percorsi con quote l'app avvisa prima delle salite: "tra 200 metri salita al 9 per cento per 800 metri". |
 | **Info** | Impostazioni, collegamento a Strava, avvertenze, crediti. |
 
 ## Mappe offline
@@ -71,7 +72,17 @@ Nella cartella `desktop/` c'è il programma per PC con cui preparare percorsi e 
 - profilo altimetrico, km, dislivello, tempo stimato, annulla (Ctrl+Z), archivio dei percorsi;
 - import GPX, KML, GeoJSON, TCX, FIT, CSV (anche trascinando i file nella finestra); export GPX (percorso + segnaposto, pronto per l'app), FIT, KML, TCX, GeoJSON, CSV.
 
-Scaricalo da **Releases** → "SirJoe MTB Planner per Windows": `…-portable.exe` (senza installazione) o `…-setup.exe`. Per mandare un percorso al telefono: *Esporta file* in GPX, copialo sul telefono e importalo da **Percorsi → Importa**.
+- **Sala analisi** (scheda *Uscite*): traccia colorata per velocità, pendenza o quota; confronto tra percorso pianificato e fatto; replay animato; elenco salite; **video social da 20 secondi** con il logo BY SIRJOE.
+
+Scaricalo da **Releases** → "SirJoe MTB Planner per Windows": `…-portable.exe` (senza installazione) o `…-setup.exe`.
+
+### SirJoe Link (telefono ↔ PC, senza cloud)
+
+1. Sul PC premi **📲 SirJoe Link**: compare un QR code. La prima volta Windows chiede di consentire l'accesso alla rete: scegli **Reti private**.
+2. Sul telefono: **Percorsi → 📲 SirJoe Link → Inquadra QR** (telefono e PC sulla stessa rete Wi-Fi).
+3. Scegli *Ricevi percorsi dal PC* (quelli in archivio e quello aperto) o *Invia le mie uscite al PC*: le trovi nella scheda **Uscite** pronte per la Sala analisi.
+
+In alternativa resta il metodo classico: *Esporta file* in GPX, copialo sul telefono e importalo da **Percorsi → Importa**.
 
 ## Installazione
 

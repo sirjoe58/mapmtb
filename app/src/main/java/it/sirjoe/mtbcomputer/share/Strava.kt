@@ -58,7 +58,7 @@ object Strava {
         ctx.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
-    fun isAuthRedirect(uri: Uri?) = uri != null && uri.scheme == "sirjoemtb"
+    fun isAuthRedirect(uri: Uri?) = uri != null && uri.scheme == "sirjoemtb" && uri.host == "localhost"
 
     // ------------------------------------------------------------- token
 

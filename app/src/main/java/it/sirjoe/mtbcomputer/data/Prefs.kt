@@ -50,6 +50,14 @@ object Prefs {
     fun mtbOverlay(ctx: Context) = p(ctx).getBoolean("mtb_overlay", true)
     fun setMtbOverlay(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("mtb_overlay", v).apply()
 
+    /** Sfida al fantasma (uscita precedente sullo stesso percorso). */
+    fun ghost(ctx: Context) = p(ctx).getBoolean("ghost", true)
+    fun setGhost(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("ghost", v).apply()
+
+    /** Avvisi vocali e a schermo prima delle salite del percorso. */
+    fun climbAlerts(ctx: Context) = p(ctx).getBoolean("climb_alerts", true)
+    fun setClimbAlerts(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("climb_alerts", v).apply()
+
     fun voice(ctx: Context) = p(ctx).getBoolean("voice", true)
     fun setVoice(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("voice", v).apply()
 

@@ -9,6 +9,7 @@ SirJoe MTB è un'app gratuita e open source per USO PERSONALE e non commerciale.
 - Tieni sempre l'attenzione sul percorso, sul traffico, sugli altri utenti del sentiero e sugli ostacoli.
 - Su strada rispetta il Codice della Strada: anche in bici è vietato usare il telefono tenendolo in mano mentre si guida (art. 173 CdS).
 - Indossa il casco e le protezioni adeguate al tipo di percorso.
+- Il "fantasma" è un gioco per allenarti contro te stesso, non una gara: non forzare il ritmo in discesa, nei tratti tecnici, su strada o dove ci sono altre persone. Gli avvisi sulle salite sono calcolati dalle quote della traccia e possono essere imprecisi.
 
 ## 2. LE MAPPE POSSONO ESSERE SBAGLIATE
 - Mappe e percorsi provengono da OpenStreetMap e da fonti di terzi: possono essere incompleti, non aggiornati o errati.
@@ -29,7 +30,8 @@ SirJoe MTB è un'app gratuita e open source per USO PERSONALE e non commerciale.
 
 ## 5. PRIVACY
 - Posizioni e tracce restano solo sul tuo telefono. L'app non ha account, non raccoglie dati e non li invia a nessuno.
-- Le uniche connessioni sono verso i server delle mappe (riquadri), il server BRouter quando crei un percorso che segue i sentieri, e Strava solo se lo colleghi tu.
+- Le uniche connessioni sono verso i server delle mappe (riquadri), il server BRouter quando crei un percorso che segue i sentieri, Strava solo se lo colleghi tu e il tuo PC solo se usi SirJoe Link.
+- SirJoe Link collega telefono e PC direttamente nella rete Wi-Fi di casa, senza cloud né account. Il QR contiene un codice segreto: non mostrarlo ad altri e chiudi la finestra Link sul PC quando hai finito. Non usarlo su reti Wi-Fi pubbliche o condivise.
 - Se condividi una traccia, ricorda che contiene luoghi e orari: condividila solo con chi vuoi. Non registrare né condividere la posizione di altre persone senza il loro consenso.
 
 ## 6. PERCORSI CREATI E CONDIVISIONE

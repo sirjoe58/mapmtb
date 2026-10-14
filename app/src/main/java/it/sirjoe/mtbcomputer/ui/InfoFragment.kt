@@ -57,6 +57,8 @@ class InfoFragment : Fragment(R.layout.fragment_info) {
         }
         bind(R.id.swScreen, Prefs.keepScreenOn(ctx)) { Prefs.setKeepScreenOn(ctx, it) }
         bind(R.id.swVoice, Prefs.voice(ctx)) { Prefs.setVoice(ctx, it) }
+        bind(R.id.swClimbs, Prefs.climbAlerts(ctx)) { Prefs.setClimbAlerts(ctx, it) }
+        bind(R.id.swGhost, Prefs.ghost(ctx)) { Prefs.setGhost(ctx, it) }
         bind(R.id.swMtb, Prefs.mtbOverlay(ctx)) {
             Prefs.setMtbOverlay(ctx, it)
             (activity as? MainActivity)?.onBaseMapChanged()

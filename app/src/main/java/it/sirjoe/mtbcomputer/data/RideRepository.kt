@@ -63,8 +63,21 @@ object RideRepository {
         _location.value = l
     }
 
-    fun setRoute(t: Track?) {
+    /** true se il percorso attivo va sfidato come "fantasma". */
+    @Volatile
+    var ghostMode = false
+        private set
+
+    private val _coach = MutableStateFlow<CoachState?>(null)
+    val coach: StateFlow<CoachState?> = _coach.asStateFlow()
+
+    fun setRoute(t: Track?, ghost: Boolean = false) {
+        ghostMode = ghost && t != null
         _route.value = t
+    }
+
+    fun updateCoach(c: CoachState?) {
+        _coach.value = c
     }
 
     @Synchronized

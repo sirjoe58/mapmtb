@@ -151,3 +151,30 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .dlg-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 .spacer { flex: 1; }
 .coords { font-size: 12px; color: var(--muted); }
+
+/* ---------- novità 1.2: Link, Uscite, Sala analisi ---------- */
+.tab { font-size: 13px; padding: 9px 2px; }
+#linkBtn { white-space: nowrap; padding: 7px 12px; }
+#linkDialog { width: min(720px, 94vw); }
+.link-grid { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+.qr-box { background: #fff; border-radius: 12px; padding: 10px; text-align: center; color: #333; }
+.qr-box img { width: 200px; height: 200px; display: block; margin: 0 auto 6px; image-rendering: pixelated; }
+.qr-box .small { color: #555; word-break: break-all; }
+.steps { margin: 0 0 8px; padding-left: 20px; }
+.steps li { margin-bottom: 4px; }
+.list.compact li { padding: 6px 10px; cursor: default; }
+.log { list-style: none; margin: 0; padding: 8px 10px; background: var(--bg); border-radius: 8px; max-height: 140px; overflow-y: auto; font-size: 12.5px; }
+.log li { padding: 2px 0; }
+.log:empty::before { content: 'In attesa del telefono…'; color: var(--muted); }
+.stats.six { grid-template-columns: repeat(3, 1fr); row-gap: 10px; }
+.legend { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: -4px 0 4px; }
+.legend + .small, .legend-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+.replay { display: flex; gap: 8px; align-items: center; }
+.replay input[type=range] { flex: 1; accent-color: var(--accent); }
+.replay select { width: auto; }
+#anPlay { width: 44px; }
+.climbs { font-size: 12.5px; }
+.climbs .climb { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; background: var(--bg); border-radius: 8px; margin-bottom: 4px; cursor: pointer; }
+.climbs .climb:hover { outline: 1px solid var(--accent); }
+.climbs .grade { font-weight: 700; }
+.ride-dot { width: 18px; height: 18px; border-radius: 50%; background: #ff6d00; border: 3px solid #fff; box-shadow: 0 0 0 3px rgba(255,109,0,.35), 0 1px 4px rgba(0,0,0,.5); }
