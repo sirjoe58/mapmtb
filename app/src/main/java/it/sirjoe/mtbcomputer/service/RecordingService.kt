@@ -10,6 +10,7 @@ import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
@@ -57,6 +58,10 @@ class RecordingService : Service() {
 
         /** Velocita' sotto cui scatta la pausa automatica (circa 3 km/h). */
         private const val AUTOPAUSE_MS = 0.8
+        /** Velocità che fa uscire dalla sosta (circa 7 km/h). */
+        private const val WAKE_SPEED_MS = 2.0
+        /** Spostamento dal punto di sosta che fa uscire dalla sosta. */
+        private const val WAKE_DISTANCE_M = 30f
 
         fun send(ctx: Context, action: String) {
             val i = Intent(ctx, RecordingService::class.java).setAction(action)
@@ -75,6 +80,11 @@ class RecordingService : Service() {
     private var pausedAccumMs = 0L
     private var pauseStarted = 0L
     private var nextKm = 1
+
+    // sosta automatica
+    private var stillSince: Long? = null
+    private var sleepAnchor: Location? = null
+    private var wakeHits = 0
 
     private var tts: TextToSpeech? = null
     private var ttsReady = false
@@ -113,6 +123,8 @@ class RecordingService : Service() {
 
         RideRepository.clearPoints()
         lastLoc = null
+        stillSince = null
+        sleepAnchor = null
         altRef = null
         slopeMarkAlt = null
         slopeMarkDist = 0.0
@@ -138,9 +150,10 @@ class RecordingService : Service() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun requestUpdates() {
-        val req = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
-            .setMinUpdateIntervalMillis(1000L)
+    private fun requestUpdates(intervalMs: Long = 1000L) {
+        fused.removeLocationUpdates(callback)
+        val req = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMs)
+            .setMinUpdateIntervalMillis(intervalMs)
             .build()
         try {
             fused.requestLocationUpdates(req, callback, Looper.getMainLooper())
@@ -156,12 +169,73 @@ class RecordingService : Service() {
         val now = System.currentTimeMillis()
         val pausedNow = if (s.paused) now - pauseStarted else 0L
         RideRepository.updateStats(s.copy(elapsedMs = now - s.startTime - pausedAccumMs - pausedNow))
+        // fermo da abbastanza tempo (anche se il GPS non manda più posizioni): sosta
+        val since = stillSince
+        if (!s.paused && !s.sleeping && Prefs.autoSleep(this) && since != null &&
+            now - since >= Prefs.sleepDelaySec(this) * 1000L
+        ) {
+            enterSleep()
+        }
+    }
+
+    // ------------------------------------------------------------ sosta
+
+    private fun enterSleep() {
+        val s = RideRepository.stats.value
+        if (!s.recording || s.sleeping) return
+        sleepAnchor = lastLoc ?: RideRepository.location.value
+        wakeHits = 0
+        RideRepository.updateStats(s.copy(sleeping = true, currentSpeedMs = 0.0))
+        requestUpdates(3000L) // GPS più lento: risparmio batteria
+        updateNotification(getString(R.string.notif_sleeping))
+        speak("Sosta")
+    }
+
+    private fun wake(loc: Location) {
+        val s = RideRepository.stats.value
+        if (!s.sleeping) return
+        stillSince = null
+        // il tratto percorso dalla sosta a qui viene conteggiato
+        lastLoc = sleepAnchor
+        sleepAnchor = null
+        RideRepository.updateStats(s.copy(sleeping = false))
+        requestUpdates(1000L)
+        updateNotification(getString(R.string.notif_recording))
+        wakeScreen()
+        speak("Si riparte")
+        onLocation(loc)
+    }
+
+    /** Riaccende lo schermo per qualche secondo: l'app compare sopra la schermata di blocco. */
+    @Suppress("DEPRECATION")
+    private fun wakeScreen() {
+        try {
+            val pm = getSystemService(PowerManager::class.java) ?: return
+            val wl = pm.newWakeLock(
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                    PowerManager.ON_AFTER_RELEASE,
+                "SirJoeMTB:ripresa"
+            )
+            wl.acquire(5_000L)
+        } catch (_: Exception) {
+        }
     }
 
     private fun onLocation(loc: Location) {
         RideRepository.updateLocation(loc)
         val s = RideRepository.stats.value
         if (!s.recording || s.paused) return
+
+        if (s.sleeping) {
+            // in sosta: si riparte con due posizioni di fila in movimento
+            val anchor = sleepAnchor
+            val good = !loc.hasAccuracy() || loc.accuracy <= 25f
+            val fast = loc.hasSpeed() && loc.speed >= WAKE_SPEED_MS
+            val far = anchor != null && good && anchor.distanceTo(loc) > WAKE_DISTANCE_M
+            wakeHits = if (fast || far) wakeHits + 1 else 0
+            if (wakeHits >= 2) wake(loc)
+            return
+        }
         if (loc.hasAccuracy() && loc.accuracy > 35f) return
 
         val prev = lastLoc
@@ -216,6 +290,7 @@ class RecordingService : Service() {
 
         if (isMoving) RideRepository.addPoint(TrackPoint(loc.latitude, loc.longitude, alt, loc.time))
         lastLoc = loc
+        stillSince = if (speed < AUTOPAUSE_MS) (stillSince ?: System.currentTimeMillis()) else null
 
         val maxSpeed = if (speed < 30.0) max(s.maxSpeedMs, speed) else s.maxSpeedMs
         RideRepository.updateStats(
@@ -241,7 +316,9 @@ class RecordingService : Service() {
         val s = RideRepository.stats.value
         if (!s.recording || s.paused) return
         pauseStarted = System.currentTimeMillis()
-        RideRepository.updateStats(s.copy(paused = true, currentSpeedMs = 0.0))
+        stillSince = null
+        if (s.sleeping) requestUpdates(1000L)
+        RideRepository.updateStats(s.copy(paused = true, sleeping = false, currentSpeedMs = 0.0))
         updateNotification(getString(R.string.notif_paused))
         speak("Pausa")
     }

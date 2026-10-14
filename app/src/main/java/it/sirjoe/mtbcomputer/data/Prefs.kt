@@ -38,6 +38,12 @@ object Prefs {
     fun vectorScale(ctx: Context): Float = p(ctx).getFloat("vector_scale", 1.0f)
     fun setVectorScale(ctx: Context, v: Float) = p(ctx).edit().putFloat("vector_scale", v).apply()
 
+    // Sosta automatica ("sleep") da fermo, con ripresa automatica
+    fun autoSleep(ctx: Context) = p(ctx).getBoolean("auto_sleep", true)
+    fun setAutoSleep(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("auto_sleep", v).apply()
+    fun sleepDelaySec(ctx: Context) = p(ctx).getInt("sleep_delay", 60)
+    fun setSleepDelaySec(ctx: Context, v: Int) = p(ctx).edit().putInt("sleep_delay", v).apply()
+
     fun keepScreenOn(ctx: Context) = p(ctx).getBoolean("keep_screen_on", true)
     fun setKeepScreenOn(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("keep_screen_on", v).apply()
 

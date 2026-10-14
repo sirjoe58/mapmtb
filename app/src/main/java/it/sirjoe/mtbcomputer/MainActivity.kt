@@ -19,6 +19,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.RideRepository
+import it.sirjoe.mtbcomputer.data.RideStats
 import it.sirjoe.mtbcomputer.share.ShareHelper
 import it.sirjoe.mtbcomputer.share.Strava
 import it.sirjoe.mtbcomputer.ui.DataFragment
@@ -93,17 +94,46 @@ class MainActivity : AppCompatActivity() {
         // Schermo acceso durante la registrazione (se attivato nelle impostazioni)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                RideRepository.stats.collect { s ->
-                    if (s.recording && Prefs.keepScreenOn(this@MainActivity)) {
-                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    } else {
-                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    }
-                }
+                RideRepository.stats.collect { s -> applyScreenMode(s) }
             }
         }
 
         handleIntent(intent)
+    }
+
+    /**
+     * Schermo durante l'uscita:
+     * - in movimento resta acceso (se attivato nelle impostazioni);
+     * - in sosta si abbassa la luminosità e lo schermo può spegnersi;
+     * - alla ripartenza l'app si riaccende sopra la schermata di blocco.
+     */
+    private var lastScreenMode: String? = null
+
+    private fun applyScreenMode(s: RideStats) {
+        val mode = when {
+            !s.recording -> "off"
+            s.sleeping -> "sleep"
+            else -> "ride"
+        }
+        if (mode == lastScreenMode) return
+        lastScreenMode = mode
+        val overLock = s.recording && Prefs.autoSleep(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(overLock)
+            setTurnScreenOn(overLock)
+        } else {
+            @Suppress("DEPRECATION")
+            val f = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            if (overLock) window.addFlags(f) else window.clearFlags(f)
+        }
+        if (mode == "ride" && Prefs.keepScreenOn(this)) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        val lp = window.attributes
+        lp.screenBrightness = if (mode == "sleep") 0.02f else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        window.attributes = lp
     }
 
     override fun onNewIntent(intent: Intent) {

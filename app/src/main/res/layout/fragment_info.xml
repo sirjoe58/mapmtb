@@ -43,6 +43,19 @@
             android:text="Pausa automatica quando sei fermo" />
 
         <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swSleep"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Sosta automatica: da fermo lo schermo si spegne, ripartendo si riaccende e la registrazione riprende" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSleepDelay"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/swHeading"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

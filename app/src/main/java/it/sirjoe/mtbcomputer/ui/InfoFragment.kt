@@ -35,6 +35,26 @@ class InfoFragment : Fragment(R.layout.fragment_info) {
         }
         bind(R.id.swAutoPause, Prefs.autoPause(ctx)) { Prefs.setAutoPause(ctx, it) }
         bind(R.id.swHeading, Prefs.headingUp(ctx)) { Prefs.setHeadingUp(ctx, it) }
+        bind(R.id.swSleep, Prefs.autoSleep(ctx)) { Prefs.setAutoSleep(ctx, it) }
+        val delayBtn = view.findViewById<MaterialButton>(R.id.btnSleepDelay)
+        val delays = intArrayOf(30, 60, 120, 300)
+        val delayLabels = arrayOf("30 secondi", "1 minuto", "2 minuti", "5 minuti")
+        fun showDelay() {
+            val i = delays.indexOf(Prefs.sleepDelaySec(ctx)).coerceAtLeast(1)
+            delayBtn.text = "Sosta dopo: " + delayLabels[i] + " da fermo"
+        }
+        showDelay()
+        delayBtn.setOnClickListener {
+            val sel = delays.indexOf(Prefs.sleepDelaySec(ctx)).coerceAtLeast(1)
+            MaterialAlertDialogBuilder(ctx)
+                .setTitle("Dopo quanto tempo da fermo")
+                .setSingleChoiceItems(delayLabels, sel) { d, which ->
+                    Prefs.setSleepDelaySec(ctx, delays[which])
+                    showDelay()
+                    d.dismiss()
+                }
+                .show()
+        }
         bind(R.id.swScreen, Prefs.keepScreenOn(ctx)) { Prefs.setKeepScreenOn(ctx, it) }
         bind(R.id.swVoice, Prefs.voice(ctx)) { Prefs.setVoice(ctx, it) }
         bind(R.id.swMtb, Prefs.mtbOverlay(ctx)) {

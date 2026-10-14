@@ -359,7 +359,8 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         val speedMs = if (s.recording) s.currentSpeedMs
         else (RideRepository.location.value?.takeIf { it.hasSpeed() }?.speed?.toDouble() ?: 0.0)
         speedTv.text = Format.speedKmh(speedMs)
-        distanceTv.text = getString(R.string.unit_km_value, Format.distanceKm(s.distanceM))
+        distanceTv.text = getString(R.string.unit_km_value, Format.distanceKm(s.distanceM)) +
+            if (s.sleeping) "  · sosta" else ""
         extraTime.text = "In movimento " + Format.duration(s.movingMs)
         extraAscent.text = "Salita " + Format.meters(s.ascentM) + " m"
         val alt = s.altitudeM ?: RideRepository.location.value?.takeIf { it.hasAltitude() }?.altitude
