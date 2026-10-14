@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SirJoe MTB Planner</title>
+  <link rel="icon" href="icon.png">
+  <link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside id="side">
+    <header class="brand">
+      <img src="logo.png" alt="BY SIRJOE" class="logo">
+      <div class="brand-sub">MTB Planner</div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="route">Percorso</button>
+      <button class="tab" data-tab="places">Segnaposto</button>
+      <button class="tab" data-tab="library">Archivio</button>
+      <button class="tab" data-tab="info">Info</button>
+    </nav>
+
+    <!-- PERCORSO -->
+    <section class="panel active" id="tab-route">
+      <label class="field">
+        <span>Nome</span>
+        <input id="routeName" type="text" placeholder="Il mio giro MTB">
+      </label>
+
+      <label class="field">
+        <span>Tipo di percorso</span>
+        <select id="profile">
+          <option value="offroad">Fuoristrada / MTB (sentieri e sterrati)</option>
+          <option value="trekking">Equilibrato (sterrati e ciclabili)</option>
+          <option value="fast">Il più veloce (strade scorrevoli)</option>
+          <option value="shortest">Il più corto</option>
+          <option value="long">Il più lungo (giro più ampio)</option>
+          <option value="straight">Linea retta (a mano libera)</option>
+        </select>
+      </label>
+      <button id="recalc" class="btn ghost small">Ricalcola tutto con questo tipo</button>
+
+      <div class="stats">
+        <div><b id="stDist">0,00</b><small>km</small></div>
+        <div><b id="stUp">0</b><small>m salita</small></div>
+        <div><b id="stDown">0</b><small>m discesa</small></div>
+        <div><b id="stTime">0:00</b><small>tempo stimato</small></div>
+      </div>
+
+      <div class="grid2">
+        <button id="undo" class="btn">↶ Annulla</button>
+        <button id="reverse" class="btn">⇅ Inverti</button>
+        <button id="loop" class="btn">↺ Chiudi anello</button>
+        <button id="clearRoute" class="btn danger">Cancella</button>
+      </div>
+
+      <h3>Salva ed esporta</h3>
+      <div class="grid2">
+        <button id="saveRoute" class="btn primary">Salva in archivio</button>
+        <button id="newRoute" class="btn">Nuovo percorso</button>
+      </div>
+      <label class="field">
+        <span>Formato di esportazione</span>
+        <select id="exportFormat">
+          <option value="gpx">GPX – per SirJoe MTB (percorso + segnaposto)</option>
+          <option value="fit">FIT – Garmin, Wahoo, Hammerhead</option>
+          <option value="kml">KML – Google Earth</option>
+          <option value="tcx">TCX – Garmin</option>
+          <option value="geojson">GeoJSON</option>
+          <option value="csv">CSV – foglio di calcolo</option>
+        </select>
+      </label>
+      <div class="grid2">
+        <button id="export" class="btn primary">Esporta file</button>
+        <button id="importBtn" class="btn">Importa file…</button>
+      </div>
+      <input id="importFile" type="file" accept=".gpx,.kml,.geojson,.json,.tcx,.fit,.csv" multiple hidden>
+
+      <div class="hint">
+        <b>Come si usa:</b> clic sulla mappa per aggiungere punti; trascina un punto per spostarlo;
+        clic destro su un punto per toglierlo; clic sulla linea per inserire un punto in mezzo.
+        Con <b>✏️ Disegna</b> tracci il percorso a mano libera con la penna della tavoletta grafica
+        (o col mouse): con un tipo di percorso viene agganciato ai sentieri, con <i>Linea retta</i>
+        resta come l'hai disegnato.
+        Per mandarlo al telefono: <i>Esporta GPX</i>, copia il file sul telefono e in SirJoe MTB
+        apri <i>Percorsi → Importa</i>.
+      </div>
+    </section>
+
+    <!-- SEGNAPOSTO -->
+    <section class="panel" id="tab-places">
+      <p class="hint">Attiva <b>Segnaposto</b> nella barra sopra la mappa e clicca dove vuoi metterli.
+        Trascinali per spostarli, cliccali per modificarli. Vengono esportati nel GPX insieme al percorso.</p>
+      <ul id="placeList" class="list"></ul>
+      <h3>Percorso automatico tra segnaposto</h3>
+      <p class="hint small">Collega i segnaposto spuntati nell'ordine dell'elenco, con il tipo di percorso scelto.</p>
+      <label class="check"><input type="checkbox" id="placesLoop"> Ritorna al primo (anello)</label>
+      <div class="grid2">
+        <button id="routePlaces" class="btn primary">Crea percorso</button>
+        <button id="exportPlaces" class="btn">Esporta solo segnaposto</button>
+      </div>
+    </section>
+
+    <!-- ARCHIVIO -->
+    <section class="panel" id="tab-library">
+      <p class="hint">I percorsi salvati restano su questo PC.</p>
+      <ul id="libList" class="list"></ul>
+    </section>
+
+    <!-- INFO -->
+    <section class="panel" id="tab-info">
+      <h3>Avvertenze d'uso</h3>
+      <div class="disclaimer" id="disclaimerText"></div>
+      <h3>Crediti</h3>
+      <p class="small">
+        Mappe © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a> (ODbL),
+        stile <a href="https://opentopomap.org" target="_blank">OpenTopoMap</a> (CC-BY-SA).
+        Itinerari MTB: <a href="https://mtb.waymarkedtrails.org" target="_blank">waymarkedtrails.org</a>.
+        Calcolo percorsi: <a href="https://brouter.de" target="_blank">BRouter</a>.
+        Ricerca luoghi: <a href="https://nominatim.org" target="_blank">Nominatim</a>.
+        Libreria mappa: Leaflet. Codice con licenza MIT.
+      </p>
+      <p class="small" id="version"></p>
+    </section>
+  </aside>
+
+  <main id="main">
+    <div id="toolbar">
+      <div class="seg" role="group" aria-label="Modalità clic">
+        <button class="seg-btn active" data-mode="route" title="Il clic aggiunge punti al percorso">✚ Punti percorso</button>
+        <button class="seg-btn" data-mode="draw" title="Disegna a mano libera con penna (tavoletta grafica) o mouse">✏️ Disegna</button>
+        <button class="seg-btn" data-mode="place" title="Il clic aggiunge un segnaposto">📍 Segnaposto</button>
+      </div>
+      <form id="searchForm" class="search">
+        <input id="searchInput" type="search" placeholder="Cerca un luogo (es. Monte Grappa)…">
+        <ul id="searchResults" class="results"></ul>
+      </form>
+      <select id="baseMap" title="Mappa">
+        <option value="topo">OpenTopoMap</option>
+        <option value="osm">OpenStreetMap</option>
+      </select>
+      <label class="check light"><input type="checkbox" id="mtbOverlay" checked> Itinerari MTB</label>
+    </div>
+    <div id="map"></div>
+    <div id="busy" hidden>Calcolo del percorso…</div>
+    <div id="profileBox">
+      <canvas id="elev"></canvas>
+      <div id="elevInfo">Profilo altimetrico: aggiungi almeno due punti</div>
+    </div>
+  </main>
+
+  <!-- finestra modifica segnaposto -->
+  <dialog id="placeDialog">
+    <form method="dialog" class="dlg">
+      <h3 id="placeDialogTitle">Segnaposto</h3>
+      <label class="field"><span>Nome</span><input id="pdName" required></label>
+      <label class="field"><span>Nota</span><textarea id="pdNote" rows="3"></textarea></label>
+      <label class="field"><span>Tipo</span><select id="pdType"></select></label>
+      <div class="coords" id="pdCoords"></div>
+      <div class="dlg-actions">
+        <button value="delete" class="btn danger">Elimina</button>
+        <button value="addroute" class="btn">Aggiungi al percorso</button>
+        <span class="spacer"></span>
+        <button value="cancel" class="btn">Annulla</button>
+        <button value="save" class="btn primary">Salva</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- avvertenze al primo avvio -->
+  <dialog id="welcome">
+    <form method="dialog" class="dlg">
+      <img src="logo.png" alt="BY SIRJOE" class="logo center">
+      <h3>Avvertenze d'uso</h3>
+      <div class="disclaimer" id="welcomeText"></div>
+      <div class="dlg-actions">
+        <span class="spacer"></span>
+        <button value="ok" class="btn primary">Ho letto e accetto</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" hidden></div>
+
+  <script src="../node_modules/leaflet/dist/leaflet.js"></script>
+  <script src="formats.js"></script>
+  <script src="routing.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

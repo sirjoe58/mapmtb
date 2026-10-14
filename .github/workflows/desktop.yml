@@ -1,0 +1,71 @@
+name: Compila Planner Windows
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'desktop/**', '.github/workflows/desktop.yml' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Installa dipendenze
+        run: npm ci
+
+      - name: Verifica formato FIT
+        run: |
+          node tools-check-fit.js
+          pip install fitparse
+          python -c "import fitparse; f=fitparse.FitFile('test-course.fit', check_crc=True); f.parse(); n=len(list(f.get_messages('record'))); assert n==60, n; print('fitparse ok', n)"
+
+      - name: Crea gli eseguibili Windows
+        run: npx electron-builder --win portable nsis --publish never
+
+      - name: Leggi la versione
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SirJoe-MTB-Planner-${{ env.VERSION }}-windows
+          path: desktop/dist/*.exe
+
+      - name: Controlla se la versione è già pubblicata
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/planner-v${VERSION}" >/dev/null; then
+            echo "NEW_RELEASE=false" >> "$GITHUB_ENV"
+          else
+            echo "NEW_RELEASE=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Pubblica in Releases
+        if: env.NEW_RELEASE == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: planner-v${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          name: SirJoe MTB Planner per Windows ${{ env.VERSION }}
+          make_latest: false
+          body: |
+            Programma per Windows per creare percorsi e segnaposto da importare in SirJoe MTB.
+            - **SirJoe-MTB-Planner-${{ env.VERSION }}-portable.exe**: si avvia senza installazione.
+            - **SirJoe-MTB-Planner-${{ env.VERSION }}-setup.exe**: lo installa con icona nel menu Start.
+            Al primo avvio Windows può mostrare "Windows ha protetto il PC": clic su *Ulteriori informazioni* → *Esegui comunque*.
+          files: |
+            desktop/dist/SirJoe-MTB-Planner-${{ env.VERSION }}-portable.exe
+            desktop/dist/SirJoe-MTB-Planner-${{ env.VERSION }}-setup.exe

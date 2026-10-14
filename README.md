@@ -60,6 +60,19 @@ Strava permette il caricamento solo tramite un'"applicazione API" personale, gra
 
 Client ID e Secret restano solo sul telefono. Strava accetta come attività solo le uscite registrate (con orari); i percorsi creati a mano si condividono come file GPX.
 
+## SirJoe MTB Planner per Windows
+
+Nella cartella `desktop/` c'è il programma per PC con cui preparare percorsi e segnaposto da mandare all'app:
+
+- mappa grande (OpenTopoMap / OpenStreetMap) con itinerari MTB e ricerca dei luoghi;
+- percorso a punti (clic per aggiungere, trascina per spostare, clic destro per togliere, clic sulla linea per inserire) calcolato come nell'app: fuoristrada, equilibrato, veloce, corto, lungo o linea retta;
+- **disegno a mano libera con tavoletta grafica** (o mouse): con un tipo di percorso il tratto si aggancia ai sentieri, con "Linea retta" resta come disegnato;
+- segnaposto con nome, nota e tipo (stessi colori dell'app) e percorso automatico tra segnaposto;
+- profilo altimetrico, km, dislivello, tempo stimato, annulla (Ctrl+Z), archivio dei percorsi;
+- import GPX, KML, GeoJSON, TCX, FIT, CSV (anche trascinando i file nella finestra); export GPX (percorso + segnaposto, pronto per l'app), FIT, KML, TCX, GeoJSON, CSV.
+
+Scaricalo da **Releases** → "SirJoe MTB Planner per Windows": `…-portable.exe` (senza installazione) o `…-setup.exe`. Per mandare un percorso al telefono: *Esporta file* in GPX, copialo sul telefono e importalo da **Percorsi → Importa**.
+
 ## Installazione
 
 1. Vai su **Releases**: ogni versione ha il suo file, ad esempio `SirJoeMTB-v1.4.1.apk` (in alternativa: **Actions** → ultima esecuzione → artefatto `SirJoeMTB-v…`).
