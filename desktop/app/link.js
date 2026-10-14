@@ -21,6 +21,24 @@ const Link = {
     return items;
   },
 
+  showAddr(addr, pcName) {
+    this.addr = addr;
+    $('linkAddr').textContent = pcName;
+    $('linkManual').textContent = `${addr}:${this.port}  ·  PIN ${this.pin}`;
+    $('linkPing').textContent = `http://${addr}:${this.port}/ping`;
+  },
+
+  async firewall() {
+    this.log('Richiesta del permesso di amministratore a Windows…');
+    const r = await window.sirjoe.link.firewall();
+    if (r.ok) {
+      this.log('✔ Firewall sbloccato per SirJoe Link: riprova dal telefono');
+      toast('Firewall sbloccato: riprova dal telefono');
+    } else {
+      this.log('Firewall non modificato: ' + r.error);
+    }
+  },
+
   log(text) {
     const li = document.createElement('li');
     li.textContent = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + '  ' + text;
@@ -48,13 +66,15 @@ const Link = {
     try {
       const r = await window.sirjoe.link.start(items);
       $('linkQr').src = r.qr;
-      $('linkAddr').textContent = `${r.addresses[0]}:${r.port} · ${r.pcName}`;
+      this.port = r.port;
+      this.pin = r.pin;
+      this.showAddr(r.addresses[0], r.pcName);
       const pick = $('linkAddrPick'), sel = $('linkAddrSel');
       pick.hidden = r.addresses.length < 2;
       sel.innerHTML = r.addresses.map((a) => `<option>${a}</option>`).join('');
       sel.onchange = async () => {
         $('linkQr').src = await window.sirjoe.link.qr(sel.value);
-        $('linkAddr').textContent = `${sel.value}:${r.port} · ${r.pcName}`;
+        this.showAddr(sel.value, r.pcName);
       };
     } catch (e) {
       $('linkAddr').textContent = '';
@@ -64,6 +84,13 @@ const Link = {
 
   onEvent(ev) {
     if (ev.type === 'connected') this.log('📱 Telefono collegato (' + ev.from + ')');
+    else if (ev.type === 'ping') this.log('✔ Il telefono ' + ev.from + ' raggiunge il PC (prova dal browser)');
+    else if (ev.type === 'denied') this.log('✖ Richiesta con codice sbagliato da ' + ev.from + ': inquadra di nuovo il QR');
+    else if (ev.type === 'pin') {
+      this.pin = ev.pin;
+      if (this.addr) this.showAddr(this.addr, $('linkAddr').textContent);
+      this.log('PIN cambiato (' + ev.reason + ')');
+    }
     else if (ev.type === 'sent') this.log('➜ Inviato al telefono: ' + ev.name);
     else if (ev.type === 'received') {
       this.log('⬇ Ricevuta uscita: ' + ev.name + ' (scheda Uscite)');
@@ -74,6 +101,7 @@ const Link = {
 };
 
 $('linkBtn').addEventListener('click', () => Link.show());
+$('linkFw').addEventListener('click', () => Link.firewall());
 $('linkDialog').addEventListener('close', () => {
   Link.open = false;
   if (window.sirjoe && window.sirjoe.link) window.sirjoe.link.stop();

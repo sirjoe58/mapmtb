@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, net, shell, session, dialog } = require('el
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { execFile } = require('child_process');
 const { LinkServer } = require('./link-server');
 
 let link = null;
@@ -37,6 +38,34 @@ function createWindow() {
   });
 }
 
+/**
+ * Sblocca SirJoe Link nel firewall di Windows (chiede il permesso di amministratore):
+ * toglie i blocchi creati se all'avviso di Windows si è premuto "Annulla" e consente
+ * le porte 47891-47899 in entrata, su qualsiasi tipo di rete.
+ */
+function unlockFirewall() {
+  if (process.platform !== 'win32') return Promise.resolve({ ok: false, error: 'Solo su Windows' });
+  const script = [
+    "$ErrorActionPreference = 'SilentlyContinue'",
+    "Get-NetFirewallApplicationFilter | Where-Object { $_.Program -like '*SirJoe*' } | Get-NetFirewallRule | Where-Object { $_.Direction -eq 'Inbound' -and $_.Action -eq 'Block' } | Remove-NetFirewallRule",
+    "Remove-NetFirewallRule -DisplayName 'SirJoe Link'",
+    "New-NetFirewallRule -DisplayName 'SirJoe Link' -Description 'SirJoe MTB Planner: collegamento Wi-Fi con il telefono' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 47891-47899 -Profile Any | Out-Null",
+    "if (Get-NetFirewallRule -DisplayName 'SirJoe Link') { exit 0 } else { exit 1 }"
+  ].join('\r\n');
+  const file = path.join(app.getPath('temp'), 'sirjoe-link-firewall.ps1');
+  fs.writeFileSync(file, script, 'utf8');
+  const outer = `try { $p = Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','"${file}"' -Verb RunAs -WindowStyle Hidden -PassThru -Wait; exit $p.ExitCode } catch { exit 5 }`;
+  return new Promise((resolve) => {
+    execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', outer], { windowsHide: true }, (err) => {
+      try { fs.unlinkSync(file); } catch (e) { /* già tolto */ }
+      const code = err ? (typeof err.code === 'number' ? err.code : 1) : 0;
+      if (code === 0) resolve({ ok: true });
+      else if (code === 5) resolve({ ok: false, error: 'Permesso di amministratore non concesso' });
+      else resolve({ ok: false, error: 'Regola non creata (codice ' + code + ')' });
+    });
+  });
+}
+
 app.whenReady().then(() => {
   // identificazione corretta verso i server di mappe e percorsi (richiesta dalle loro regole)
   session.defaultSession.setUserAgent(UA);
@@ -57,6 +86,7 @@ app.whenReady().then(() => {
   ipcMain.handle('link-start', async (_e, outbox) => { link.setOutbox(outbox); return link.start(); });
   ipcMain.handle('link-qr', (_e, address) => link.qrFor(address));
   ipcMain.handle('link-stop', () => { link.stop(); return true; });
+  ipcMain.handle('link-firewall', () => unlockFirewall());
   ipcMain.handle('rides-list', () => link.listRides());
   ipcMain.handle('ride-read', (_e, file) => link.readRide(file));
   ipcMain.handle('ride-delete', (_e, file) => { link.deleteRide(file); return true; });

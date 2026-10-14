@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('sirjoe', {
     start: (outbox) => ipcRenderer.invoke('link-start', outbox),
     qr: (address) => ipcRenderer.invoke('link-qr', address),
     stop: () => ipcRenderer.invoke('link-stop'),
+    firewall: () => ipcRenderer.invoke('link-firewall'),
     onEvent: (cb) => ipcRenderer.on('link-event', (_e, ev) => cb(ev))
   },
   rides: {

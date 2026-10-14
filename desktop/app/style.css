@@ -156,9 +156,11 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .tab { font-size: 13px; padding: 9px 2px; }
 #linkBtn { white-space: nowrap; padding: 7px 12px; }
 #linkDialog { width: min(720px, 94vw); }
-.link-grid { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+.link-grid { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
 .qr-box { background: #fff; border-radius: 12px; padding: 10px; text-align: center; color: #333; }
-.qr-box img { width: 200px; height: 200px; display: block; margin: 0 auto 6px; image-rendering: pixelated; }
+.qr-box img { display: block; margin: 0 auto 6px; image-rendering: pixelated; max-width: none; }
+.qr-box .manual { margin-top: 6px; font-size: 14px; color: #222; }
+.qr-box .manual b { display: block; font-size: 17px; letter-spacing: .5px; font-family: Consolas, monospace; }
 .qr-box .small { color: #555; word-break: break-all; }
 .steps { margin: 0 0 8px; padding-left: 20px; }
 .steps li { margin-bottom: 4px; }

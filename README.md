@@ -81,8 +81,10 @@ Scaricalo da **Releases** → "SirJoe MTB Planner per Windows": `…-portable.ex
 ### SirJoe Link (telefono ↔ PC, senza cloud)
 
 1. Sul PC premi **📲 SirJoe Link**: compare un QR code. La prima volta Windows chiede di consentire l'accesso alla rete: scegli **Reti private**.
-2. Sul telefono: **Percorsi → 📲 SirJoe Link → Inquadra QR** (telefono e PC sulla stessa rete Wi-Fi).
+2. Sul telefono: **Percorsi → 📲 SirJoe Link → Inquadra il QR** (telefono e PC sulla stessa rete Wi-Fi), oppure **Inserisci codice** con indirizzo e PIN scritti sotto il QR.
 3. Scegli *Ricevi percorsi dal PC* (quelli in archivio e quello aperto) o *Invia le mie uscite al PC*: le trovi nella scheda **Uscite** pronte per la Sala analisi.
+
+Se il telefono non si collega, apri nel suo browser l'indirizzo di prova mostrato dal PC (`http://IP:47891/ping`): se non risponde premi **🛡 Sblocca nel firewall di Windows** nella finestra Link.
 
 In alternativa resta il metodo classico: *Esporta file* in GPX, copialo sul telefono e importalo da **Percorsi → Importa**.
 

@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.zxing.client.android.Intents
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import it.sirjoe.mtbcomputer.data.Prefs
@@ -191,7 +192,10 @@ class MainActivity : AppCompatActivity() {
                 .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
                 .setPrompt("Inquadra il QR di SirJoe Link sullo schermo del PC")
                 .setBeepEnabled(false)
-                .setOrientationLocked(false)
+                .setOrientationLocked(true)
+                .setCameraId(0)
+                // legge anche i QR chiari su sfondo scuro (schermi in modalità scura)
+                .addExtra(Intents.Scan.SCAN_TYPE, Intents.Scan.MIXED_SCAN)
         )
     }
 

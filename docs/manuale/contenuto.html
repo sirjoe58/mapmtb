@@ -9,7 +9,7 @@
 <h2 id="a1">1. Installazione e aggiornamento</h2>
 <p><b>Requisiti:</b> Android 6.0 o successivo (va bene anche il Redmi 4X), GPS, circa 60 MB liberi più lo spazio per le mappe offline.</p>
 <ol>
-  <li>Sul telefono apri <b>github.com/sirjoe58/mapmtb</b> → <b>Releases</b> e scarica l'ultimo file, ad esempio <code>SirJoeMTB-v1.6.0.apk</code>. Ogni versione ha un nome diverso, così sai sempre quale stai installando.</li>
+  <li>Sul telefono apri <b>github.com/sirjoe58/mapmtb</b> → <b>Releases</b> e scarica l'ultimo file, ad esempio <code>SirJoeMTB-v1.6.1.apk</code>. Ogni versione ha un nome diverso, così sai sempre quale stai installando.</li>
   <li>Apri il file scaricato. La prima volta Android chiede di <b>consentire l'installazione da questa fonte</b> (browser o file manager): consenti e torna indietro.</li>
   <li>Tocca <b>Installa</b>.</li>
 </ol>
@@ -217,10 +217,10 @@
 </section>
 
 <h2 id="b1">12. Installazione</h2>
-<p>Da <b>github.com/sirjoe58/mapmtb → Releases</b>, nella release <b>planner-v1.2.0</b>, scegli:</p>
+<p>Da <b>github.com/sirjoe58/mapmtb → Releases</b>, nella release <b>planner-v1.2.1</b>, scegli:</p>
 <ul>
-  <li><code>SirJoe-MTB-Planner-1.2.0-portable.exe</code>: si avvia con un doppio clic, senza installazione (anche da chiavetta USB);</li>
-  <li><code>SirJoe-MTB-Planner-1.2.0-setup.exe</code>: installazione classica con collegamento sul desktop e nel menu Start.</li>
+  <li><code>SirJoe-MTB-Planner-1.2.1-portable.exe</code>: si avvia con un doppio clic, senza installazione (anche da chiavetta USB);</li>
+  <li><code>SirJoe-MTB-Planner-1.2.1-setup.exe</code>: installazione classica con collegamento sul desktop e nel menu Start.</li>
 </ul>
 <div class="box tip">Il programma non è firmato digitalmente (è un progetto personale): Windows SmartScreen può mostrare "Windows ha protetto il PC". Clicca <b>Ulteriori informazioni → Esegui comunque</b>. Al primo uso di SirJoe Link Windows chiede l'accesso alla rete: scegli <b>Reti private</b>.</div>
 <p>Requisiti: Windows 10 o 11 a 64 bit, Internet per mappe, ricerca e calcolo dei percorsi.</p>
@@ -322,7 +322,8 @@
   <li>PC e telefono devono essere sulla <b>stessa rete Wi-Fi</b>.</li>
   <li>Nel Planner premi <b>SirJoe Link</b> (in alto a destra): compare un QR code con il nome del PC e l'indirizzo di rete. Se il PC ha più reti, scegli quella del Wi-Fi nel menu <b>Rete</b>.</li>
   <li>La prima volta Windows chiede di consentire l'accesso: scegli <b>Reti private</b> e <b>Consenti</b>.</li>
-  <li>Sul telefono: <b>Percorsi → SirJoe Link: scambia con il PC → Inquadra QR</b> e punta il codice. La prima volta concedi la fotocamera. Puoi anche inquadrarlo con l'app Fotocamera del telefono: si apre direttamente SirJoe MTB.</li>
+  <li>Sul telefono: <b>Percorsi → SirJoe Link: scambia con il PC → Inquadra il QR del PC</b> e punta il codice tenendo il telefono in verticale, a 20–30 cm dallo schermo. La prima volta concedi la fotocamera. Puoi anche inquadrarlo con l'app Fotocamera del telefono: si apre direttamente SirJoe MTB.</li>
+  <li><b>Senza QR</b>: sotto il QR il PC mostra indirizzo e PIN (es. <code>192.168.1.10:47891 · PIN 482913</code>). Sul telefono scegli <b>Inserisci codice (indirizzo e PIN)</b> e scrivili. Il PIN cambia a ogni apertura della finestra e dopo 5 tentativi sbagliati.</li>
   <li>Compare <b>Collegato a NOME-PC</b>. Le volte successive puoi usare <b>Ricollega a NOME-PC</b> senza inquadrare, finché la finestra Link sul PC è aperta.</li>
 </ol>
 <h3>Ricevere percorsi sul telefono</h3>
@@ -335,6 +336,13 @@
   <li>Ogni richiesta deve contenere il codice segreto del QR; il telefono accetta solo indirizzi della rete locale.</li>
   <li>Non mostrare il QR ad altri e non usare Link su Wi-Fi pubblici o condivisi.</li>
 </ul>
+<h3>Se il telefono non si collega</h3>
+<ol>
+  <li>Controlla che il telefono sia sul Wi-Fi di casa (non sulla rete "ospiti" e non sui dati mobili).</li>
+  <li>Apri nel browser del telefono l'indirizzo di prova mostrato nella finestra Link, ad esempio <code>http://192.168.1.10:47891/ping</code>. Se compare <b>"SirJoe Link OK"</b> la rete funziona; nella sezione Attività del PC compare "Il telefono raggiunge il PC".</li>
+  <li>Se la pagina non si apre è quasi sempre il firewall di Windows: nella finestra Link premi <b>Sblocca nel firewall di Windows</b> e conferma con <b>Sì</b> la richiesta di amministratore. Il programma toglie gli eventuali blocchi e consente le porte 47891–47899 in entrata.</li>
+  <li>Riprova dal telefono. Nella pagina di errore dell'app il pulsante <b>Apri nel browser</b> fa la prova del punto 2 per te.</li>
+</ol>
 <div class="box tip"><b>Fuori casa:</b> puoi collegare il PC all'<b>hotspot del telefono</b>; PC e telefono sono così sulla stessa rete e Link funziona anche senza router.</div>
 
 <h2 id="c2">20. Flussi di lavoro tipici</h2>
@@ -369,7 +377,8 @@
   <tr><td>Le mappe offline sono brutte o illeggibili</td><td>Importa anche lo stile Elevate e regola "Dimensione testi mappa offline". Usa la versione 1.5.0 o successiva.</td></tr>
   <tr><td>Nessun avviso vocale</td><td>Attiva gli avvisi in Info, alza il volume multimediale, installa la sintesi vocale italiana.</td></tr>
   <tr><td>Nessun avviso salite</td><td>Il percorso deve avere le quote e devi essere sul percorso (entro circa 80 m).</td></tr>
-  <tr><td>SirJoe Link: "PC non raggiungibile"</td><td>Stessa rete Wi-Fi; finestra Link aperta sul PC; Windows Defender Firewall → consenti SirJoe MTB Planner su <b>Reti private</b>; la rete di casa in Windows deve essere impostata come "Privata". Alcuni router con "isolamento client" o reti ospiti bloccano il collegamento.</td></tr>
+  <tr><td>SirJoe Link: "PC non raggiungibile"</td><td>Segui "Se il telefono non si collega" nel capitolo 19: prova <code>/ping</code> dal browser del telefono e, se non risponde, premi <b>Sblocca nel firewall di Windows</b>. Alcuni router con "isolamento client" o reti ospiti bloccano comunque il collegamento.</td></tr>
+  <tr><td>Il lettore QR non legge il codice</td><td>Dalla versione 1.6.1 il lettore è in verticale. Tieni il telefono a 20–30 cm, alza la luminosità del monitor, evita riflessi; oppure usa <b>Inserisci codice</b> con indirizzo e PIN.</td></tr>
   <tr><td>Strava: "Autorizzazione negata" o errore</td><td>Callback Domain deve essere <code>localhost</code>; durante l'autorizzazione lascia la spunta per caricare attività.</td></tr>
   <tr><td>Il Planner non si avvia (SmartScreen)</td><td>Ulteriori informazioni → Esegui comunque.</td></tr>
   <tr><td>Il video non si crea</td><td>Lascia la finestra del Planner in primo piano durante i 20 secondi di registrazione.</td></tr>
