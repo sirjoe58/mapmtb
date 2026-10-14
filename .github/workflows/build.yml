@@ -3,6 +3,7 @@ name: Compila APK
 on:
   push:
     branches: [ main ]
+    paths-ignore: [ 'desktop/**', '.github/workflows/desktop.yml' ]
     tags: [ 'v*' ]
   pull_request:
   workflow_dispatch:
