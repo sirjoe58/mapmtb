@@ -12,6 +12,7 @@
     <string name="channel_recording">Registrazione uscita</string>
     <string name="notif_recording">Registrazione in corso</string>
     <string name="notif_paused">Registrazione in pausa</string>
+    <string name="notif_sleeping">In sosta: riparte da sola quando ti rimetti in movimento</string>
     <string name="need_location">Serve il permesso di posizione per registrare</string>
     <string name="ride_saved">Uscita salvata: %1$s (%2$s km)</string>
 

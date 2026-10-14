@@ -20,6 +20,8 @@ data class Track(val name: String, val points: List<TrackPoint>)
 data class RideStats(
     val recording: Boolean = false,
     val paused: Boolean = false,
+    /** Sosta automatica: fermo da un po', schermo libero di spegnersi, riparte da solo. */
+    val sleeping: Boolean = false,
     val startTime: Long = 0L,
     val elapsedMs: Long = 0L,
     val movingMs: Long = 0L,

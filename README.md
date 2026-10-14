@@ -12,6 +12,7 @@ Ciclocomputer e navigatore per mountain bike su Android: mappa a tutto schermo, 
 | --- | --- |
 | **Mappa** | Mappa a tutto schermo (OpenTopoMap o OpenStreetMap) con itinerari MTB. Cursore: MTB vista da dietro con una freccia davanti che indica dove andare. Orientamento a scelta dal pulsante bussola: direzione di marcia, Nord in alto o libero; la mappa si sposta con un dito e si gira con due dita (tocco lungo sulla bussola = Nord in alto). Barra dati in basso: velocità, distanza, ora. Registrazione, avviso di fuori percorso con vibrazione, distanza al traguardo. |
 | **Crea** | Percorsi personalizzati: tocca la mappa (o usa "+" col mirino) per aggiungere punti. I tratti seguono strade e sentieri reali (BRouter) oppure vanno in linea retta. Annulla, chiudi anello, inverti, salva, segui subito, condividi. Mostra km e dislivello. |
+| **Sosta automatica** | Da fermo per un tempo a scelta (30 s – 5 min) l'app va in sosta: luminosità al minimo, schermo libero di spegnersi, GPS più lento. Quando riparti si risveglia da sola, riaccende lo schermo e riprende registrazione e navigazione. |
 | **Dati** | Velocità attuale, media e massima, distanza, tempi, ora, quota, dislivello, pendenza, direzione, distanza al traguardo, precisione GPS, profilo altimetrico. |
 | **Percorsi** | Archivio di uscite e percorsi. Importa, esporta, rinomina, modifica nella pagina Crea, condividi. Esporta tutto in un archivio ZIP. Mappe offline. |
 | **Info** | Impostazioni, collegamento a Strava, avvertenze, crediti. |

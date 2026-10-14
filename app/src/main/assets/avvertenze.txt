@@ -21,6 +21,7 @@ SirJoe MTB è un'app gratuita e open source per USO PERSONALE e non commerciale.
 • L'app NON è un dispositivo di sicurezza o di soccorso. In caso di emergenza chiama il 112.
 • Il GPS con schermo acceso consuma molta batteria: parti carico e valuta una batteria esterna.
 • Il segnale GPS può essere impreciso in valli strette, boschi fitti e vicino a pareti di roccia.
+• Con la sosta automatica, durante l'uscita l'app si mostra sopra la schermata di blocco quando riparti: chi prende il telefono vede la mappa (non le altre app). Puoi disattivarla nella pagina Info.
 
 5. PRIVACY
 • Posizioni e tracce restano solo sul tuo telefono. L'app non ha account, non raccoglie dati e non li invia a nessuno.
