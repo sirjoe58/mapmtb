@@ -11,12 +11,27 @@ android {
         applicationId = "it.sirjoe.mtbcomputer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.4.0"
+        versionCode = 6
+        versionName = "1.4.1"
+    }
+
+    // Chiave di firma fissa: ogni nuova versione si installa sopra la precedente
+    // senza disinstallare (tracce, mappe e impostazioni restano).
+    signingConfigs {
+        create("sirjoe") {
+            storeFile = rootProject.file("keystore/sirjoe.jks")
+            storePassword = "sirjoe-mtb"
+            keyAlias = "sirjoe"
+            keyPassword = "sirjoe-mtb"
+        }
     }
 
     buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("sirjoe")
+        }
         release {
+            signingConfig = signingConfigs.getByName("sirjoe")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
