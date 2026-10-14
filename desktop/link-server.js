@@ -12,6 +12,8 @@ const crypto = require('crypto');
 const QRCode = require('qrcode');
 
 const PREFERRED_PORT = 47891;
+const LAST_PORT = 47899; // porte provate in ordine (la regola del firewall copre 47891-47899)
+const QR_OPTS = { scale: 8, margin: 4, errorCorrectionLevel: 'L', color: { dark: '#000000', light: '#ffffff' } };
 const MAX_UPLOAD = 30 * 1024 * 1024;
 
 /** Indirizzi IPv4 della rete locale, i più probabili per primi */
@@ -50,6 +52,15 @@ class LinkServer {
     this.outbox = [];
     this.server = null;
     this.port = null;
+    this.pin = null;
+    this.pinFails = 0;
+  }
+
+  /** PIN di 6 cifre per il collegamento a mano (senza QR), nuovo a ogni apertura */
+  _newPin() {
+    this.pin = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+    this.pinFails = 0;
+    return this.pin;
   }
 
   _loadToken() {
@@ -75,10 +86,34 @@ class LinkServer {
 
   _handle(req, res) {
     const url = new URL(req.url, 'http://localhost');
+    const remote0 = (req.socket.remoteAddress || '').replace('::ffff:', '');
+
+    // prova dal browser del telefono: http://IP:PORTA/ping
+    if (req.method === 'GET' && url.pathname === '/ping') {
+      this.onEvent({ type: 'ping', from: remote0 });
+      return this._send(res, 200, 'SirJoe Link OK: il telefono raggiunge il PC ' + this.pcName + '.\nTorna nell\'app SirJoe MTB.', 'text/plain; charset=utf-8');
+    }
+    // collegamento a mano: il PIN mostrato sul PC dà il codice segreto
+    if (req.method === 'GET' && url.pathname === '/pair') {
+      const pin = String(url.searchParams.get('pin') || '');
+      if (this.pin && pin.length === 6 && crypto.timingSafeEqual(Buffer.from(pin), Buffer.from(this.pin))) {
+        this.onEvent({ type: 'connected', from: remote0 });
+        return this._send(res, 200, { token: this.token, name: this.pcName });
+      }
+      this.pinFails++;
+      if (this.pinFails >= 5) {
+        this._newPin();
+        this.onEvent({ type: 'pin', pin: this.pin, reason: 'troppi tentativi sbagliati' });
+      }
+      return this._send(res, 403, { error: 'PIN sbagliato: controlla il numero sul PC' });
+    }
     const token = req.headers['x-sirjoe-token'] || url.searchParams.get('t');
     const okToken = token && token.length === this.token.length &&
       crypto.timingSafeEqual(Buffer.from(String(token)), Buffer.from(this.token));
-    if (!okToken) return this._send(res, 403, { error: 'Codice non valido: inquadra di nuovo il QR' });
+    if (!okToken) {
+      this.onEvent({ type: 'denied', from: remote0 });
+      return this._send(res, 403, { error: 'Codice non valido: inquadra di nuovo il QR' });
+    }
 
     const remote = (req.socket.remoteAddress || '').replace('::ffff:', '');
     if (req.method === 'GET' && url.pathname === '/info') {
@@ -131,14 +166,18 @@ class LinkServer {
   /** Avvia il server e prepara il QR: { url, qr, port, addresses, token } */
   async start() {
     if (!this.server) {
-      try { this.server = await this._listen(PREFERRED_PORT); } catch (e) { this.server = await this._listen(0); }
+      for (let p = PREFERRED_PORT; p <= LAST_PORT && !this.server; p++) {
+        try { this.server = await this._listen(p); } catch (e) { /* porta occupata: prova la successiva */ }
+      }
+      if (!this.server) this.server = await this._listen(0);
       this.port = this.server.address().port;
     }
+    this._newPin();
     const addresses = localAddresses();
     if (!addresses.length) throw new Error('Il PC non è collegato a nessuna rete');
     const url = this.urlFor(addresses[0]);
-    const qr = await QRCode.toDataURL(url, { width: 360, margin: 1, errorCorrectionLevel: 'M' });
-    return { url, qr, port: this.port, addresses, pcName: this.pcName };
+    const qr = await QRCode.toDataURL(url, QR_OPTS);
+    return { url, qr, port: this.port, addresses, pcName: this.pcName, pin: this.pin };
   }
 
   urlFor(address) {
@@ -147,11 +186,12 @@ class LinkServer {
   }
 
   async qrFor(address) {
-    return QRCode.toDataURL(this.urlFor(address), { width: 360, margin: 1, errorCorrectionLevel: 'M' });
+    return QRCode.toDataURL(this.urlFor(address), QR_OPTS);
   }
 
   stop() {
     if (this.server) { this.server.close(); this.server = null; this.port = null; }
+    this.pin = null;
   }
 
   /* ------------------------------- uscite ricevute (cartella sul PC) */

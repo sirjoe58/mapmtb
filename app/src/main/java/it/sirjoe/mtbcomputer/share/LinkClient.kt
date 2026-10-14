@@ -30,6 +30,13 @@ object LinkClient {
 
     fun isLink(uri: Uri?) = uri != null && uri.scheme == "sirjoemtb" && uri.host == "link"
 
+    /** Indirizzo della rete locale (casa, hotspot del telefono). */
+    fun isLocal(host: String) = host.startsWith("192.168.") || host.startsWith("10.") ||
+        Regex("^172\\.(1[6-9]|2[0-9]|3[01])\\.").containsMatchIn(host) || host.endsWith(".local")
+
+    /** Errore leggibile: rete irraggiungibile (firewall/Wi-Fi) oppure codice rifiutato. */
+    class LinkError(message: String, val unreachable: Boolean) : Exception(message)
+
     fun parse(text: String?): Pc? {
         if (text.isNullOrBlank()) return null
         return try {
@@ -39,9 +46,7 @@ object LinkClient {
             val port = u.getQueryParameter("p")?.toIntOrNull() ?: return null
             val token = u.getQueryParameter("t") ?: return null
             // solo indirizzi della rete locale
-            val local = host.startsWith("192.168.") || host.startsWith("10.") ||
-                Regex("^172\\.(1[6-9]|2[0-9]|3[01])\\.").containsMatchIn(host) || host.endsWith(".local")
-            if (!local) return null
+            if (!isLocal(host)) return null
             Pc(host, port, token, u.getQueryParameter("n") ?: "PC")
         } catch (e: Exception) {
             null
@@ -62,7 +67,12 @@ object LinkClient {
 
     private fun readBody(c: HttpURLConnection): ByteArray {
         try {
-            val code = c.responseCode
+            val code = try {
+                c.responseCode
+            } catch (e: java.io.IOException) {
+                // nessuna risposta: Wi-Fi diverso, PC spento o firewall di Windows
+                throw LinkError(e.javaClass.simpleName + ": " + (e.message ?: ""), unreachable = true)
+            }
             val stream = if (code in 200..299) c.inputStream else c.errorStream
             val bytes = stream?.use { it.readBytes() } ?: ByteArray(0)
             if (code !in 200..299) {
@@ -71,12 +81,23 @@ object LinkClient {
                 } catch (e: Exception) {
                     ""
                 }
-                throw IllegalStateException(msg.ifBlank { "errore $code" })
+                throw LinkError(msg.ifBlank { "errore $code" }, unreachable = false)
             }
             return bytes
         } finally {
             c.disconnect()
         }
+    }
+
+    /** Collegamento a mano: indirizzo "192.168.1.10:47891" e PIN di 6 cifre mostrati sul PC. */
+    suspend fun pair(address: String, pin: String): Pc = withContext(Dispatchers.IO) {
+        val a = address.trim().removePrefix("http://").trimEnd('/')
+        val host = a.substringBefore(':').trim()
+        val port = a.substringAfter(':', "47891").trim().toIntOrNull() ?: 47891
+        if (host.isEmpty() || !isLocal(host)) throw LinkError("Indirizzo non valido: scrivilo come sul PC (es. 192.168.1.10:47891)", false)
+        val probe = Pc(host, port, "", "PC")
+        val j = JSONObject(String(readBody(open(probe, "/pair?pin=" + URLEncoder.encode(pin.trim(), "UTF-8")))))
+        Pc(host, port, j.getString("token"), j.optString("name", "PC"))
     }
 
     /** Verifica il collegamento: restituisce il nome del PC. */

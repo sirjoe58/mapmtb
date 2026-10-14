@@ -240,13 +240,17 @@
     <form method="dialog" class="dlg">
       <h3>📲 SirJoe Link</h3>
       <div class="link-grid">
-        <div class="qr-box"><img id="linkQr" alt="QR code"><div id="linkAddr" class="small"></div></div>
+        <div class="qr-box"><img id="linkQr" alt="QR code"><div id="linkAddr" class="small"></div>
+          <div class="manual">Senza QR: <b id="linkManual">—</b></div></div>
         <div>
           <ol class="steps">
             <li>Telefono e PC sulla <b>stessa rete Wi-Fi</b>.</li>
             <li>Sul telefono apri <b>SirJoe MTB → Percorsi → SirJoe Link</b>.</li>
-            <li>Tocca <b>Inquadra QR</b> e punta questo codice.</li>
+            <li>Tocca <b>Inquadra QR</b> e punta questo codice, oppure <b>Inserisci codice</b> e scrivi indirizzo e PIN qui a sinistra.</li>
           </ol>
+          <p class="small"><b>Il telefono non si collega?</b> Apri sul telefono il browser all'indirizzo
+            <b id="linkPing">—</b>: se non compare "SirJoe Link OK" il firewall di Windows blocca il collegamento.</p>
+          <button type="button" class="btn" id="linkFw">🛡 Sblocca nel firewall di Windows</button>
           <p class="small">Il telefono può <b>ricevere</b> i percorsi qui sotto e <b>inviare</b> le uscite registrate,
             che arrivano nella scheda <i>Uscite</i>. Il collegamento resta attivo solo finché questa finestra è aperta.</p>
           <label class="field" id="linkAddrPick" hidden><span>Rete</span><select id="linkAddrSel"></select></label>

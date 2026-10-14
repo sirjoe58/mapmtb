@@ -1,5 +1,11 @@
 package it.sirjoe.mtbcomputer.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.text.InputFilter
+import android.text.InputType
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -16,20 +22,95 @@ import kotlinx.coroutines.withContext
 object LinkUi {
 
     private const val HELP =
-        "Sul PC apri SirJoe MTB Planner e premi \"📲 SirJoe Link\": compare un QR code.\n\n" +
+        "Sul PC apri SirJoe MTB Planner e premi \"📲 SirJoe Link\": compare un QR code, e sotto l'indirizzo e il PIN " +
+            "per collegarti anche senza QR.\n\n" +
             "Telefono e PC devono essere sulla stessa rete Wi-Fi. La prima volta Windows può chiedere " +
             "di consentire l'accesso alla rete: scegli \"Reti private\"."
 
     fun menu(act: MainActivity) {
         val last = LinkClient.last(act)
-        val items = mutableListOf("Inquadra il QR del PC")
-        if (last != null) items.add("Ricollega a ${last.name}")
+        val items = mutableListOf("📷 Inquadra il QR del PC", "⌨ Inserisci codice (indirizzo e PIN)")
+        if (last != null) items.add("🔁 Ricollega a ${last.name}")
+        items.add("❓ Come funziona")
         MaterialAlertDialogBuilder(act)
             .setTitle("📲 SirJoe Link")
-            .setMessage(HELP)
-            .setPositiveButton("Inquadra QR") { _, _ -> act.scanLinkQr() }
-            .apply { if (last != null) setNeutralButton("Ricollega a ${last.name}") { _, _ -> connect(act, last) } }
+            .setItems(items.toTypedArray()) { _, which ->
+                when {
+                    which == 0 -> act.scanLinkQr()
+                    which == 1 -> manual(act)
+                    last != null && which == 2 -> connect(act, last)
+                    else -> MaterialAlertDialogBuilder(act).setTitle("SirJoe Link").setMessage(HELP)
+                        .setPositiveButton("OK", null).show()
+                }
+            }
             .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /** Collegamento senza QR: indirizzo e PIN scritti sotto il QR nella finestra del PC. */
+    fun manual(act: MainActivity) {
+        val dp = act.resources.displayMetrics.density
+        val box = LinearLayout(act).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((20 * dp).toInt(), (8 * dp).toInt(), (20 * dp).toInt(), 0)
+        }
+        val addr = EditText(act).apply {
+            hint = "Indirizzo, es. 192.168.1.10:47891"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setSingleLine()
+            LinkClient.last(act)?.let { setText("${it.host}:${it.port}") }
+        }
+        val pin = EditText(act).apply {
+            hint = "PIN di 6 cifre"
+            inputType = InputType.TYPE_CLASS_NUMBER
+            filters = arrayOf(InputFilter.LengthFilter(6))
+        }
+        box.addView(addr)
+        box.addView(pin)
+        MaterialAlertDialogBuilder(act)
+            .setTitle("Codice del PC")
+            .setMessage("Li trovi nella finestra SirJoe Link del Planner, sotto il QR (\"Senza QR\").")
+            .setView(box)
+            .setPositiveButton("Collega") { _, _ ->
+                act.lifecycleScope.launch {
+                    try {
+                        val pc = LinkClient.pair(addr.text.toString(), pin.text.toString())
+                        connect(act, pc)
+                    } catch (e: Exception) {
+                        failure(act, e, addr.text.toString().trim())
+                    }
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun failure(act: MainActivity, e: Exception, address: String) {
+        val unreachable = e !is LinkClient.LinkError || e.unreachable
+        val ping = "http://" + address.removePrefix("http://").trimEnd('/') + "/ping"
+        val msg = if (unreachable) {
+            "Il telefono non riesce a raggiungere il PC ($address).\n\n" +
+                "1. Telefono e PC sulla stessa rete Wi-Fi (non la rete \"ospiti\", non i dati mobili).\n" +
+                "2. Sul PC la finestra SirJoe Link deve restare aperta.\n" +
+                "3. Prova ad aprire nel browser del telefono:\n$ping\n" +
+                "Se non compare \"SirJoe Link OK\", sul PC premi \"🛡 Sblocca nel firewall di Windows\" e conferma.\n\n" +
+                "Dettaglio: ${e.message}"
+        } else {
+            "Il PC ha rifiutato il collegamento: ${e.message}\n\nChiudi e riapri SirJoe Link sul PC e inquadra il nuovo QR (o scrivi il nuovo PIN)."
+        }
+        MaterialAlertDialogBuilder(act)
+            .setTitle(if (unreachable) "PC non raggiungibile" else "Codice non accettato")
+            .setMessage(msg)
+            .setPositiveButton("Riprova") { _, _ -> menu(act) }
+            .apply {
+                if (unreachable) setNeutralButton("Apri nel browser") { _, _ ->
+                    try {
+                        act.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(ping)))
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+            .setNegativeButton("Chiudi", null)
             .show()
     }
 
@@ -53,16 +134,7 @@ object LinkUi {
                     .setNegativeButton("Chiudi", null)
                     .show()
             } catch (e: Exception) {
-                MaterialAlertDialogBuilder(act)
-                    .setTitle("PC non raggiungibile")
-                    .setMessage(
-                        "Controlla che:\n• telefono e PC siano sulla stessa rete Wi-Fi;\n" +
-                            "• sul PC sia aperta la finestra \"SirJoe Link\";\n" +
-                            "• Windows abbia consentito l'accesso (Reti private).\n\nDettaglio: ${e.message}"
-                    )
-                    .setPositiveButton("Inquadra di nuovo") { _, _ -> act.scanLinkQr() }
-                    .setNegativeButton("Chiudi", null)
-                    .show()
+                failure(act, e, "${pc.host}:${pc.port}")
             }
         }
     }
