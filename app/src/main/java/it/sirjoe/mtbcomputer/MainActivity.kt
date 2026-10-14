@@ -17,13 +17,17 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.RideRepository
 import it.sirjoe.mtbcomputer.data.RideStats
+import it.sirjoe.mtbcomputer.share.LinkClient
 import it.sirjoe.mtbcomputer.share.ShareHelper
 import it.sirjoe.mtbcomputer.share.Strava
 import it.sirjoe.mtbcomputer.ui.DataFragment
 import it.sirjoe.mtbcomputer.ui.InfoFragment
+import it.sirjoe.mtbcomputer.ui.LinkUi
 import it.sirjoe.mtbcomputer.ui.MapFragment
 import it.sirjoe.mtbcomputer.ui.PlannerFragment
 import it.sirjoe.mtbcomputer.ui.TracksFragment
@@ -147,6 +151,8 @@ class MainActivity : AppCompatActivity() {
         if (intent == null) return
         val data = intent.data
         when {
+            // QR di SirJoe Link letto con la fotocamera del telefono
+            LinkClient.isLink(data) -> openLink(data.toString())
             // ritorno dall'autorizzazione Strava
             Strava.isAuthRedirect(data) -> {
                 lifecycleScope.launch {
@@ -171,6 +177,36 @@ class MainActivity : AppCompatActivity() {
             }
         }
         setIntent(Intent(this, MainActivity::class.java))
+    }
+
+    // ------------------------------------------------------- SirJoe Link
+
+    private val scanLauncher = registerForActivityResult(ScanContract()) { r ->
+        r.contents?.let { openLink(it) }
+    }
+
+    fun scanLinkQr() {
+        scanLauncher.launch(
+            ScanOptions()
+                .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                .setPrompt("Inquadra il QR di SirJoe Link sullo schermo del PC")
+                .setBeepEnabled(false)
+                .setOrientationLocked(false)
+        )
+    }
+
+    private fun openLink(text: String) {
+        val pc = LinkClient.parse(text)
+        if (pc == null) {
+            Toast.makeText(this, "Questo QR non è di SirJoe Link (o il PC non è nella rete di casa)", Toast.LENGTH_LONG).show()
+            return
+        }
+        selectTab(R.id.nav_tracks)
+        LinkUi.connect(this, pc)
+    }
+
+    fun onTracksChanged() {
+        (supportFragmentManager.findFragmentByTag(TAG_TRACKS) as? TracksFragment)?.refresh()
     }
 
     private fun importFromOtherApp(uris: List<Uri>) {

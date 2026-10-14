@@ -35,6 +35,7 @@ import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.Placemarks
 import it.sirjoe.mtbcomputer.data.Prefs
+import it.sirjoe.mtbcomputer.data.CoachState
 import it.sirjoe.mtbcomputer.data.RideRepository
 import it.sirjoe.mtbcomputer.data.Track
 import it.sirjoe.mtbcomputer.service.RecordingService
@@ -79,6 +80,8 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     private lateinit var distanceTv: TextView
     private lateinit var clockTv: TextView
     private lateinit var bannerTv: TextView
+    private lateinit var coachTv: TextView
+    private var ghostMarker: Marker? = null
     private lateinit var extraRow: View
     private lateinit var extraTime: TextView
     private lateinit var extraAscent: TextView
@@ -121,6 +124,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         distanceTv = view.findViewById(R.id.distance)
         clockTv = view.findViewById(R.id.clock)
         bannerTv = view.findViewById(R.id.routeBanner)
+        coachTv = view.findViewById(R.id.coachBanner)
         extraRow = view.findViewById(R.id.extraRow)
         extraTime = view.findViewById(R.id.extraTime)
         extraAscent = view.findViewById(R.id.extraAscent)
@@ -205,6 +209,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
                 launch { RideRepository.pointCount.collect { updateTrackLine(it) } }
                 launch { RideRepository.route.collect { showRoute(it) } }
                 launch { Placemarks.items.collect { redrawPlaces() } }
+                launch { RideRepository.coach.collect { showCoach(it) } }
                 launch {
                     while (true) {
                         clockTv.text = clockFmt.format(Date())
@@ -547,5 +552,62 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             @Suppress("DEPRECATION")
             v.vibrate(pattern, -1)
         }
+    }
+
+    // ------------------------------------------------- fantasma e salite
+
+    private fun ghostIcon(): android.graphics.drawable.Drawable {
+        val dp = resources.displayMetrics.density
+        val size = (34 * dp).toInt()
+        val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(150, 120, 60, 200) }
+        val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2 * dp
+        }
+        c.drawCircle(size / 2f, size / 2f, size / 2f - 2 * dp, fill)
+        c.drawCircle(size / 2f, size / 2f, size / 2f - 2 * dp, ring)
+        val txt = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 18 * dp; textAlign = Paint.Align.CENTER }
+        c.drawText("👻", size / 2f, size / 2f + 6 * dp, txt)
+        return android.graphics.drawable.BitmapDrawable(resources, bmp)
+    }
+
+    private fun gap(sec: Int) = if (sec < 60) "$sec s" else "${sec / 60}:${"%02d".format(sec % 60)}"
+
+    private fun showCoach(c: CoachState?) {
+        if (view == null) return
+        val lines = ArrayList<String>()
+        c?.ghostDiffSec?.let { d ->
+            lines.add(
+                when {
+                    d > 3 -> "👻 Avanti di ${gap(d)}"
+                    d < -3 -> "👻 Indietro di ${gap(-d)}"
+                    else -> "👻 Alla pari"
+                }
+            )
+        }
+        c?.climbText?.let { lines.add(it) }
+        coachTv.text = lines.joinToString("\n")
+        coachTv.visibility = if (lines.isEmpty()) View.GONE else View.VISIBLE
+
+        val lat = c?.ghostLat
+        val lon = c?.ghostLon
+        if (lat == null || lon == null) {
+            ghostMarker?.let { map.overlays.remove(it) }
+            ghostMarker = null
+        } else {
+            val m = ghostMarker ?: Marker(map).also {
+                it.icon = ghostIcon()
+                it.setAnchor(0.5f, 0.5f)
+                it.title = "Fantasma"
+                it.setOnMarkerClickListener { _, _ -> true }
+                // sotto il cursore della bici
+                val i = map.overlays.indexOf(marker)
+                if (i >= 0) map.overlays.add(i, it) else map.overlays.add(it)
+                ghostMarker = it
+            }
+            m.position = GeoPoint(lat, lon)
+        }
+        map.invalidate()
     }
 }

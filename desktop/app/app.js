@@ -92,10 +92,12 @@ function render() {
   pointLayer.clearLayers();
   placeLayer.clearLayers();
 
+  const slopeOn = $('slopeColors').checked;
   state.legs.forEach((leg, i) => {
     const ll = leg.map((p) => [p.lat, p.lon]);
     L.polyline(ll, { color: '#ffffff', weight: 9, opacity: 0.8 }).addTo(routeLayer);
-    const line = L.polyline(ll, { color: '#8e24aa', weight: 5 }).addTo(routeLayer);
+    if (slopeOn) colorLine(leg, Geo.grades(leg).map(slopeColor), routeLayer, 5);
+    const line = L.polyline(ll, slopeOn ? { color: '#000', weight: 12, opacity: 0 } : { color: '#8e24aa', weight: 5 }).addTo(routeLayer);
     line.on('click', (e) => {
       if (mode !== 'route') return;
       L.DomEvent.stop(e);
@@ -133,8 +135,52 @@ function render() {
   });
 
   renderStats();
+  renderClimbs();
   renderPlaceList();
   drawProfile();
+}
+
+/** linea divisa in tratti colorati (colori[i] = colore del tratto che parte dal punto i) */
+function colorLine(pts, colors, layer, weight) {
+  let start = 0;
+  for (let i = 1; i <= pts.length; i++) {
+    if (i === pts.length || colors[i] !== colors[start]) {
+      const seg = pts.slice(start, Math.min(i + 1, pts.length)).map((p) => [p.lat, p.lon]);
+      if (seg.length >= 2) L.polyline(seg, { color: colors[start], weight, interactive: false }).addTo(layer);
+      start = i;
+    }
+  }
+}
+
+function climbHtml(c) {
+  return `<span>da km ${Fmt.km(c.start)} · ${Fmt.m(c.length)} m</span><span class="grade" style="color:${slopeColor(c.avg)}">${(c.avg * 100).toFixed(1)}% · max ${(c.max * 100).toFixed(0)}% · +${Fmt.m(c.gain)} m</span>`;
+}
+
+function renderClimbs() {
+  const box = $('climbBox');
+  const pts = allPoints();
+  const climbs = Geo.climbs(pts);
+  box.innerHTML = '';
+  if (!climbs.length) {
+    box.innerHTML = pts.some((p) => p.ele != null) ? '<div class="small">Nessuna salita impegnativa</div>' : '';
+    return;
+  }
+  const head = document.createElement('div');
+  head.className = 'small';
+  head.textContent = `Salite: ${climbs.length} · la più dura ${(Math.max(...climbs.map((c) => c.avg)) * 100).toFixed(0)}% di media`;
+  box.appendChild(head);
+  const cum = Geo.cumulative(pts);
+  for (const c of climbs) {
+    const d = document.createElement('div');
+    d.className = 'climb';
+    d.innerHTML = climbHtml(c);
+    d.addEventListener('click', () => {
+      const a = cum.findIndex((x) => x >= c.start), b = cum.findIndex((x) => x >= c.end);
+      const seg = pts.slice(Math.max(0, a), b < 0 ? pts.length : b + 1);
+      if (seg.length >= 2) map.fitBounds(L.latLngBounds(seg.map((p) => [p.lat, p.lon])), { padding: [60, 60] });
+    });
+    box.appendChild(d);
+  }
 }
 
 function renderStats() {
@@ -472,7 +518,7 @@ async function routeThroughPlaces() {
 const elev = $('elev');
 let elevData = null;
 function drawProfile() {
-  const pts = allPoints();
+  const pts = (window.Analysis && Analysis.active) ? Analysis.points : allPoints();
   const ctx = elev.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const w = elev.clientWidth, h = elev.clientHeight;
@@ -514,6 +560,7 @@ function drawProfile() {
   withEle.forEach((p, i) => (i ? ctx.lineTo(X(cum[i]), Y(p.ele)) : ctx.moveTo(X(cum[i]), Y(p.ele))));
   ctx.strokeStyle = '#ff6d00'; ctx.lineWidth = 2; ctx.stroke();
   $('elevInfo').textContent = `Profilo altimetrico · min ${Math.round(min)} m · max ${Math.round(max)} m — passa il mouse per vedere il punto sulla mappa`;
+  if (window.Analysis && Analysis.active) Analysis.afterProfile(ctx, elevData, h);
 }
 elev.addEventListener('mousemove', (e) => {
   if (!elevData) return;
@@ -723,6 +770,8 @@ $('exportPlaces').addEventListener('click', () => {
   download('Segnaposto SirJoe MTB.gpx', Formats.gpx('Segnaposto', [], state.places), 'application/gpx+xml');
 });
 $('baseMap').addEventListener('change', (e) => setBase(e.target.value));
+$('slopeColors').checked = store.get('slopeColors', false);
+$('slopeColors').addEventListener('change', (e) => { store.set('slopeColors', e.target.checked); render(); });
 $('mtbOverlay').addEventListener('change', (e) => {
   store.set('mtb', e.target.checked);
   if (e.target.checked) mtbLayer.addTo(map); else map.removeLayer(mtbLayer);

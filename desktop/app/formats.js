@@ -41,8 +41,73 @@ const Geo = {
       if (p.ele - ref >= 3) { up += p.ele - ref; ref = p.ele; } else if (ref - p.ele >= 3) { down += ref - p.ele; ref = p.ele; }
     }
     return { dist: cum[cum.length - 1] || 0, up, down, hasEle, cum };
+  },
+
+  /**
+   * Salite del percorso: tratti di almeno 300 m con pendenza media >= 5% e almeno 25 m di dislivello.
+   * Stesso metodo dell'app Android. Restituisce [{ start, end, length, gain, avg, max }] in metri e frazioni.
+   */
+  climbs(pts) {
+    const p = pts.filter((q) => q.ele != null);
+    if (p.length < 2) return [];
+    const cum = Geo.cumulative(p);
+    const total = cum[cum.length - 1];
+    const eleAt = (d) => {
+      if (d <= 0) return p[0].ele;
+      if (d >= total) return p[p.length - 1].ele;
+      let lo = 0, hi = cum.length - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] < d) lo = m; else hi = m; }
+      const f = (d - cum[lo]) / ((cum[hi] - cum[lo]) || 1);
+      return p[lo].ele + f * (p[hi].ele - p[lo].ele);
+    };
+    const out = [];
+    const finish = (c) => {
+      c.length = c.end - c.start;
+      c.gain = eleAt(c.end) - eleAt(c.start);
+      c.avg = c.gain / c.length;
+      if (c.length >= 300 && c.gain >= 25 && c.avg >= 0.05) out.push(c);
+    };
+    let cur = null, low = 0;
+    for (let s = 0; s + 100 <= total; s += 50) {
+      const g = (eleAt(s + 100) - eleAt(s)) / 100;
+      if (g >= 0.05) {
+        if (!cur) cur = { start: s, max: g };
+        cur.end = s + 100; cur.max = Math.max(cur.max, g); low = 0;
+      } else if (cur) {
+        low++;
+        if (g < 0.02 || low >= 3) { finish(cur); cur = null; low = 0; }
+      }
+    }
+    if (cur) finish(cur);
+    return out;
+  },
+
+  /** pendenza (frazione) per ogni punto, su una finestra di circa 60 m */
+  grades(pts) {
+    const cum = Geo.cumulative(pts);
+    return pts.map((q, i) => {
+      if (q.ele == null) return 0;
+      let a = i, b = i;
+      while (a > 0 && cum[i] - cum[a] < 30) a--;
+      while (b < pts.length - 1 && cum[b] - cum[i] < 30) b++;
+      const d = cum[b] - cum[a];
+      if (d < 10 || pts[a].ele == null || pts[b].ele == null) return 0;
+      return (pts[b].ele - pts[a].ele) / d;
+    });
   }
 };
+
+/** Colori per pendenza: discesa blu, piano verde, salita dal giallo al rosso scuro */
+const SLOPE_CLASSES = [
+  { max: -0.08, color: '#1565C0', label: '< -8%' },
+  { max: -0.03, color: '#42A5F5', label: '-8/-3%' },
+  { max: 0.03, color: '#43A047', label: '±3%' },
+  { max: 0.06, color: '#FDD835', label: '3-6%' },
+  { max: 0.10, color: '#FB8C00', label: '6-10%' },
+  { max: 0.15, color: '#E53935', label: '10-15%' },
+  { max: Infinity, color: '#6A1B9A', label: '> 15%' }
+];
+const slopeColor = (g) => SLOPE_CLASSES.find((c) => g < c.max).color;
 
 const Fmt = {
   km: (m) => (m / 1000).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),

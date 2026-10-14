@@ -25,7 +25,13 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
+import it.sirjoe.mtbcomputer.data.Climb
+import it.sirjoe.mtbcomputer.data.CoachState
+import it.sirjoe.mtbcomputer.data.Ghost
 import it.sirjoe.mtbcomputer.data.Prefs
+import it.sirjoe.mtbcomputer.data.RouteAnalysis
+import it.sirjoe.mtbcomputer.data.RouteProgress
+import it.sirjoe.mtbcomputer.data.Track
 import it.sirjoe.mtbcomputer.data.RideRepository
 import it.sirjoe.mtbcomputer.data.RideStats
 import it.sirjoe.mtbcomputer.data.TrackPoint
@@ -86,6 +92,16 @@ class RecordingService : Service() {
     private var sleepAnchor: Location? = null
     private var wakeHits = 0
 
+    // fantasma e avvisi salite
+    private var coachRoute: Track? = null
+    private var coachGhostMode = false
+    private var progress: RouteProgress? = null
+    private var climbs: List<Climb> = emptyList()
+    private val announced = HashSet<Int>()
+    private var ghost: Ghost? = null
+    private var nextGhostKm = 1
+    private var coachJob: Job? = null
+
     private var tts: TextToSpeech? = null
     private var ttsReady = false
 
@@ -133,6 +149,9 @@ class RecordingService : Service() {
         RideRepository.updateStats(RideStats(recording = true, startTime = System.currentTimeMillis()))
 
         requestUpdates()
+        coachJob = scope.launch {
+            RideRepository.route.collect { setupCoach(it) }
+        }
         ticker = scope.launch {
             while (isActive) {
                 delay(1000)
@@ -306,11 +325,92 @@ class RecordingService : Service() {
             )
         )
 
+        updateCoach(loc, RideRepository.stats.value)
+
         if (dist / 1000.0 >= nextKm) {
             speak("Chilometro $nextKm")
             nextKm++
         }
     }
+
+    // ------------------------------------------------- fantasma e salite
+
+    private fun setupCoach(route: Track?) {
+        coachRoute = route
+        coachGhostMode = RideRepository.ghostMode
+        announced.clear()
+        nextGhostKm = 1
+        if (route == null || route.points.size < 2) {
+            progress = null; climbs = emptyList(); ghost = null
+            RideRepository.updateCoach(null)
+            return
+        }
+        progress = RouteProgress(route.points)
+        climbs = if (Prefs.climbAlerts(this)) RouteAnalysis.climbs(route.points) else emptyList()
+        ghost = if (coachGhostMode && Prefs.ghost(this) && Ghost.canUse(route)) Ghost(route) else null
+        RideRepository.updateCoach(null)
+    }
+
+    private fun updateCoach(loc: Location, s: RideStats) {
+        val route = RideRepository.route.value
+        if (route !== coachRoute || RideRepository.ghostMode != coachGhostMode) setupCoach(route)
+        val prog = progress ?: return
+        val done = prog.update(loc.latitude, loc.longitude)
+        val onRoute = prog.offDistance < 80
+
+        // salite: avviso prima e indicazione durante
+        var climbText: String? = null
+        if (onRoute) {
+            for ((i, c) in climbs.withIndex()) {
+                val toStart = c.start - done
+                if (toStart in 0.0..250.0) {
+                    if (announced.add(i)) {
+                        val m = (Math.round(toStart / 50.0) * 50).toInt().coerceAtLeast(50)
+                        speak("Tra $m metri salita al ${pct(c.avg)} per cento per ${Format.meters(c.length)} metri")
+                    }
+                    climbText = "⛰ Tra ${toStart.toInt()} m salita ${pct(c.avg)}% · ${Format.meters(c.length)} m · ↗ ${c.gain.toInt()} m"
+                    break
+                }
+                if (done >= c.start && done <= c.end) {
+                    announced.add(i)
+                    climbText = "⛰ Salita ${pct(c.avg)}% · mancano ${Format.meters(c.end - done)} m"
+                    break
+                }
+            }
+        }
+
+        // fantasma: la stessa uscita fatta in passato, partita insieme a te
+        var gLat: Double? = null
+        var gLon: Double? = null
+        var diff: Int? = null
+        val g = ghost
+        if (g != null) {
+            val p = g.positionAt(s.elapsedMs)
+            gLat = p.lat; gLon = p.lon
+            if (onRoute) {
+                diff = ((g.timeAtDistance(done) - s.elapsedMs) / 1000).toInt()
+                if (done / 1000.0 >= nextGhostKm) {
+                    val d = diff
+                    speak(
+                        when {
+                            d > 3 -> "Sei avanti di ${secondsText(d)} sul fantasma"
+                            d < -3 -> "Sei indietro di ${secondsText(-d)} sul fantasma"
+                            else -> "Sei alla pari con il fantasma"
+                        }
+                    )
+                    nextGhostKm = (done / 1000.0).toInt() + 1
+                }
+            }
+        }
+        RideRepository.updateCoach(
+            if (g == null && climbText == null) null else CoachState(gLat, gLon, diff, climbText)
+        )
+    }
+
+    private fun pct(f: Double) = Math.round(f * 100).toInt()
+
+    private fun secondsText(sec: Int): String =
+        if (sec < 90) "$sec secondi" else "${sec / 60} minuti e ${sec % 60} secondi"
 
     private fun pause() {
         val s = RideRepository.stats.value
@@ -336,6 +436,9 @@ class RecordingService : Service() {
     private fun stopRide() {
         fused.removeLocationUpdates(callback)
         ticker?.cancel()
+        coachJob?.cancel()
+        progress = null; ghost = null; climbs = emptyList(); coachRoute = null
+        RideRepository.updateCoach(null)
         val s = RideRepository.stats.value
         val points = RideRepository.snapshotPoints()
         if (s.recording && points.size >= 2) {

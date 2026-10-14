@@ -39,6 +39,24 @@
         android:textStyle="bold"
         android:visibility="gone" />
 
+    <!-- Fantasma e salite in arrivo -->
+    <TextView
+        android:id="@+id/coachBanner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="90dp"
+        android:background="@drawable/bg_banner"
+        android:gravity="center"
+        android:paddingStart="12dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="6dp"
+        android:textColor="@color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <!-- Pulsanti flottanti a destra -->
     <LinearLayout
         android:layout_width="wrap_content"

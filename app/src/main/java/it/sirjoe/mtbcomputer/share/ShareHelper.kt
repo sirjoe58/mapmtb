@@ -115,10 +115,15 @@ object ShareHelper {
 
     /** Importa una o più tracce da un file (anche ZIP) e le salva nell'archivio. */
     fun importUri(ctx: Context, uri: Uri): List<Track> {
-        lastImportedWaypoints = 0
         val name = displayName(ctx, uri)
         val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw IllegalArgumentException("Impossibile leggere il file")
+        return importBytes(ctx, bytes, name)
+    }
+
+    /** Importa tracce (e segnaposto) da un file già letto, ad esempio ricevuto da SirJoe Link. */
+    fun importBytes(ctx: Context, bytes: ByteArray, name: String): List<Track> {
+        lastImportedWaypoints = 0
         if (bytes.size > 50 * 1024 * 1024) throw IllegalArgumentException("File troppo grande (max 50 MB)")
 
         val out = ArrayList<Track>()

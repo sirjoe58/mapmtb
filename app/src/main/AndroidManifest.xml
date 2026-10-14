@@ -10,6 +10,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <!-- Per aprire l'app Strava (autorizzazione) se installata -->
     <queries>
@@ -30,7 +34,8 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SirJoeMTB">
+        android:theme="@style/Theme.SirJoeMTB"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".MainActivity"
@@ -48,6 +53,16 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:host="localhost"
+                    android:scheme="sirjoemtb" />
+            </intent-filter>
+
+            <!-- QR di SirJoe Link letto anche con la fotocamera del telefono -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="link"
                     android:scheme="sirjoemtb" />
             </intent-filter>
 

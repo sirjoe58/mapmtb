@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.MainActivity
+import it.sirjoe.mtbcomputer.data.Ghost
 import it.sirjoe.mtbcomputer.data.OfflineMaps
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.PlannerState
@@ -61,6 +62,9 @@ class TracksFragment : Fragment() {
         }
         root.addView(button("Importa tracce e segnaposto (GPX, FIT, KML, KMZ, TCX, GeoJSON, CSV, ZIP)") {
             importTrack.launch(arrayOf("*/*"))
+        })
+        root.addView(button("📲 SirJoe Link: scambia con il PC…") {
+            (activity as? MainActivity)?.let { LinkUi.menu(it) }
         })
         root.addView(button("Esporta tutte le tracce (ZIP)") {
             if (!ShareHelper.shareAll(requireContext())) toast("Nessuna traccia da esportare")
@@ -224,28 +228,36 @@ class TracksFragment : Fragment() {
         val t1 = track.points.last().time
         if (t0 != null && t1 != null && t1 > t0) info.append("  ·  ${Format.duration(t1 - t0)}")
 
-        val items = arrayOf(
+        val ghostOk = Ghost.canUse(track)
+        val items = mutableListOf(
             "Mostra e segui sulla mappa",
             "Modifica / allunga nella pagina Crea",
             "Condividi (Strava, social, app…)",
             "Rinomina",
             "Elimina"
         )
+        if (ghostOk) items.add(1, "👻 Sfida il fantasma (rifai questa uscita)")
         MaterialAlertDialogBuilder(act)
             .setTitle("${track.name}\n$info")
-            .setItems(items) { _, which ->
-                when (which) {
-                    0 -> {
+            .setItems(items.toTypedArray()) { _, which ->
+                when (items[which]) {
+                    items[0] -> {
                         RideRepository.setRoute(track)
                         act.selectTab(R.id.nav_map)
                     }
-                    1 -> {
+                    "👻 Sfida il fantasma (rifai questa uscita)" -> {
+                        if (!Prefs.ghost(act)) Prefs.setGhost(act, true)
+                        RideRepository.setRoute(track, ghost = true)
+                        act.selectTab(R.id.nav_map)
+                        toast("Avvia la registrazione: il fantasma parte con te")
+                    }
+                    "Modifica / allunga nella pagina Crea" -> {
                         PlannerState.loadFrom(track)
                         act.openPlannerOnRoute()
                     }
-                    2 -> TrackActions.shareMenu(act, track)
-                    3 -> rename(file)
-                    4 -> confirmDelete(file)
+                    "Condividi (Strava, social, app…)" -> TrackActions.shareMenu(act, track)
+                    "Rinomina" -> rename(file)
+                    "Elimina" -> confirmDelete(file)
                 }
             }
             .show()

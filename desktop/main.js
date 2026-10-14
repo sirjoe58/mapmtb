@@ -2,6 +2,11 @@
 const { app, BrowserWindow, ipcMain, net, shell, session, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const { LinkServer } = require('./link-server');
+
+let link = null;
+let mainWin = null;
 
 let lastDir = null;
 
@@ -23,6 +28,7 @@ function createWindow() {
       nodeIntegration: false
     }
   });
+  mainWin = win;
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
   // i link esterni si aprono nel browser
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -41,6 +47,21 @@ app.whenReady().then(() => {
     return { ok: res.ok, status: res.status, text };
   });
   ipcMain.handle('app-version', () => app.getVersion());
+
+  // ---- SirJoe Link: server Wi-Fi verso il telefono, attivo solo a finestra aperta
+  link = new LinkServer({
+    dataDir: app.getPath('userData'),
+    pcName: os.hostname() || 'PC',
+    onEvent: (ev) => { if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('link-event', ev); }
+  });
+  ipcMain.handle('link-start', async (_e, outbox) => { link.setOutbox(outbox); return link.start(); });
+  ipcMain.handle('link-qr', (_e, address) => link.qrFor(address));
+  ipcMain.handle('link-stop', () => { link.stop(); return true; });
+  ipcMain.handle('rides-list', () => link.listRides());
+  ipcMain.handle('ride-read', (_e, file) => link.readRide(file));
+  ipcMain.handle('ride-delete', (_e, file) => { link.deleteRide(file); return true; });
+  ipcMain.handle('ride-add', (_e, name, text) => link.addRide(name, text));
+  ipcMain.handle('rides-folder', () => { shell.openPath(link.ridesDir); return link.ridesDir; });
 
   // "Salva con nome": scegli nome e cartella
   ipcMain.handle('save-file', async (e, { name, data, ext }) => {

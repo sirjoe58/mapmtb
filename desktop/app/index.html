@@ -18,6 +18,7 @@
     <nav class="tabs" role="tablist">
       <button class="tab active" data-tab="route">Percorso</button>
       <button class="tab" data-tab="places">Segnaposto</button>
+      <button class="tab" data-tab="rides">Uscite</button>
       <button class="tab" data-tab="library">Archivio</button>
       <button class="tab" data-tab="info">Info</button>
     </nav>
@@ -48,6 +49,9 @@
         <div><b id="stDown">0</b><small>m discesa</small></div>
         <div><b id="stTime">0:00</b><small>tempo stimato</small></div>
       </div>
+
+      <label class="check"><input type="checkbox" id="slopeColors"> Colora il percorso per pendenza</label>
+      <div id="climbBox" class="climbs"></div>
 
       <div class="grid2">
         <button id="undo" class="btn">↶ Annulla</button>
@@ -104,6 +108,66 @@
       </div>
     </section>
 
+    <!-- USCITE (registrate col telefono) + SALA ANALISI -->
+    <section class="panel" id="tab-rides">
+      <div id="ridesHome">
+        <p class="hint">Qui arrivano le uscite registrate col telefono tramite <b>📲 SirJoe Link</b>
+          (in alto a destra), oppure aggiungile da file. Cliccane una per aprire la <b>Sala analisi</b>.</p>
+        <div class="grid2">
+          <button id="addRide" class="btn">Aggiungi da file…</button>
+          <button id="ridesFolder" class="btn">Apri cartella</button>
+        </div>
+        <input id="rideFile" type="file" accept=".gpx,.fit,.tcx" multiple hidden>
+        <ul id="rideList" class="list"></ul>
+      </div>
+
+      <div id="analysis" hidden>
+        <button id="closeAnalysis" class="btn ghost small">← Torna all'elenco</button>
+        <h3 id="anName">Uscita</h3>
+        <div class="stats six">
+          <div><b id="anDist">0</b><small>km</small></div>
+          <div><b id="anTime">0:00</b><small>tempo totale</small></div>
+          <div><b id="anMoving">0:00</b><small>in movimento</small></div>
+          <div><b id="anAvg">0</b><small>km/h media</small></div>
+          <div><b id="anMax">0</b><small>km/h max</small></div>
+          <div><b id="anUp">0</b><small>m salita</small></div>
+        </div>
+        <label class="field"><span>Colora la traccia per</span>
+          <select id="anColor">
+            <option value="speed">Velocità</option>
+            <option value="slope">Pendenza</option>
+            <option value="ele">Altitudine</option>
+          </select>
+        </label>
+        <div id="anLegend" class="legend"></div>
+
+        <h3>Replay</h3>
+        <div class="replay">
+          <button id="anPlay" class="btn primary">▶</button>
+          <input id="anSlider" type="range" min="0" max="1000" value="0">
+          <select id="anSpeed">
+            <option value="30">×30</option>
+            <option value="60" selected>×60</option>
+            <option value="120">×120</option>
+            <option value="300">×300</option>
+          </select>
+        </div>
+        <div id="anNow" class="small">—</div>
+
+        <h3>Confronto con un percorso pianificato</h3>
+        <select id="anCompare"><option value="">Nessuno</option></select>
+        <div id="anCompareOut" class="small"></div>
+
+        <h3>Salite</h3>
+        <div id="anClimbs" class="climbs"></div>
+
+        <h3>Video per i social</h3>
+        <p class="hint small">Animazione di 20 secondi del giro con i numeri e il logo, pronta per Instagram, Facebook e WhatsApp.</p>
+        <button id="anVideo" class="btn primary">🎬 Crea video</button>
+        <div id="anVideoState" class="small"></div>
+      </div>
+    </section>
+
     <!-- ARCHIVIO -->
     <section class="panel" id="tab-library">
       <p class="hint">I percorsi salvati restano su questo PC.</p>
@@ -143,6 +207,7 @@
         <option value="osm">OpenStreetMap</option>
       </select>
       <label class="check light"><input type="checkbox" id="mtbOverlay" checked> Itinerari MTB</label>
+      <button id="linkBtn" class="btn primary" title="Collega il telefono via Wi-Fi">📲 SirJoe Link</button>
     </div>
     <div id="map"></div>
     <div id="busy" hidden>Calcolo del percorso…</div>
@@ -167,6 +232,31 @@
         <button value="cancel" class="btn">Annulla</button>
         <button value="save" class="btn primary">Salva</button>
       </div>
+    </form>
+  </dialog>
+
+  <!-- SirJoe Link -->
+  <dialog id="linkDialog">
+    <form method="dialog" class="dlg">
+      <h3>📲 SirJoe Link</h3>
+      <div class="link-grid">
+        <div class="qr-box"><img id="linkQr" alt="QR code"><div id="linkAddr" class="small"></div></div>
+        <div>
+          <ol class="steps">
+            <li>Telefono e PC sulla <b>stessa rete Wi-Fi</b>.</li>
+            <li>Sul telefono apri <b>SirJoe MTB → Percorsi → SirJoe Link</b>.</li>
+            <li>Tocca <b>Inquadra QR</b> e punta questo codice.</li>
+          </ol>
+          <p class="small">Il telefono può <b>ricevere</b> i percorsi qui sotto e <b>inviare</b> le uscite registrate,
+            che arrivano nella scheda <i>Uscite</i>. Il collegamento resta attivo solo finché questa finestra è aperta.</p>
+          <label class="field" id="linkAddrPick" hidden><span>Rete</span><select id="linkAddrSel"></select></label>
+        </div>
+      </div>
+      <h3>Percorsi offerti al telefono</h3>
+      <ul id="linkOut" class="list compact"></ul>
+      <h3>Attività</h3>
+      <ul id="linkLog" class="log"></ul>
+      <div class="dlg-actions"><span class="spacer"></span><button value="close" class="btn">Chiudi</button></div>
     </form>
   </dialog>
 
@@ -203,5 +293,7 @@
   <script src="formats.js"></script>
   <script src="routing.js"></script>
   <script src="app.js"></script>
+  <script src="analysis.js"></script>
+  <script src="link.js"></script>
 </body>
 </html>

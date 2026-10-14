@@ -11,8 +11,8 @@ android {
         applicationId = "it.sirjoe.mtbcomputer"
         minSdk = 23
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.5.1"
+        versionCode = 9
+        versionName = "1.6.0"
     }
 
     // Chiave di firma fissa: ogni nuova versione si installa sopra la precedente
@@ -72,6 +72,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("org.osmdroid:osmdroid-mapsforge:6.1.20")
+    // lettore QR per SirJoe Link (versione compatibile con Android 6)
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
+    implementation("com.google.zxing:core:3.3.0")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
 
