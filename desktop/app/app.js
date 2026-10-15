@@ -32,6 +32,7 @@ function snapshot() {
   if (history.length > 80) history.shift();
 }
 function undo() {
+  if (busy) return toast('Attendi la fine del calcolo in corso');
   const s = history.pop();
   if (!s) return toast('Niente da annullare');
   const o = JSON.parse(s);
@@ -296,7 +297,8 @@ function closeLoop() {
 }
 
 function clearRoute() {
-  if (!state.points.length) return;
+  if (busy) return toast('Attendi la fine del calcolo in corso');
+  if (!state.points.length) return toast('Niente da cancellare');
   if (!confirm('Cancellare il percorso? I segnaposto restano.')) return;
   snapshot();
   state.points = []; state.legs = [];
@@ -730,6 +732,7 @@ function setMode(m) {
   document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b.dataset.mode === m));
   mapEl.classList.toggle('place-mode', m === 'place');
   mapEl.classList.toggle('draw-mode', m === 'draw');
+  $('drawBar').hidden = m !== 'draw';
   if (m === 'draw') {
     map.dragging.disable();
     toast(state.profile === 'straight'
@@ -752,6 +755,8 @@ $('undo').addEventListener('click', undo);
 $('reverse').addEventListener('click', reverseRoute);
 $('loop').addEventListener('click', closeLoop);
 $('clearRoute').addEventListener('click', clearRoute);
+$('drawUndo').addEventListener('click', undo);
+$('drawClear').addEventListener('click', clearRoute);
 $('saveRoute').addEventListener('click', saveToLibrary);
 $('newRoute').addEventListener('click', () => {
   if (state.points.length && !confirm('Iniziare un nuovo percorso? Quello attuale, se non salvato, andrà perso.')) return;
