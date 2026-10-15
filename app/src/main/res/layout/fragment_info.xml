@@ -67,7 +67,26 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="56dp"
-            android:text="Schermo sempre acceso durante la registrazione" />
+            android:text="Schermo acceso durante uscita e navigazione" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDim"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swAutoHide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="Nascondi pulsanti e barra delle pagine 30 secondi dopo la partenza (tocca il bordo destro o il fondo per farli ricomparire)" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRotation"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/swVoice"

@@ -59,9 +59,19 @@ object RideRepository {
         _stats.value = s
     }
 
+    /** Ultima volta in movimento (oltre 7 km/h): serve a capire se si sta navigando. */
+    @Volatile
+    var lastMovingAt = 0L
+        private set
+
     fun updateLocation(l: Location) {
+        if (l.hasSpeed() && l.speed > 2f) lastMovingAt = System.currentTimeMillis()
         _location.value = l
     }
+
+    /** Uscita in corso: registrazione, oppure percorso da seguire mentre ci si muove (ultimi 2 minuti). */
+    fun rideActive(): Boolean = _stats.value.recording ||
+        (_route.value != null && System.currentTimeMillis() - lastMovingAt < 120_000L)
 
     /** true se il percorso attivo va sfidato come "fantasma". */
     @Volatile

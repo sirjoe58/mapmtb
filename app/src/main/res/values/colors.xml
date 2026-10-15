@@ -5,8 +5,11 @@
     <color name="sj_red">#D84315</color>
     <color name="sj_green">#2E7D32</color>
     <color name="sj_dark">#1B1B1B</color>
-    <color name="data_bar">#B3000000</color>
+    <color name="data_bar">#8C000000</color>
+    <color name="clock_bg">#59FFC107</color>
+    <color name="clock_text">#FFD54F</color>
+    <color name="nav_bg">#D9FFFFFF</color>
     <color name="white">#FFFFFF</color>
-    <color name="fab_bg">#E6FFFFFF</color>
+    <color name="fab_bg">#B3FFFFFF</color>
     <color name="ic_launcher_background">#1E3A2B</color>
 </resources>

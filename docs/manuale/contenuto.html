@@ -9,7 +9,7 @@
 <h2 id="a1">1. Installazione e aggiornamento</h2>
 <p><b>Requisiti:</b> Android 6.0 o successivo (va bene anche il Redmi 4X), GPS, circa 60 MB liberi più lo spazio per le mappe offline.</p>
 <ol>
-  <li>Sul telefono apri <b>github.com/sirjoe58/mapmtb</b> → <b>Releases</b> e scarica l'ultimo file, ad esempio <code>SirJoeMTB-v1.6.1.apk</code>. Ogni versione ha un nome diverso, così sai sempre quale stai installando.</li>
+  <li>Sul telefono apri <b>github.com/sirjoe58/mapmtb</b> → <b>Releases</b> e scarica l'ultimo file, ad esempio <code>SirJoeMTB-v1.7.0.apk</code>. Ogni versione ha un nome diverso, così sai sempre quale stai installando.</li>
   <li>Apri il file scaricato. La prima volta Android chiede di <b>consentire l'installazione da questa fonte</b> (browser o file manager): consenti e torna indietro.</li>
   <li>Tocca <b>Installa</b>.</li>
 </ol>
@@ -46,7 +46,7 @@
     <circle cx="343" cy="110" r="9" class="btn"/><circle cx="343" cy="135" r="9" class="btn"/>
     <circle cx="343" cy="160" r="9" class="btn"/><circle cx="343" cy="190" r="11" class="rec"/>
     <rect x="162" y="280" width="196" height="30" class="bar"/>
-    <text x="180" y="300" class="small w">18,6 km/h</text><text x="250" y="300" class="small w">12,40 km</text><text x="315" y="300" class="small w">10:42</text>
+    <text x="190" y="300" class="small w" text-anchor="middle">18,6</text><rect x="235" y="284" width="50" height="22" rx="5" fill="#FFC107" opacity=".45"/><text x="260" y="300" class="small" fill="#5d4037" text-anchor="middle">10:42</text><text x="330" y="300" class="small w" text-anchor="middle">12,40</text>
     <text x="166" y="44" class="tiny">BY SIRJOE</text>
     <line x1="370" y1="110" x2="420" y2="90" class="lead"/><text x="424" y="93" class="lbl">Mappe e livelli</text>
     <line x1="370" y1="135" x2="420" y2="125" class="lead"/><text x="424" y="128" class="lbl">Orientamento (bussola)</text>
@@ -63,6 +63,15 @@
 
 <h3>Il cursore e il percorso</h3>
 <p>La tua posizione è una <b>mountain bike vista da dietro</b> con una <b>freccia davanti</b>: quando segui un percorso la freccia indica la direzione da prendere, altrimenti la direzione di marcia. La linea blu è il percorso da seguire, la linea arancione è la traccia che stai registrando.</p>
+
+<h3>La barra dati</h3>
+<p>In basso, su una barra semitrasparente, tre numeri della stessa grandezza: <b>velocità</b> a sinistra, <b>ora</b> al centro (in giallo, su un riquadro colorato) e <b>km</b> a destra. Toccando la barra compare una seconda riga con tempo in movimento, salita e quota.</p>
+
+<h3>Barre a scomparsa</h3>
+<p>Durante un'uscita (registrazione) o una navigazione (percorso caricato e in movimento), <b>30 secondi dopo la partenza</b> i pulsanti a destra e la barra delle pagine in basso spariscono per lasciare più mappa; la barra dati resta sempre visibile. Per farli ricomparire tocca lo schermo nel punto dove stanno: il <b>bordo destro</b> per i pulsanti, la <b>barra dati</b> o il fondo dello schermo per la barra delle pagine. Dopo altri 30 secondi si nascondono di nuovo. Quando l'uscita o la navigazione finiscono restano sempre visibili. Si può disattivare in Info.</p>
+
+<h3>Cursore e zoom</h3>
+<p>Il cursore della bici sta <b>sempre al centro</b> dello schermo. Se sposti la mappa con un dito, dopo 15 secondi senza toccarla la mappa torna da sola sulla tua posizione. Il <b>doppio tocco non ingrandisce</b> la mappa, così le vibrazioni del manubrio o le gocce di pioggia non cambiano lo zoom: per zoomare usa due dita. Lo schermo resta <b>verticale</b> anche se giri il telefono (si cambia in Info).</p>
 
 <h3>Muovere, ruotare, zoomare</h3>
 <ul>
@@ -89,7 +98,10 @@
 </ol>
 <h3>Pausa automatica e sosta automatica</h3>
 <p><b>Pausa automatica</b>: sotto i 3 km/h circa il tempo in movimento si ferma, così la media non si abbassa ai semafori o alle fontane.</p>
-<p><b>Sosta automatica</b>: se resti fermo per il tempo scelto in Info (da 30 secondi a 5 minuti) l'app va in sosta: luminosità al minimo, schermo libero di spegnersi, GPS più lento per risparmiare batteria, voce "Sosta". Quando riparti (due posizioni di fila in movimento, oltre 7 km/h o 30 m dal punto di sosta) si risveglia da sola, riaccende lo schermo sopra la schermata di blocco e riprende registrazione e navigazione ("Si riparte"). Il tratto fatto mentre si risvegliava viene conteggiato.</p>
+<p><b>Sosta automatica</b>: se resti fermo per il tempo scelto in Info (da 30 secondi a 5 minuti) l'app va in sosta: schermo oscurato (si riaccende con un tocco), GPS più lento per risparmiare batteria, voce "Sosta". Quando riparti (due posizioni di fila in movimento, oltre 7 km/h o 30 m dal punto di sosta) si risveglia da sola, riaccende lo schermo sopra la schermata di blocco e riprende registrazione e navigazione ("Si riparte"). Il tratto fatto mentre si risvegliava viene conteggiato.</p>
+<h3>Schermo oscurato</h3>
+<p>Durante l'uscita lo schermo resta acceso. Se non lo tocchi per il tempo scelto in Info (predefinito <b>5 minuti</b>; 1, 2, 10, 15, 30 minuti o <b>mai</b>), si oscura: luminosità al minimo e velo nero, ma l'app continua a registrare e a navigare. <b>Basta un tocco</b> per riaccenderlo (quel tocco non preme nulla sulla mappa). Anche in sosta lo schermo si oscura invece di spegnersi, così si riaccende sempre con un tocco; consuma un po' più di batteria di uno schermo spento.</p>
+
 <h3>Avvisi vocali</h3>
 <p>Con gli avvisi vocali attivi la voce italiana del telefono annuncia avvio, pausa, ripresa, sosta e ogni chilometro, oltre agli avvisi di fantasma e salite. Se non senti nulla controlla che sia installata la sintesi vocale Google con la lingua italiana.</p>
 
@@ -200,7 +212,10 @@
   <tr><th>Impostazione</th><th>Effetto</th></tr>
   <tr><td>Pausa automatica quando sei fermo</td><td>Ferma il tempo in movimento sotto i 3 km/h.</td></tr>
   <tr><td>Sosta automatica</td><td>Spegne lo schermo da fermo e riprende da sola; con il ritardo regolabile.</td></tr>
-  <tr><td>Schermo sempre acceso durante la registrazione</td><td>Utile col telefono sul manubrio; consuma più batteria.</td></tr>
+  <tr><td>Schermo acceso durante uscita e navigazione</td><td>Utile col telefono sul manubrio; consuma più batteria.</td></tr>
+  <tr><td>Oscura lo schermo dopo…</td><td>Minuti senza tocchi prima di oscurare lo schermo (5 predefinito, oppure mai). Un tocco lo riaccende.</td></tr>
+  <tr><td>Nascondi pulsanti e barra delle pagine</td><td>Barre a scomparsa 30 secondi dopo la partenza (capitolo 3).</td></tr>
+  <tr><td>Schermo: sempre verticale</td><td>Oppure sempre orizzontale, o automatico.</td></tr>
   <tr><td>Mappa orientata nella direzione di marcia</td><td>Scelta predefinita; altre scelte dalla bussola.</td></tr>
   <tr><td>Mostra itinerari MTB sulla mappa</td><td>Sovrapposizione waymarkedtrails (online).</td></tr>
   <tr><td>Avvisi vocali</td><td>Voce a ogni km, pausa, sosta.</td></tr>
@@ -217,10 +232,10 @@
 </section>
 
 <h2 id="b1">12. Installazione</h2>
-<p>Da <b>github.com/sirjoe58/mapmtb → Releases</b>, nella release <b>planner-v1.2.1</b>, scegli:</p>
+<p>Da <b>github.com/sirjoe58/mapmtb → Releases</b>, nella release <b>planner-v1.3.0</b>, scegli:</p>
 <ul>
-  <li><code>SirJoe-MTB-Planner-1.2.1-portable.exe</code>: si avvia con un doppio clic, senza installazione (anche da chiavetta USB);</li>
-  <li><code>SirJoe-MTB-Planner-1.2.1-setup.exe</code>: installazione classica con collegamento sul desktop e nel menu Start.</li>
+  <li><code>SirJoe-MTB-Planner-1.3.0-portable.exe</code>: si avvia con un doppio clic, senza installazione (anche da chiavetta USB);</li>
+  <li><code>SirJoe-MTB-Planner-1.3.0-setup.exe</code>: installazione classica con collegamento sul desktop e nel menu Start.</li>
 </ul>
 <div class="box tip">Il programma non è firmato digitalmente (è un progetto personale): Windows SmartScreen può mostrare "Windows ha protetto il PC". Clicca <b>Ulteriori informazioni → Esegui comunque</b>. Al primo uso di SirJoe Link Windows chiede l'accesso alla rete: scegli <b>Reti private</b>.</div>
 <p>Requisiti: Windows 10 o 11 a 64 bit, Internet per mappe, ricerca e calcolo dei percorsi.</p>
@@ -294,7 +309,7 @@
   <li><b>Replay</b>: il pallino ripercorre l'uscita a ×30, ×60, ×120 o ×300; con il cursore vai a un momento preciso e vedi tempo, km, velocità e quota.</li>
   <li><b>Confronto con un percorso pianificato</b>: scegli un percorso dell'archivio; il percorso compare tratteggiato, le deviazioni sono evidenziate in viola e vedi quanta parte dell'uscita è stata sul percorso.</li>
   <li><b>Salite</b>: elenco con lunghezza, dislivello, pendenza media e massima.</li>
-  <li><b>Video per i social</b>: <b>Crea video</b> registra un'animazione verticale di 20 secondi (1080×1350) con il giro che si disegna, i numeri e il logo BY SIRJOE, pronta per Instagram, Facebook e WhatsApp. Al termine scegli dove salvarla (MP4, o WebM se il PC non supporta MP4).</li>
+  <li><b>Video per i social</b>: <b>Crea video</b> registra un'animazione verticale di 20 secondi (1080×1350) con <b>la mappa della zona</b> (OpenTopoMap o OpenStreetMap, come quella scelta nel Planner) e sopra il giro che si disegna, i numeri e il logo BY SIRJOE, pronta per Instagram, Facebook e WhatsApp. Al termine scegli dove salvarla (MP4, o WebM se il PC non supporta MP4).</li>
 </ul>
 
 <section class="part" id="p3">
@@ -381,7 +396,7 @@
   <tr><td>Il lettore QR non legge il codice</td><td>Dalla versione 1.6.1 il lettore è in verticale. Tieni il telefono a 20–30 cm, alza la luminosità del monitor, evita riflessi; oppure usa <b>Inserisci codice</b> con indirizzo e PIN.</td></tr>
   <tr><td>Strava: "Autorizzazione negata" o errore</td><td>Callback Domain deve essere <code>localhost</code>; durante l'autorizzazione lascia la spunta per caricare attività.</td></tr>
   <tr><td>Il Planner non si avvia (SmartScreen)</td><td>Ulteriori informazioni → Esegui comunque.</td></tr>
-  <tr><td>Il video non si crea</td><td>Lascia la finestra del Planner in primo piano durante i 20 secondi di registrazione.</td></tr>
+  <tr><td>Il video non si crea</td><td>Lascia la finestra del Planner in primo piano durante i 20 secondi di registrazione. Senza Internet il video si crea lo stesso, ma senza la mappa di sfondo.</td></tr>
 </table>
 
 <h2 id="d2">22. Avvertenze d'uso</h2>

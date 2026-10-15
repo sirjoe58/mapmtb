@@ -56,6 +56,49 @@ class InfoFragment : Fragment(R.layout.fragment_info) {
                 .show()
         }
         bind(R.id.swScreen, Prefs.keepScreenOn(ctx)) { Prefs.setKeepScreenOn(ctx, it) }
+        bind(R.id.swAutoHide, Prefs.autoHideBars(ctx)) { Prefs.setAutoHideBars(ctx, it) }
+
+        // oscuramento dello schermo senza tocchi (si riaccende toccandolo)
+        val dimBtn = view.findViewById<MaterialButton>(R.id.btnDim)
+        val dims = intArrayOf(1, 2, 5, 10, 15, 30, 0)
+        val dimLabels = arrayOf("1 minuto", "2 minuti", "5 minuti", "10 minuti", "15 minuti", "30 minuti", "Mai")
+        fun showDim() {
+            val i = dims.indexOf(Prefs.dimAfterMin(ctx)).let { if (it < 0) 2 else it }
+            dimBtn.text = if (dims[i] == 0) "Oscura lo schermo: mai" else "Oscura lo schermo dopo ${dimLabels[i]} senza tocchi"
+        }
+        showDim()
+        dimBtn.setOnClickListener {
+            val sel = dims.indexOf(Prefs.dimAfterMin(ctx)).let { if (it < 0) 2 else it }
+            MaterialAlertDialogBuilder(ctx)
+                .setTitle("Oscura lo schermo dopo")
+                .setSingleChoiceItems(dimLabels, sel) { d, which ->
+                    Prefs.setDimAfterMin(ctx, dims[which])
+                    showDim()
+                    d.dismiss()
+                }
+                .show()
+            Toast.makeText(ctx, "Durante l'uscita lo schermo si oscura ma resta attivo: toccalo per riaccenderlo", Toast.LENGTH_LONG).show()
+        }
+
+        // rotazione dello schermo
+        val rotBtn = view.findViewById<MaterialButton>(R.id.btnRotation)
+        val rots = arrayOf(Prefs.ROT_PORTRAIT, Prefs.ROT_LANDSCAPE, Prefs.ROT_AUTO)
+        val rotLabels = arrayOf("Sempre verticale", "Sempre orizzontale", "Automatica (gira col telefono)")
+        fun showRot() {
+            rotBtn.text = "Schermo: " + rotLabels[rots.indexOf(Prefs.rotation(ctx)).coerceAtLeast(0)].lowercase()
+        }
+        showRot()
+        rotBtn.setOnClickListener {
+            MaterialAlertDialogBuilder(ctx)
+                .setTitle("Orientamento dello schermo")
+                .setSingleChoiceItems(rotLabels, rots.indexOf(Prefs.rotation(ctx)).coerceAtLeast(0)) { d, which ->
+                    Prefs.setRotation(ctx, rots[which])
+                    showRot()
+                    d.dismiss()
+                    (activity as? MainActivity)?.applyRotation()
+                }
+                .show()
+        }
         bind(R.id.swVoice, Prefs.voice(ctx)) { Prefs.setVoice(ctx, it) }
         bind(R.id.swClimbs, Prefs.climbAlerts(ctx)) { Prefs.setClimbAlerts(ctx, it) }
         bind(R.id.swGhost, Prefs.ghost(ctx)) { Prefs.setGhost(ctx, it) }

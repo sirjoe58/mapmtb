@@ -6,7 +6,15 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.content.pm.ActivityInfo
+import android.graphics.Color
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -51,6 +59,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var nav: BottomNavigationView
+    private lateinit var container: FrameLayout
+    private var currentTag = TAG_MAP
+    private var navHidden = false
+
+    // oscuramento dello schermo durante l'uscita (si riaccende con un tocco)
+    private var lastTouch = System.currentTimeMillis()
+    private var dimView: View? = null
+    private var swallowGesture = false
     private var pendingSave: ByteArray? = null
 
     private val permissionLauncher =
@@ -77,6 +93,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         nav = findViewById(R.id.bottomNav)
+        container = findViewById(R.id.container)
+        applyRotation()
+        // le pagine diverse dalla mappa non finiscono sotto la barra delle pagine
+        nav.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateContainerPadding() }
 
         if (savedInstanceState == null) {
             val t = supportFragmentManager.beginTransaction()
@@ -93,6 +113,7 @@ class MainActivity : AppCompatActivity() {
             show(tagFor(item.itemId))
             true
         }
+        currentTag = tagFor(nav.selectedItemId)
 
         if (Prefs.disclaimerAccepted(this)) askPermissions() else showDisclaimer()
 
@@ -102,25 +123,44 @@ class MainActivity : AppCompatActivity() {
                 RideRepository.stats.collect { s -> applyScreenMode(s) }
             }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                RideRepository.route.collect { applyScreenMode(RideRepository.stats.value) }
+            }
+        }
+        // controllo periodico: oscura lo schermo dopo il tempo scelto senza tocchi
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    kotlinx.coroutines.delay(2000)
+                    applyScreenMode(RideRepository.stats.value)
+                    checkDim()
+                }
+            }
+        }
 
         handleIntent(intent)
     }
 
     /**
-     * Schermo durante l'uscita:
-     * - in movimento resta acceso (se attivato nelle impostazioni);
-     * - in sosta si abbassa la luminosità e lo schermo può spegnersi;
+     * Schermo durante l'uscita o la navigazione:
+     * - resta acceso (se attivato nelle impostazioni);
+     * - dopo il tempo scelto senza tocchi, o in sosta, si oscura ma resta attivo:
+     *   un tocco lo riaccende;
      * - alla ripartenza l'app si riaccende sopra la schermata di blocco.
      */
     private var lastScreenMode: String? = null
 
+    private fun rideActive() = RideRepository.rideActive()
+
     private fun applyScreenMode(s: RideStats) {
         val mode = when {
-            !s.recording -> "off"
-            s.sleeping -> "sleep"
-            else -> "ride"
+            s.recording && s.sleeping -> "sleep"
+            rideActive() -> "ride"
+            else -> "off"
         }
         if (mode == lastScreenMode) return
+        val previous = lastScreenMode
         lastScreenMode = mode
         val overLock = s.recording && Prefs.autoSleep(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -131,14 +171,107 @@ class MainActivity : AppCompatActivity() {
             val f = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             if (overLock) window.addFlags(f) else window.clearFlags(f)
         }
-        if (mode == "ride" && Prefs.keepScreenOn(this)) {
+        if (mode != "off" && Prefs.keepScreenOn(this)) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+        when {
+            mode == "sleep" -> dim()
+            previous == "sleep" || mode == "off" -> {
+                // ripartenza o fine uscita: schermo di nuovo pieno
+                lastTouch = System.currentTimeMillis()
+                undim()
+            }
+        }
+    }
+
+    private fun checkDim() {
+        val min = Prefs.dimAfterMin(this)
+        if (min <= 0 || dimView != null || !rideActive() || !Prefs.keepScreenOn(this)) return
+        if (System.currentTimeMillis() - lastTouch >= min * 60_000L) dim()
+    }
+
+    /** Schermo oscurato: velo nero e luminosità al minimo, ma l'app resta attiva. */
+    private fun dim() {
+        if (dimView == null) {
+            val v = FrameLayout(this).apply {
+                setBackgroundColor(Color.argb(235, 0, 0, 0))
+                addView(TextView(this@MainActivity).apply {
+                    text = "Tocca lo schermo per riaccenderlo"
+                    setTextColor(Color.argb(110, 255, 255, 255))
+                    textSize = 14f
+                }, FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+                ).apply { bottomMargin = (48 * resources.displayMetrics.density).toInt() })
+            }
+            addContentView(v, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            dimView = v
+        }
         val lp = window.attributes
-        lp.screenBrightness = if (mode == "sleep") 0.02f else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        lp.screenBrightness = 0.01f
         window.attributes = lp
+    }
+
+    private fun undim() {
+        dimView?.let { (it.parent as? ViewGroup)?.removeView(it) }
+        dimView = null
+        val lp = window.attributes
+        lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        window.attributes = lp
+    }
+
+    /** Ogni tocco tiene acceso lo schermo; se era oscurato, il primo tocco lo riaccende e basta. */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        lastTouch = System.currentTimeMillis()
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN && dimView != null) {
+            undim()
+            swallowGesture = true
+            return true
+        }
+        if (swallowGesture) {
+            if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) swallowGesture = false
+            return true
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    fun applyRotation() {
+        requestedOrientation = when (Prefs.rotation(this)) {
+            Prefs.ROT_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            Prefs.ROT_AUTO -> ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+            else -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+    }
+
+    // ------------------------------------------- barra delle pagine in basso
+
+    private fun updateContainerPadding() {
+        val bottom = if (currentTag == TAG_MAP) 0 else nav.height
+        if (container.paddingBottom != bottom) container.setPadding(0, 0, 0, bottom)
+        (supportFragmentManager.findFragmentByTag(TAG_MAP) as? MapFragment)?.onNavBarOffset(navOffset())
+    }
+
+    /** Spazio occupato in basso dalla barra delle pagine (0 se nascosta). */
+    fun navOffset(): Int = if (navHidden) 0 else nav.height
+
+    fun isNavHidden() = navHidden
+
+    /** Nasconde o mostra la barra delle pagine (solo sulla mappa). */
+    fun setNavHidden(hidden: Boolean) {
+        val h = hidden && currentTag == TAG_MAP
+        if (h == navHidden) return
+        navHidden = h
+        nav.animate().cancel()
+        if (h) {
+            nav.animate().translationY(nav.height.toFloat()).alpha(0f).setDuration(250)
+                .withEndAction { if (navHidden) nav.visibility = View.INVISIBLE }.start()
+        } else {
+            nav.visibility = View.VISIBLE
+            nav.animate().translationY(0f).alpha(1f).setDuration(200).start()
+        }
+        (supportFragmentManager.findFragmentByTag(TAG_MAP) as? MapFragment)?.onNavBarOffset(navOffset())
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -249,6 +382,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun show(tag: String) {
+        currentTag = tag
+        if (tag != TAG_MAP) setNavHidden(false)
         val fm = supportFragmentManager
         val t = fm.beginTransaction()
         for (f in ALL_TAGS) {
@@ -256,6 +391,7 @@ class MainActivity : AppCompatActivity() {
             if (f == tag) t.show(frag) else t.hide(frag)
         }
         t.commitNow()
+        updateContainerPadding()
     }
 
     fun selectTab(id: Int) {

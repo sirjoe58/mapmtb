@@ -324,6 +324,63 @@ const Analysis = {
     }
   },
 
+  /**
+   * Mappa di sfondo per il video: riquadri OpenTopoMap (o OSM) allo zoom che contiene il giro,
+   * scaricati una volta sola (pochi riquadri, come una normale visualizzazione) e uniti in un'immagine.
+   * k, ox, oy: la stessa proiezione usata per disegnare il percorso.
+   */
+  async mapBackground(MAP, k, ox, oy) {
+    if (!(window.sirjoe && window.sirjoe.fetchDataUrl)) return null;
+    const useOsm = store.get('base', 'topo') === 'osm';
+    // zoom un po' più alto del necessario: riquadri rimpiccioliti, quindi nitidi
+    const maxZ = useOsm ? 19 : 17;
+    const plan = (z) => {
+      const n = 2 ** z, ts = k / n; // lato di un riquadro in pixel del video
+      const tx0 = Math.floor((MAP.x - ox) / ts), tx1 = Math.floor((MAP.x + MAP.w - ox) / ts);
+      const ty0 = Math.max(0, Math.floor((MAP.y - oy) / ts)), ty1 = Math.min(n - 1, Math.floor((MAP.y + MAP.h - oy) / ts));
+      const jobs = [];
+      for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) jobs.push([tx, ty]);
+      return { z, n, ts, jobs };
+    };
+    const zf = Math.log2(k / 256);
+    let pl = plan(Math.max(1, Math.min(maxZ, Math.ceil(zf))));
+    if (pl.jobs.length > 60) pl = plan(Math.max(1, Math.min(maxZ, Math.floor(zf))));
+    const { z, n, ts, jobs } = pl;
+    if (!jobs.length || jobs.length > 60) return null;
+    const cv = document.createElement('canvas');
+    cv.width = MAP.w; cv.height = MAP.h;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#dfe6d8'; c.fillRect(0, 0, MAP.w, MAP.h);
+    let ok = 0, i = 0;
+    const worker = async () => {
+      while (i < jobs.length) {
+        const [tx, ty] = jobs[i++];
+        const x = ((tx % n) + n) % n;
+        const sub = 'abc'[(tx + ty) % 3];
+        const url = useOsm ? `https://tile.openstreetmap.org/${z}/${x}/${ty}.png` : `https://${sub}.tile.opentopomap.org/${z}/${x}/${ty}.png`;
+        try {
+          const img = new Image();
+          img.src = await window.sirjoe.fetchDataUrl(url);
+          await img.decode();
+          c.drawImage(img, tx * ts + ox - MAP.x, ty * ts + oy - MAP.y, ts + 0.5, ts + 0.5);
+          ok++;
+        } catch (e) { /* riquadro mancante: resta lo sfondo */ }
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    if (!ok) return null;
+    // sfumature in alto e in basso per staccare titolo e numeri
+    let g = c.createLinearGradient(0, 0, 0, 90);
+    g.addColorStop(0, 'rgba(20,38,28,.9)'); g.addColorStop(1, 'rgba(20,38,28,0)');
+    c.fillStyle = g; c.fillRect(0, 0, MAP.w, 90);
+    g = c.createLinearGradient(0, MAP.h - 90, 0, MAP.h);
+    g.addColorStop(0, 'rgba(12,26,18,0)'); g.addColorStop(1, 'rgba(12,26,18,1)');
+    c.fillStyle = g; c.fillRect(0, MAP.h - 90, MAP.w, 90);
+    c.font = '600 18px "Segoe UI", Arial, sans-serif'; c.fillStyle = 'rgba(255,255,255,.85)'; c.textAlign = 'right';
+    c.fillText(useOsm ? '© OpenStreetMap contributors' : '© OpenStreetMap contributors, OpenTopoMap (CC-BY-SA)', MAP.w - 16, MAP.h - 14);
+    return cv;
+  },
+
   /* --------------------------------------------------------- video */
   async video() {
     if (this.recording) return;
@@ -341,7 +398,8 @@ const Analysis = {
     // proiezione di Mercatore adattata al riquadro
     const mx = (lon) => lon / 360 + 0.5;
     const my = (lat) => 0.5 - Math.log(Math.tan(Math.PI / 4 + (Math.max(-85, Math.min(85, lat)) * Math.PI) / 360)) / (2 * Math.PI);
-    const box = { x: 80, y: 230, w: W - 160, h: 700 };
+    const box = { x: 110, y: 250, w: W - 220, h: 660 };
+    const MAP = { x: 0, y: 180, w: W, h: 820 }; // riquadro della mappa di sfondo
     const xs = this.points.map((p) => mx(p.lon)), ys = this.points.map((p) => my(p.lat));
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
     const k = Math.min(box.w / ((maxX - minX) || 1e-9), box.h / ((maxY - minY) || 1e-9));
@@ -354,6 +412,8 @@ const Analysis = {
     const total = this.cum[this.cum.length - 1];
     const sum = Geo.summary(this.points);
     const font = (px, w = 700) => `${w} ${px}px "Segoe UI", Arial, sans-serif`;
+    $('anVideoState').textContent = 'Scarico la mappa…';
+    const mapBg = await this.mapBackground(MAP, k, ox, oy);
 
     const frame = (prog) => {
       const g = ctx.createLinearGradient(0, 0, 0, H);
@@ -365,9 +425,15 @@ const Analysis = {
         ctx.fillStyle = '#B0C4B8'; ctx.font = font(34, 400);
         ctx.fillText(new Date(this.t0).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), 60, 160);
       }
+      // mappa di sfondo con il percorso
+      if (mapBg) {
+        ctx.drawImage(mapBg, MAP.x, MAP.y);
+      }
       // percorso intero tenue + parte già percorsa colorata
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 10;
+      ctx.strokeStyle = mapBg ? 'rgba(20,38,28,.55)' : 'rgba(255,255,255,.22)'; ctx.lineWidth = mapBg ? 14 : 10;
+      ctx.beginPath(); P.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = mapBg ? 8 : 10;
       ctx.beginPath(); P.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
       const n = Math.max(1, Math.floor(prog * (P.length - 1)));
       ctx.lineWidth = 12;

@@ -76,6 +76,14 @@ app.whenReady().then(() => {
     return { ok: res.ok, status: res.status, text };
   });
   ipcMain.handle('app-version', () => app.getVersion());
+  // immagini (riquadri di mappa per il video) come data URL: niente problemi di origine sul canvas
+  ipcMain.handle('fetch-data-url', async (_e, url) => {
+    if (!/^https:\/\/([a-c]\.)?tile\.(opentopomap|openstreetmap)\.org\//.test(url)) throw new Error('Indirizzo non consentito');
+    const res = await net.fetch(url, { headers: { 'User-Agent': UA } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const buf = Buffer.from(await res.arrayBuffer());
+    return `data:${res.headers.get('content-type') || 'image/png'};base64,${buf.toString('base64')}`;
+  });
 
   // ---- SirJoe Link: server Wi-Fi verso il telefono, attivo solo a finestra aperta
   link = new LinkServer({
