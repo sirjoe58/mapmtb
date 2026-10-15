@@ -44,6 +44,21 @@ object Prefs {
     fun sleepDelaySec(ctx: Context) = p(ctx).getInt("sleep_delay", 60)
     fun setSleepDelaySec(ctx: Context, v: Int) = p(ctx).edit().putInt("sleep_delay", v).apply()
 
+    /** Barre (pulsanti laterali e pagine in basso) nascoste 30 s dopo l'avvio di uscita o navigazione. */
+    fun autoHideBars(ctx: Context) = p(ctx).getBoolean("auto_hide_bars", true)
+    fun setAutoHideBars(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("auto_hide_bars", v).apply()
+
+    /** Minuti senza tocchi dopo cui lo schermo si oscura durante l'uscita (0 = mai). */
+    fun dimAfterMin(ctx: Context) = p(ctx).getInt("dim_after_min", 5)
+    fun setDimAfterMin(ctx: Context, v: Int) = p(ctx).edit().putInt("dim_after_min", v).apply()
+
+    const val ROT_PORTRAIT = "portrait"
+    const val ROT_LANDSCAPE = "landscape"
+    const val ROT_AUTO = "auto"
+    /** Rotazione dello schermo: verticale bloccata se non si sceglie altro. */
+    fun rotation(ctx: Context): String = p(ctx).getString("rotation", ROT_PORTRAIT) ?: ROT_PORTRAIT
+    fun setRotation(ctx: Context, v: String) = p(ctx).edit().putString("rotation", v).apply()
+
     fun keepScreenOn(ctx: Context) = p(ctx).getBoolean("keep_screen_on", true)
     fun setKeepScreenOn(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("keep_screen_on", v).apply()
 

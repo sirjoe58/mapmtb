@@ -16,6 +16,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -63,6 +64,8 @@ class MapFragment : Fragment(R.layout.fragment_map) {
 
     companion object {
         private const val OFF_ROUTE_M = 60.0
+        private const val BARS_DELAY_MS = 30_000L
+        private const val REFOLLOW_MS = 15_000L
         private const val BACK_ON_ROUTE_M = 35.0
         /** La freccia punta al punto del percorso che si trova circa 40 m più avanti. */
         private const val LOOK_AHEAD_M = 40.0
@@ -81,6 +84,17 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     private lateinit var clockTv: TextView
     private lateinit var bannerTv: TextView
     private lateinit var coachTv: TextView
+    private lateinit var distanceUnitTv: TextView
+    private lateinit var sideBar: View
+    private lateinit var dataBar: View
+
+    // barre a scomparsa durante l'uscita o la navigazione
+    private var barsActive = false
+    private var sideShownAt = 0L
+    private var navShownAt = 0L
+    private var sideHidden = false
+    private var lastMapTouch = 0L
+    private var downTime = 0L
     private var ghostMarker: Marker? = null
     private lateinit var extraRow: View
     private lateinit var extraTime: TextView
@@ -125,6 +139,17 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         clockTv = view.findViewById(R.id.clock)
         bannerTv = view.findViewById(R.id.routeBanner)
         coachTv = view.findViewById(R.id.coachBanner)
+        distanceUnitTv = view.findViewById(R.id.distanceUnit)
+        sideBar = view.findViewById(R.id.sideBar)
+        dataBar = view.findViewById(R.id.dataBar)
+        sideBar.alpha = 0.85f
+        // niente zoom con il doppio tocco: le vibrazioni del manubrio non ingrandiscono la mappa
+        map.overlays.add(object : org.osmdroid.views.overlay.Overlay() {
+            override fun draw(c: Canvas?, osmv: MapView?, shadow: Boolean) {}
+            override fun onDoubleTap(e: MotionEvent?, mapView: MapView?) = true
+            override fun onDoubleTapEvent(e: MotionEvent?, mapView: MapView?) = true
+        })
+        map.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         extraRow = view.findViewById(R.id.extraRow)
         extraTime = view.findViewById(R.id.extraTime)
         extraAscent = view.findViewById(R.id.extraAscent)
@@ -161,9 +186,17 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         // Trascinando con un dito la mappa smette di seguire la posizione
         // (lo zoom con due dita invece non la sgancia).
         map.setOnTouchListener { _, e ->
+            lastMapTouch = System.currentTimeMillis()
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     downX = e.x; downY = e.y
+                    downTime = System.currentTimeMillis()
+                }
+                MotionEvent.ACTION_UP -> {
+                    val moved = Math.hypot((e.x - downX).toDouble(), (e.y - downY).toDouble())
+                    if (moved < 16 * resources.displayMetrics.density && System.currentTimeMillis() - downTime < 400) {
+                        onMapTap(e.x, e.y)
+                    }
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val moved = Math.hypot((e.x - downX).toDouble(), (e.y - downY).toDouble())
@@ -197,22 +230,35 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             true
         }
         btnRecord.setOnClickListener { onRecordClick() }
+        // usare un pulsante tiene visibile la barra laterale per altri 30 secondi
+        val sb = sideBar as ViewGroup
+        for (i in 0 until sb.childCount) {
+            sb.getChildAt(i).setOnTouchListener { _, _ -> sideShownAt = System.currentTimeMillis(); false }
+        }
         btnStop.setOnClickListener { confirmStop() }
-        view.findViewById<View>(R.id.dataBar).setOnClickListener {
-            extraRow.visibility = if (extraRow.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        dataBar.setOnClickListener {
+            val act = activity as? MainActivity
+            if (act != null && act.isNavHidden()) {
+                // tocco sulla barra dati in basso: ricompare la barra delle pagine
+                showNavBar()
+            } else {
+                extraRow.visibility = if (extraRow.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+                navShownAt = System.currentTimeMillis()
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { RideRepository.location.collect { l -> if (l != null) onLocation(l) } }
-                launch { RideRepository.stats.collect { updateData() } }
+                launch { RideRepository.stats.collect { updateData(); refreshBarsMode() } }
                 launch { RideRepository.pointCount.collect { updateTrackLine(it) } }
-                launch { RideRepository.route.collect { showRoute(it) } }
+                launch { RideRepository.route.collect { showRoute(it); refreshBarsMode() } }
                 launch { Placemarks.items.collect { redrawPlaces() } }
                 launch { RideRepository.coach.collect { showCoach(it) } }
                 launch {
                     while (true) {
                         clockTv.text = clockFmt.format(Date())
+                        barsTick()
                         delay(1000)
                     }
                 }
@@ -288,12 +334,10 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         val mode = Prefs.orientation(requireContext())
         val auto = !userRotated && mode != Prefs.ORIENT_FREE && (follow || mode == Prefs.ORIENT_NORTH)
         if (auto) map.mapOrientation = if (mode == Prefs.ORIENT_HEADING) -lastBearing else 0f
-        val headingUp = auto && mode == Prefs.ORIENT_HEADING
 
         // In modalità "direzione di marcia" la posizione sta nella parte bassa dello schermo
-        if (map.height > 0) {
-            map.setMapCenterOffset(0, if (headingUp && follow) (map.height * 0.22f).toInt() else 0)
-        }
+        // cursore sempre al centro dello schermo
+        map.setMapCenterOffset(0, 0)
         updateCompass()
 
         // direzione da seguire: verso il percorso, oppure la direzione di marcia
@@ -389,14 +433,89 @@ class MapFragment : Fragment(R.layout.fragment_map) {
 
     // ------------------------------------------------------------------ dati
 
+    // ------------------------------------------------- barre a scomparsa
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (!hidden && view != null) {
+            // tornando sulla mappa le barre ricompaiono e ripartono i 30 secondi
+            showSideBar(); showNavBar()
+        }
+    }
+
+    /**
+     * Uscita (registrazione) o navigazione (percorso caricato e in movimento): le barre si nascondono
+     * dopo 30 s; finita, restano visibili.
+     */
+    private fun refreshBarsMode() {
+        if (view == null) return
+        val active = RideRepository.rideActive()
+        if (active == barsActive) return
+        barsActive = active
+        showSideBar(); showNavBar()
+    }
+
+    private fun barsTick() {
+        refreshBarsMode()
+        val now = System.currentTimeMillis()
+        val act = activity as? MainActivity ?: return
+        if (barsActive && Prefs.autoHideBars(requireContext()) && !isHidden) {
+            if (!sideHidden && now - sideShownAt > BARS_DELAY_MS) hideSideBar()
+            if (!act.isNavHidden() && now - navShownAt > BARS_DELAY_MS) act.setNavHidden(true)
+        }
+        // dopo un po' che non tocchi la mappa, il cursore torna al centro
+        if (barsActive && !follow && lastMapTouch > 0 && now - lastMapTouch > REFOLLOW_MS) {
+            follow = true
+            userRotated = false
+            RideRepository.location.value?.let { onLocation(it) }
+        }
+    }
+
+    private fun onMapTap(x: Float, y: Float) {
+        val dp = resources.displayMetrics.density
+        val w = map.width
+        val h = map.height
+        if (sideHidden && x > w - 110 * dp) showSideBar()
+        if ((activity as? MainActivity)?.isNavHidden() == true && y > h - dataBar.height - 90 * dp) showNavBar()
+    }
+
+    private fun showSideBar() {
+        sideShownAt = System.currentTimeMillis()
+        if (!sideHidden) return
+        sideHidden = false
+        sideBar.visibility = View.VISIBLE
+        sideBar.animate().cancel()
+        sideBar.animate().alpha(0.85f).translationX(0f).setDuration(200).start()
+    }
+
+    private fun hideSideBar() {
+        if (sideHidden) return
+        sideHidden = true
+        sideBar.animate().cancel()
+        sideBar.animate().alpha(0f).translationX(sideBar.width.toFloat()).setDuration(250)
+            .withEndAction { if (sideHidden) sideBar.visibility = View.INVISIBLE }.start()
+    }
+
+    private fun showNavBar() {
+        navShownAt = System.currentTimeMillis()
+        (activity as? MainActivity)?.setNavHidden(false)
+    }
+
+    /** La barra dati sta sempre appena sopra la barra delle pagine (o in fondo se è nascosta). */
+    fun onNavBarOffset(px: Int) {
+        if (view == null) return
+        dataBar.animate().cancel()
+        dataBar.animate().translationY(-px.toFloat()).setDuration(220).start()
+    }
+
     private fun updateData() {
         if (!isAdded) return
         val s = RideRepository.stats.value
         val speedMs = if (s.recording) s.currentSpeedMs
         else (RideRepository.location.value?.takeIf { it.hasSpeed() }?.speed?.toDouble() ?: 0.0)
         speedTv.text = Format.speedKmh(speedMs)
-        distanceTv.text = getString(R.string.unit_km_value, Format.distanceKm(s.distanceM)) +
-            if (s.sleeping) "  · sosta" else ""
+        distanceTv.text = Format.distanceKm(s.distanceM)
+        distanceUnitTv.text = if (s.sleeping) "km · sosta" else "km"
         extraTime.text = "In movimento " + Format.duration(s.movingMs)
         extraAscent.text = "Salita " + Format.meters(s.ascentM) + " m"
         val alt = s.altitudeM ?: RideRepository.location.value?.takeIf { it.hasAltitude() }?.altitude
