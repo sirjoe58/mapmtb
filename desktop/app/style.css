@@ -123,6 +123,16 @@ a { color: var(--accent-2); }
 #map.draw-mode { cursor: crosshair; touch-action: none; }
 .leaflet-container { font: inherit; }
 
+#drawBar {
+  position: absolute; top: 66px; right: 12px; z-index: 1000;
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.45);
+}
+#drawBar[hidden] { display: none; }
+#drawBar .draw-label { font-weight: 700; color: var(--accent); margin-right: 4px; white-space: nowrap; }
+#drawBar .btn { white-space: nowrap; }
+
 #busy {
   position: absolute; top: 64px; left: 50%; transform: translateX(-50%);
   background: rgba(0,0,0,.78); color: #fff; padding: 8px 16px; border-radius: 20px; z-index: 1000;
