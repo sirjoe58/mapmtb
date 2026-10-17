@@ -149,7 +149,7 @@ class DataFragment : Fragment() {
                     idx = i
                 }
             }
-            set("togo", Format.distanceKm(cum.last() - cum[idx]))
+            set("togo", Format.distanceKm(RideRepository.routeRemainingM ?: (cum.last() - cum[idx])))
             if (elevation.hasData()) {
                 val withEle = route.points.filter { it.ele != null }
                 var bestE = Double.MAX_VALUE

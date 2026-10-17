@@ -206,7 +206,9 @@
         <option value="topo">OpenTopoMap</option>
         <option value="osm">OpenStreetMap</option>
       </select>
+      <button id="mapsBtn" class="btn" title="Satellite, altre mappe online e file di mappa">🗺 Mappe…</button>
       <label class="check light"><input type="checkbox" id="mtbOverlay" checked> Itinerari MTB</label>
+      <label class="check light" title="Mostra sulla mappa tutte le uscite registrate (scheda Uscite)"><input type="checkbox" id="ridesOverlay"> Le mie uscite</label>
       <button id="linkBtn" class="btn primary" title="Collega il telefono via Wi-Fi">📲 SirJoe Link</button>
     </div>
     <div id="map"></div>
@@ -269,6 +271,50 @@
     </form>
   </dialog>
 
+  <!-- altre mappe: satellite, fonti online, file -->
+  <dialog id="mapsDialog">
+    <form method="dialog" class="dlg wide">
+      <h3>🗺 Mappe</h3>
+      <p class="small">Le mappe <b>satellitari</b> pronte (Esri World Imagery, Sentinel-2) e le altre sono nel menu delle mappe
+        in alto. Qui aggiungi mappe tue: file sul PC o fonti online.</p>
+      <label class="check"><input type="checkbox" id="mapsSat"> Nomi di luoghi e confini sopra il satellite</label>
+
+      <h4>Da file</h4>
+      <div class="row-btns">
+        <button type="button" class="btn primary" id="mapsFile">📂 Apri file di mappa…</button>
+        <button type="button" class="btn" id="mapsFolder">📁 Cartella di riquadri…</button>
+      </div>
+      <p class="small">Formati: <b>MBTiles</b>, <b>SQLiteDB</b> (OsmAnd, Locus, RMaps), <b>PMTiles</b> a immagini, cartella di riquadri
+        <i>z/x/y</i> (Mobile Atlas Creator, SAS.Planet…), <b>GeoTIFF</b> (WGS84 o Web Mercator), <b>KMZ/KML</b> con immagini
+        (anche Garmin Custom Maps), immagine <b>JPG/PNG</b> con world file (.jgw, .pgw…), carte <b>OziExplorer</b> (.map + immagine).
+        Le mappe vettoriali Mapsforge (.map di OpenAndroMaps) si usano sul telefono.</p>
+
+      <h4>Fonte online</h4>
+      <div id="msForm" class="ms-grid">
+        <label class="field"><span>Nome</span><input id="msName" placeholder="Es. Ortofoto regione"></label>
+        <label class="field"><span>Tipo</span>
+          <select id="msKind">
+            <option value="auto">Riconosci dall'indirizzo</option>
+            <option value="xyz">XYZ / WMTS ({z}/{x}/{y})</option>
+            <option value="tms">TMS (y dal basso)</option>
+            <option value="wms">WMS</option>
+            <option value="bing">Quadkey ({q}, tipo Bing)</option>
+          </select></label>
+        <label class="field span2"><span>Indirizzo</span><input id="msUrl" placeholder="https://server/{z}/{x}/{y}.png   oppure   https://server/wms?…"></label>
+        <label class="field"><span>Livello WMS (layers)</span><input id="msLayers" placeholder="solo per WMS"></label>
+        <label class="field"><span>Zoom massimo</span><input id="msMax" type="number" min="1" max="22" value="19"></label>
+        <label class="field span2"><span>Attribuzione (chi fornisce la mappa)</span><input id="msAttr" placeholder="© …"></label>
+        <div class="span2"><button type="button" class="btn primary" id="msAdd">➕ Aggiungi fonte online</button></div>
+      </div>
+      <p class="small warn">Usa solo mappe che hai il diritto di usare e rispetta le condizioni di ogni fornitore
+        (alcuni, come Google, non permettono di usare i loro riquadri in altri programmi).</p>
+
+      <h4>Le mie mappe</h4>
+      <ul id="mapsList" class="list compact maps-list"></ul>
+      <div class="dlg-actions"><span class="spacer"></span><button value="close" class="btn">Chiudi</button></div>
+    </form>
+  </dialog>
+
   <!-- nome del percorso da salvare -->
   <dialog id="nameDialog">
     <form method="dialog" class="dlg">
@@ -304,5 +350,6 @@
   <script src="app.js"></script>
   <script src="analysis.js"></script>
   <script src="link.js"></script>
+  <script src="maps.js"></script>
 </body>
 </html>

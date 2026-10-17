@@ -59,6 +59,10 @@ object RideRepository {
         _stats.value = s
     }
 
+    /** Metri al traguardo nel senso di marcia (calcolati dalla mappa), null se non c'è percorso. */
+    @Volatile
+    var routeRemainingM: Double? = null
+
     /** Ultima volta in movimento (oltre 7 km/h): serve a capire se si sta navigando. */
     @Volatile
     var lastMovingAt = 0L

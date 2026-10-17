@@ -344,6 +344,7 @@ class MainActivity : AppCompatActivity() {
 
     fun onTracksChanged() {
         (supportFragmentManager.findFragmentByTag(TAG_TRACKS) as? TracksFragment)?.refresh()
+        (supportFragmentManager.findFragmentByTag(TAG_MAP) as? MapFragment)?.refreshRides()
     }
 
     private fun importFromOtherApp(uris: List<Uri>) {

@@ -73,6 +73,10 @@ object Prefs {
     fun climbAlerts(ctx: Context) = p(ctx).getBoolean("climb_alerts", true)
     fun setClimbAlerts(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("climb_alerts", v).apply()
 
+    /** Mostra sulla mappa tutte le uscite registrate. */
+    fun showRides(ctx: Context) = p(ctx).getBoolean("show_rides", false)
+    fun setShowRides(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("show_rides", v).apply()
+
     fun voice(ctx: Context) = p(ctx).getBoolean("voice", true)
     fun setVoice(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("voice", v).apply()
 

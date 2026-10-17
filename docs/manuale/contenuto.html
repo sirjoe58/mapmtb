@@ -9,7 +9,7 @@
 <h2 id="a1">1. Installazione e aggiornamento</h2>
 <p><b>Requisiti:</b> Android 6.0 o successivo (va bene anche il Redmi 4X), GPS, circa 60 MB liberi più lo spazio per le mappe offline.</p>
 <ol>
-  <li>Sul telefono apri <b>github.com/sirjoe58/mapmtb</b> → <b>Releases</b> e scarica l'ultimo file, ad esempio <code>SirJoeMTB-v1.7.0.apk</code>. Ogni versione ha un nome diverso, così sai sempre quale stai installando.</li>
+  <li>Sul telefono apri <b>github.com/sirjoe58/mapmtb</b> → <b>Releases</b> e scarica l'ultimo file, ad esempio <code>SirJoeMTB-v1.8.0.apk</code>. Ogni versione ha un nome diverso, così sai sempre quale stai installando.</li>
   <li>Apri il file scaricato. La prima volta Android chiede di <b>consentire l'installazione da questa fonte</b> (browser o file manager): consenti e torna indietro.</li>
   <li>Tocca <b>Installa</b>.</li>
 </ol>
@@ -82,6 +82,12 @@
 
 <h3>Scegliere la mappa</h3>
 <p>Il pulsante <b>Mappe/livelli</b> offre: <i>OpenTopoMap</i> (sentieri e rilievo, consigliata), <i>OpenStreetMap standard</i>, <i>Offline: OpenAndroMaps</i> e <i>Mappa offline importata (MBTiles)</i> se ne hai caricate, <i>Mostra/Nascondi itinerari MTB</i> (rete waymarkedtrails, serve Internet) e <i>Dimensione testi mappa offline</i> (piccoli, normali, grandi, molto grandi). Le zone viste online restano in memoria (fino a circa 1 GB) e si vedono anche senza segnale.</p>
+
+<h3>Seguire un percorso in tutti i sensi</h3>
+<p>Un percorso caricato si può seguire <b>in tutti e due i sensi di marcia</b> e partendo <b>da qualsiasi punto</b>: non serve invertirlo. Dopo poche decine di metri l'app capisce da sola da che parte stai andando (dalla direzione del GPS e da come avanzi lungo la traccia): la freccia punta nel tuo senso, la distanza al traguardo è calcolata verso la fine nel tuo senso (il banner mostra ⇄ quando vai al contrario) e gli avvisi salite usano le salite del verso giusto. Se ti giri, si adegua.</p>
+
+<h3>Le mie uscite sulla mappa</h3>
+<p>Dal pulsante <b>Mappe/livelli</b> → <b>Mostra le mie uscite registrate</b> (oppure dalla pagina Percorsi) compaiono sulla mappa, in viola trasparente, tutte le uscite registrate: utile per vedere dove sei già passato. Toccando una linea vedi nome e km. Si nascondono dallo stesso menu.</p>
 
 <h3>Avvisi durante la navigazione</h3>
 <ul>
@@ -232,10 +238,10 @@
 </section>
 
 <h2 id="b1">12. Installazione</h2>
-<p>Da <b>github.com/sirjoe58/mapmtb → Releases</b>, nella release <b>planner-v1.3.0</b>, scegli:</p>
+<p>Da <b>github.com/sirjoe58/mapmtb → Releases</b>, nella release <b>planner-v1.4.0</b>, scegli:</p>
 <ul>
-  <li><code>SirJoe-MTB-Planner-1.3.0-portable.exe</code>: si avvia con un doppio clic, senza installazione (anche da chiavetta USB);</li>
-  <li><code>SirJoe-MTB-Planner-1.3.0-setup.exe</code>: installazione classica con collegamento sul desktop e nel menu Start.</li>
+  <li><code>SirJoe-MTB-Planner-1.4.0-portable.exe</code>: si avvia con un doppio clic, senza installazione (anche da chiavetta USB);</li>
+  <li><code>SirJoe-MTB-Planner-1.4.0-setup.exe</code>: installazione classica con collegamento sul desktop e nel menu Start.</li>
 </ul>
 <div class="box tip">Il programma non è firmato digitalmente (è un progetto personale): Windows SmartScreen può mostrare "Windows ha protetto il PC". Clicca <b>Ulteriori informazioni → Esegui comunque</b>. Al primo uso di SirJoe Link Windows chiede l'accesso alla rete: scegli <b>Reti private</b>.</div>
 <p>Requisiti: Windows 10 o 11 a 64 bit, Internet per mappe, ricerca e calcolo dei percorsi.</p>
@@ -266,6 +272,27 @@
   <li><b>Barra sopra la mappa</b>: modalità <i>Punti percorso</i>, <i>Disegna</i>, <i>Segnaposto</i>; scelta tra OpenTopoMap e OpenStreetMap; itinerari MTB; ricerca luoghi; pulsante <b>SirJoe Link</b>.</li>
   <li><b>In basso</b>: profilo altimetrico; passando il mouse sul profilo vedi a che punto del percorso corrisponde.</li>
 </ul>
+
+<h3>Mappe satellitari e altre mappe</h3>
+<p>Nel menu delle mappe in alto, oltre a OpenTopoMap e OpenStreetMap, trovi <b>Satellite (Esri World Imagery)</b>, <b>Satellite Sentinel-2 cloudless (EOX)</b>, <b>Topografica Esri</b> e <b>CyclOSM</b>. Sul satellite puoi mostrare nomi di luoghi e confini. Con <b>🗺 Mappe…</b> (o "Altre mappe…" nel menu) aggiungi mappe tue:</p>
+<table>
+  <tr><th>Tipo</th><th>Come</th></tr>
+  <tr><td>Fonte online XYZ / WMTS</td><td>Indirizzo con <code>{z}</code>, <code>{x}</code>, <code>{y}</code> (anche <code>{s}</code> per i server a, b, c; i modelli WMTS con <code>{TileMatrix}</code>, <code>{TileCol}</code>, <code>{TileRow}</code> sono convertiti).</td></tr>
+  <tr><td>TMS</td><td>Come XYZ con <code>{-y}</code>, o scegliendo il tipo TMS.</td></tr>
+  <tr><td>WMS</td><td>Indirizzo del servizio (anche un GetMap incollato per intero) e nome del livello. Utile per le ortofoto dei geoportali regionali.</td></tr>
+  <tr><td>Quadkey (tipo Bing)</td><td>Indirizzo con <code>{q}</code>.</td></tr>
+  <tr><td>MBTiles, SQLiteDB, PMTiles</td><td>Apri file di mappa: mappe a riquadri create con Mobile Atlas Creator, SAS.Planet, OsmAnd, Locus, QGIS…</td></tr>
+  <tr><td>Cartella di riquadri</td><td>Cartella con sottocartelle <i>z/x/y</i>.</td></tr>
+  <tr><td>GeoTIFF</td><td>In WGS84 o Web Mercator (altre proiezioni: riproiettale con QGIS).</td></tr>
+  <tr><td>KMZ / KML</td><td>Immagini con GroundOverlay, anche le Garmin Custom Maps.</td></tr>
+  <tr><td>Immagine + world file</td><td>JPG/PNG con il suo <code>.jgw</code>/<code>.pgw</code>/<code>.wld</code> nella stessa cartella.</td></tr>
+  <tr><td>OziExplorer</td><td>File <code>.map</code> di calibrazione (WGS 84) con l'immagine accanto.</td></tr>
+</table>
+<p>Ogni mappa dell'elenco si può usare <b>come base</b> o mettere <b>sopra</b> la mappa di base con la sua <b>trasparenza</b> (ad esempio un'ortofoto sopra OpenTopoMap). Il pulsante ⌖ porta alla zona della mappa. Le mappe da file restano nell'elenco e si riaprono da sole al prossimo avvio. Le mappe vettoriali Mapsforge (OpenAndroMaps) si usano sul telefono. Il video per i social usa la mappa scelta.</p>
+<div class="box warn">Usa solo mappe che hai il diritto di usare e rispetta le condizioni di ogni fornitore: alcuni, come Google, non permettono di usare le loro immagini in altri programmi. Le immagini satellitari possono essere vecchie.</div>
+
+<h3>Le mie uscite sulla mappa</h3>
+<p>La casella <b>Le mie uscite</b> in alto mostra in viola tutte le uscite della scheda Uscite. Passando sopra una linea vedi nome e km; cliccandola si apre nella Sala analisi.</p>
 
 <h2 id="b3">14. Creare un percorso a punti</h2>
 <ol>

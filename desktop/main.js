@@ -1,10 +1,17 @@
 // SirJoe MTB Planner - processo principale (Electron)
-const { app, BrowserWindow, ipcMain, net, shell, session, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, net, shell, session, dialog, protocol } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { execFile } = require('child_process');
 const { LinkServer } = require('./link-server');
+const { MapFiles } = require('./map-sources');
+
+// mappe da file: riquadri serviti alla finestra come sjtile://<id>/<z>/<x>/<y>
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'sjtile', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
+]);
+const mapFiles = new MapFiles();
 
 let link = null;
 let mainWin = null;
@@ -76,11 +83,41 @@ app.whenReady().then(() => {
     return { ok: res.ok, status: res.status, text };
   });
   ipcMain.handle('app-version', () => app.getVersion());
+
+  // ---- mappe da file (MBTiles, SQLiteDB, PMTiles, cartelle, GeoTIFF, KMZ, world file, OziExplorer)
+  protocol.handle('sjtile', (req) => mapFiles.handle(req.url));
+  const openMap = async (p) => {
+    try {
+      return { ok: true, path: p, ...(await mapFiles.open(p)) };
+    } catch (e) {
+      return { ok: false, path: p, error: e.message };
+    }
+  };
+  ipcMain.handle('maps-open', async (e, folder) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const r = await dialog.showOpenDialog(win, folder ? {
+      title: 'Cartella con i riquadri della mappa (z/x/y)', properties: ['openDirectory']
+    } : {
+      title: 'Apri mappe',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'Mappe', extensions: ['mbtiles', 'sqlitedb', 'sqlite', 'db', 'pmtiles', 'tif', 'tiff', 'kmz', 'kml', 'map', 'jpg', 'jpeg', 'png', 'gif', 'webp'] },
+        { name: 'Tutti i file', extensions: ['*'] }
+      ]
+    });
+    if (r.canceled) return [];
+    const out = [];
+    for (const p of r.filePaths) out.push(await openMap(p));
+    return out;
+  });
+  ipcMain.handle('maps-reopen', (_e, p) => openMap(p));
+  ipcMain.handle('maps-close', (_e, id) => { mapFiles.close(id); return true; });
   // immagini (riquadri di mappa per il video) come data URL: niente problemi di origine sul canvas
   ipcMain.handle('fetch-data-url', async (_e, url) => {
-    if (!/^https:\/\/([a-c]\.)?tile\.(opentopomap|openstreetmap)\.org\//.test(url)) throw new Error('Indirizzo non consentito');
+    if (!/^https?:\/\//i.test(url)) throw new Error('Indirizzo non consentito');
     const res = await net.fetch(url, { headers: { 'User-Agent': UA } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!/^image\//.test(res.headers.get('content-type') || 'image/')) throw new Error('Non è un\'immagine');
     const buf = Buffer.from(await res.arrayBuffer());
     return `data:${res.headers.get('content-type') || 'image/png'};base64,${buf.toString('base64')}`;
   });

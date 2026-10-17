@@ -1,7 +1,7 @@
 {
   "name": "sirjoe-mtb-planner",
   "productName": "SirJoe MTB Planner",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Pianificatore di percorsi MTB per Windows, compagno dell'app Android SirJoe MTB",
   "main": "main.js",
   "author": "SirJoe",
@@ -12,7 +12,11 @@
     "dist": "electron-builder --win portable nsis --publish never"
   },
   "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "geotiff": "^2.1.3",
+    "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
+    "pmtiles": "^3.2.1",
     "qrcode": "1.5.4"
   },
   "devDependencies": {
@@ -26,6 +30,7 @@
       "main.js",
       "preload.js",
       "link-server.js",
+      "map-sources.js",
       "app/**/*",
       "node_modules/**/*"
     ],
@@ -48,6 +53,9 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "shortcutName": "SirJoe MTB Planner"
-    }
+    },
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**"
+    ]
   }
 }

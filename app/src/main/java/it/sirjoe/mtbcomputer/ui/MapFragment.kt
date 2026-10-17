@@ -38,6 +38,9 @@ import it.sirjoe.mtbcomputer.data.Placemarks
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.CoachState
 import it.sirjoe.mtbcomputer.data.RideRepository
+import it.sirjoe.mtbcomputer.data.RouteSummary
+import it.sirjoe.mtbcomputer.data.TrackStorage
+import it.sirjoe.mtbcomputer.data.RouteProgress
 import it.sirjoe.mtbcomputer.data.Track
 import it.sirjoe.mtbcomputer.service.RecordingService
 import it.sirjoe.mtbcomputer.util.Format
@@ -114,6 +117,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     private var offRoute = false
     private var routePoints: List<GeoPoint> = emptyList()
     private var routeCum: DoubleArray? = null
+    private var progress: RouteProgress? = null
     private var drawnPoints = 0
     private val placeMarkers = ArrayList<Marker>()
     private val iconCache = HashMap<Int, BitmapDrawable>()
@@ -250,7 +254,15 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { RideRepository.location.collect { l -> if (l != null) onLocation(l) } }
-                launch { RideRepository.stats.collect { updateData(); refreshBarsMode() } }
+                launch {
+                    var wasRecording = RideRepository.stats.value.recording
+                    RideRepository.stats.collect {
+                        updateData(); refreshBarsMode()
+                        // uscita appena salvata: compare tra quelle registrate
+                        if (wasRecording && !it.recording && Prefs.showRides(requireContext())) refreshRides()
+                        wasRecording = it.recording
+                    }
+                }
                 launch { RideRepository.pointCount.collect { updateTrackLine(it) } }
                 launch { RideRepository.route.collect { showRoute(it); refreshBarsMode() } }
                 launch { Placemarks.items.collect { redrawPlaces() } }
@@ -308,6 +320,58 @@ class MapFragment : Fragment(R.layout.fragment_map) {
 
     fun applyBaseMap() {
         if (isAdded) MapStyle.apply(requireContext(), map)
+        refreshRides()
+    }
+
+    // ------------------------------------------- uscite registrate sulla mappa
+
+    private var ridesOverlay: org.osmdroid.views.overlay.FolderOverlay? = null
+    private var ridesJob: kotlinx.coroutines.Job? = null
+
+    /** Disegna (o toglie) tutte le uscite registrate, in viola trasparente sotto il percorso. */
+    fun refreshRides() {
+        if (!isAdded || view == null) return
+        val ctx = requireContext()
+        ridesJob?.cancel()
+        ridesOverlay?.let { map.overlays.remove(it) }
+        ridesOverlay = null
+        if (!Prefs.showRides(ctx)) {
+            map.invalidate()
+            return
+        }
+        ridesJob = viewLifecycleOwner.lifecycleScope.launch {
+            val tracks = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                TrackStorage.list(ctx).mapNotNull { f ->
+                    try {
+                        val t = TrackStorage.load(f)
+                        // solo le uscite registrate (con gli orari), non i percorsi disegnati
+                        if (t.points.size >= 2 && t.points.first().time != null) t else null
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+            }
+            val folder = org.osmdroid.views.overlay.FolderOverlay()
+            for (t in tracks) {
+                val step = maxOf(1, t.points.size / 1500)
+                val line = Polyline(map)
+                line.setPoints(t.points.filterIndexed { i, _ -> i % step == 0 || i == t.points.lastIndex }.map { GeoPoint(it.lat, it.lon) })
+                line.outlinePaint.color = Color.argb(150, 142, 36, 170)
+                line.outlinePaint.strokeWidth = 6f
+                line.outlinePaint.strokeCap = Paint.Cap.ROUND
+                line.setOnClickListener { _, _, _ ->
+                    Toast.makeText(ctx, t.name + " · " + Format.distanceKm(RouteSummary.of(t.points).distanceM) + " km", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                folder.add(line)
+            }
+            ridesOverlay = folder
+            // sotto il percorso da seguire e la traccia in corso
+            val i = map.overlays.indexOf(routeLine).let { if (it < 0) 0 else it }
+            map.overlays.add(i, folder)
+            map.invalidate()
+            if (tracks.isEmpty()) Toast.makeText(ctx, "Nessuna uscita registrata da mostrare", Toast.LENGTH_SHORT).show()
+        }
     }
 
     // ------------------------------------------------------------- posizione
@@ -588,12 +652,15 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             routeLine.setPoints(emptyList())
             routePoints = emptyList()
             routeCum = null
+            progress = null
+            RideRepository.routeRemainingM = null
             bannerTv.visibility = View.GONE
             map.invalidate()
             return
         }
         routePoints = track.points.map { GeoPoint(it.lat, it.lon) }
         routeCum = Geo.cumulative(track.points)
+        progress = RouteProgress(track.points)
         routeLine.setPoints(routePoints)
 
         var n = -90.0
@@ -625,18 +692,12 @@ class MapFragment : Fragment(R.layout.fragment_map) {
      */
     private fun updateRouteProgress(loc: Location): Double? {
         val pts = routePoints
-        val cum = routeCum ?: return null
+        val prog = progress ?: return null
         if (pts.isEmpty()) return null
-        var best = Double.MAX_VALUE
-        var bestIdx = 0
-        for (i in pts.indices) {
-            val d = Geo.distance(loc.latitude, loc.longitude, pts[i].latitude, pts[i].longitude)
-            if (d < best) {
-                best = d
-                bestIdx = i
-            }
-        }
-        val remaining = cum.last() - cum[bestIdx]
+        val moving = loc.hasBearing() && loc.hasSpeed() && loc.speed > 1.5f
+        prog.update(loc.latitude, loc.longitude, if (moving) loc.bearing else null)
+        val best = prog.offDistance
+        RideRepository.routeRemainingM = prog.remaining()
         if (!offRoute && best > OFF_ROUTE_M) {
             offRoute = true
             vibrate()
@@ -648,16 +709,15 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             bannerTv.text = "Fuori percorso: " + best.roundToInt() + " m"
             bannerTv.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.sj_red))
         } else {
-            bannerTv.text = "Al traguardo: " + Format.distanceKm(remaining) + " km"
+            // si può seguire in tutti e due i sensi: il traguardo è la fine nel senso in cui vai
+            bannerTv.text = (if (prog.reverse) "⇄ Al traguardo: " else "Al traguardo: ") +
+                Format.distanceKm(prog.remaining()) + " km"
             bannerTv.setBackgroundResource(R.drawable.bg_banner)
         }
 
         // Fuori percorso: la freccia indica il punto più vicino per rientrare.
-        // Sul percorso: indica il punto qualche decina di metri più avanti.
-        var j = bestIdx
-        if (!offRoute) {
-            while (j < pts.lastIndex && cum[j] - cum[bestIdx] < LOOK_AHEAD_M) j++
-        }
+        // Sul percorso: indica il punto qualche decina di metri più avanti nel senso di marcia.
+        val j = if (offRoute) prog.index else prog.aheadIndex(LOOK_AHEAD_M)
         if (Geo.distance(loc.latitude, loc.longitude, pts[j].latitude, pts[j].longitude) < 3.0) return null
         return Geo.bearing(loc.latitude, loc.longitude, pts[j].latitude, pts[j].longitude)
     }

@@ -15,6 +15,7 @@ const DISCLAIMER = `SirJoe MTB Planner è un programma gratuito e open source pe
 • Il programma non è un dispositivo di sicurezza. In montagna valuta meteo, orari e capacità, porta una cartina e informa qualcuno del tuo itinerario. In emergenza chiama il 112.
 • Una traccia condivisa mostra luoghi e spesso dove abiti: condividila con attenzione.
 • Mappe © OpenStreetMap contributors (ODbL), OpenTopoMap (CC-BY-SA); itinerari MTB waymarkedtrails.org; percorsi BRouter; ricerca Nominatim. Sono servizi gratuiti gestiti da volontari: il programma li usa con moderazione e non scarica aree in blocco. Non modificarlo per aggirare questi limiti.
+• Nel Planner per Windows puoi usare mappe satellitari e di altri fornitori (Esri, EOX Sentinel-2, CyclOSM) e aggiungere fonti online o file di mappa tuoi: rispetta le condizioni d'uso di ciascun fornitore (alcuni, come Google, non permettono di usare le loro immagini in altri programmi), lascia visibili le attribuzioni e importa solo mappe che hai il diritto di usare. Le immagini satellitari possono essere vecchie: sentieri, frane e costruzioni recenti possono non comparire.
 • Il programma è fornito "così com'è", senza garanzie (licenza MIT). Chi lo usa lo fa sotto la propria responsabilità.`;
 
 /* -------------------------------------------------------------- stato */
@@ -68,12 +69,12 @@ const mtbLayer = L.tileLayer('https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.p
 let currentBase = null;
 function setBase(id) {
   if (currentBase) map.removeLayer(currentBase);
-  currentBase = bases[id] || bases.topo;
+  currentBase = bases[id] || (typeof Maps !== 'undefined' && Maps.baseLayer(id)) || bases.topo;
   currentBase.addTo(map);
   store.set('base', id);
 }
 setBase(store.get('base', 'topo'));
-$('baseMap').value = store.get('base', 'topo');
+if ([...$('baseMap').options].some((o) => o.value === store.get('base', 'topo'))) $('baseMap').value = store.get('base', 'topo');
 if (store.get('mtb', true)) mtbLayer.addTo(map); else $('mtbOverlay').checked = false;
 L.control.scale({ imperial: false }).addTo(map);
 const last = store.get('view', null);
@@ -774,7 +775,7 @@ $('exportPlaces').addEventListener('click', () => {
   if (!state.places.length) return toast('Nessun segnaposto');
   download('Segnaposto SirJoe MTB.gpx', Formats.gpx('Segnaposto', [], state.places), 'application/gpx+xml');
 });
-$('baseMap').addEventListener('change', (e) => setBase(e.target.value));
+// il cambio di mappa è gestito in maps.js (anche satellitari e le mie mappe)
 $('slopeColors').checked = store.get('slopeColors', false);
 $('slopeColors').addEventListener('change', (e) => { store.set('slopeColors', e.target.checked); render(); });
 $('mtbOverlay').addEventListener('change', (e) => {

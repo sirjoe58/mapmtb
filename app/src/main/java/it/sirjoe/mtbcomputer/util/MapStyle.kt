@@ -145,6 +145,8 @@ object MapStyle {
         if (hasVector) items.add("Offline: OpenAndroMaps")
         if (hasOffline) items.add("Mappa offline importata (MBTiles)")
         items.add(if (mtbOn) "Nascondi itinerari MTB" else "Mostra itinerari MTB")
+        val ridesOn = Prefs.showRides(ctx)
+        items.add(if (ridesOn) "Nascondi le mie uscite registrate" else "Mostra le mie uscite registrate")
         if (hasVector) items.add("Dimensione testi mappa offline…")
 
         MaterialAlertDialogBuilder(ctx)
@@ -160,6 +162,7 @@ object MapStyle {
                     }
                     label.startsWith("Offline:") -> Prefs.setBaseMap(ctx, Prefs.BASE_VECTOR)
                     label.startsWith("Mappa offline") -> Prefs.setBaseMap(ctx, Prefs.BASE_OFFLINE)
+                    label.contains("uscite registrate") -> Prefs.setShowRides(ctx, !ridesOn)
                     else -> {
                         Prefs.setMtbOverlay(ctx, !mtbOn)
                         if (!mtbOn) Toast.makeText(ctx, "Itinerari MTB visibili (serve Internet)", Toast.LENGTH_SHORT).show()

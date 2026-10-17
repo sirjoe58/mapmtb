@@ -70,6 +70,13 @@ class TracksFragment : Fragment() {
             if (!ShareHelper.shareAll(requireContext())) toast("Nessuna traccia da esportare")
         })
         root.addView(button("Mappe offline (OpenAndroMaps)…") { offlineMenu() })
+        root.addView(button("Mostra / nascondi le mie uscite registrate sulla mappa") {
+            val act = activity as? MainActivity ?: return@button
+            val on = !Prefs.showRides(act)
+            Prefs.setShowRides(act, on)
+            act.onBaseMapChanged()
+            if (on) act.selectTab(R.id.nav_map) else toast("Uscite registrate nascoste")
+        })
         root.addView(button("Rimuovi percorso attivo dalla mappa") {
             RideRepository.setRoute(null)
             toast("Percorso rimosso")

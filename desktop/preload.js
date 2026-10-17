@@ -3,6 +3,11 @@ contextBridge.exposeInMainWorld('sirjoe', {
   desktop: true,
   fetchText: (url) => ipcRenderer.invoke('fetch-text', url),
   fetchDataUrl: (url) => ipcRenderer.invoke('fetch-data-url', url),
+  maps: {
+    open: (folder) => ipcRenderer.invoke('maps-open', !!folder),
+    reopen: (p) => ipcRenderer.invoke('maps-reopen', p),
+    close: (id) => ipcRenderer.invoke('maps-close', id)
+  },
   version: () => ipcRenderer.invoke('app-version'),
   saveFile: (name, data, ext) => ipcRenderer.invoke('save-file', { name, data, ext }),
   openFiles: () => ipcRenderer.invoke('open-files'),

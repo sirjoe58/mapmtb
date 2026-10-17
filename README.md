@@ -17,6 +17,7 @@ Ciclocomputer e navigatore per mountain bike su Android: mappa a tutto schermo, 
 | **Sosta automatica** | Da fermo per un tempo a scelta (30 s – 5 min) l'app va in sosta: luminosità al minimo, schermo libero di spegnersi, GPS più lento. Quando riparti si risveglia da sola, riaccende lo schermo e riprende registrazione e navigazione. |
 | **Dati** | Velocità attuale, media e massima, distanza, tempi, ora, quota, dislivello, pendenza, direzione, distanza al traguardo, precisione GPS, profilo altimetrico. |
 | **Percorsi** | Archivio di uscite e percorsi. Importa, esporta, rinomina, modifica nella pagina Crea, condividi. Esporta tutto in un archivio ZIP. Mappe offline. |
+| **Percorsi in tutti i sensi** | Un percorso caricato si segue in qualsiasi senso di marcia e partendo da qualsiasi punto: l'app capisce da sola se lo fai al contrario (freccia, distanza al traguardo e avvisi salite si adeguano). Dal menu mappe o da *Percorsi* puoi mostrare sulla mappa tutte le uscite già registrate. |
 | **Fantasma e salite** | *Sfida il fantasma* (dal menu di un'uscita registrata): un'icona 👻 rifà la tua uscita precedente in tempo reale e la voce ti dice ogni km se sei avanti o indietro. Sui percorsi con quote l'app avvisa prima delle salite: "tra 200 metri salita al 9 per cento per 800 metri". |
 | **Info** | Impostazioni, collegamento a Strava, avvertenze, crediti. |
 
@@ -74,6 +75,8 @@ Nella cartella `desktop/` c'è il programma per PC con cui preparare percorsi e 
 - profilo altimetrico, km, dislivello, tempo stimato, annulla (Ctrl+Z), archivio dei percorsi;
 - import GPX, KML, GeoJSON, TCX, FIT, CSV (anche trascinando i file nella finestra); export GPX (percorso + segnaposto, pronto per l'app), FIT, KML, TCX, GeoJSON, CSV.
 
+- **Mappe**: satellite (Esri World Imagery, Sentinel-2), topografica Esri, CyclOSM; fonti online tue (XYZ/TMS, WMS, WMTS, Bing) e file di mappa (MBTiles, SQLiteDB, PMTiles, cartelle di riquadri, GeoTIFF, KMZ, immagini con world file, OziExplorer), come base o sovrapposte con trasparenza;
+- **Le mie uscite** sulla mappa: tutte le uscite registrate in viola, cliccabili;
 - **Sala analisi** (scheda *Uscite*): traccia colorata per velocità, pendenza o quota; confronto tra percorso pianificato e fatto; replay animato; elenco salite; **video social da 20 secondi** con il logo BY SIRJOE.
 
 Scaricalo da **Releases** → "SirJoe MTB Planner per Windows": `…-portable.exe` (senza installazione) o `…-setup.exe`.
