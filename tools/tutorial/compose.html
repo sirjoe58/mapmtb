@@ -1,0 +1,173 @@
+<!doctype html>
+<!-- Impaginazione dei fotogrammi del videotutorial: render.js chiama draw(scena, t, durata) per ogni fotogramma. -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: Russo; src: url(assets/russo_one.ttf); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0f1a14; font-family: 'Inter', 'DejaVu Sans', Arial, sans-serif; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .bg { position: absolute; inset: 0; background: radial-gradient(1200px 700px at 75% 20%, #2b4a35 0%, #14261c 55%, #0b140f 100%); }
+  .bg::after { content: ''; position: absolute; right: -80px; bottom: -60px; width: 720px; height: 260px; background: url(assets/logo.png) no-repeat center/contain; opacity: .05; }
+  #shot { position: absolute; inset: 0; width: 1920px; height: 1080px; display: none; }
+  #card { position: absolute; inset: 0; display: none; padding: 140px 170px; color: #fff; }
+  #card img { height: 120px; }
+  #card h1 { font-size: 78px; margin: 40px 0 10px; letter-spacing: -1px; }
+  #card .sub { font-size: 34px; color: #ffcfae; }
+  #card ul { list-style: none; padding: 0; margin: 30px 0 0; }
+  #card li { font-size: 38px; margin: 0 0 18px; padding-left: 40px; position: relative; color: #e8efe9; }
+  #card li::before { content: ''; position: absolute; left: 0; top: 18px; width: 16px; height: 16px; border-radius: 50%; background: #FF6D00; }
+  #phoneWrap { position: absolute; left: 230px; top: 24px; display: none; }
+  .device { width: 436px; height: 856px; border-radius: 54px; background: #111; padding: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 3px #333; position: relative; }
+  .device img { width: 400px; height: 820px; border-radius: 36px; display: block; object-fit: cover; object-position: top; }
+  .device::before { content: ''; position: absolute; top: 26px; left: 50%; width: 90px; height: 10px; margin-left: -45px; border-radius: 6px; background: #222; z-index: 2; }
+  #side { position: absolute; left: 820px; top: 150px; width: 920px; color: #fff; display: none; }
+  #side h2 { font-size: 54px; margin: 0 0 40px; line-height: 1.1; }
+  #side ul { list-style: none; padding: 0; margin: 0; }
+  #side li { font-size: 38px; line-height: 1.25; margin: 0 0 28px; padding-left: 46px; position: relative; color: #e8efe9; }
+  #side li::before { content: ''; position: absolute; left: 0; top: 14px; width: 20px; height: 20px; border-radius: 6px; background: #FF6D00; }
+  #chapter { position: absolute; bottom: 150px; left: 30px; background: rgba(255,109,0,.95); color: #fff; font-weight: 700; font-size: 26px; padding: 8px 20px; border-radius: 30px; display: none; box-shadow: 0 4px 14px rgba(0,0,0,.35); z-index: 20; }
+  #subs { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 140px 30px; background: linear-gradient(transparent, rgba(0,0,0,.82) 30%); color: #fff; font-size: 37px; line-height: 1.32; text-align: center; text-shadow: 0 2px 6px #000; z-index: 15; min-height: 120px; }
+  #hl { position: absolute; border: 5px solid #FF6D00; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(0,0,0,.28), 0 0 24px rgba(255,109,0,.9); display: none; z-index: 10; }
+  #ring { position: absolute; width: 60px; height: 60px; margin: -30px; border-radius: 50%; border: 5px solid #FF6D00; display: none; z-index: 11; }
+  #ptr { position: absolute; width: 54px; height: 54px; z-index: 12; display: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+  #fade { position: absolute; inset: 0; background: #000; pointer-events: none; z-index: 30; }
+  #brand { position: absolute; right: 28px; top: 22px; height: 54px; z-index: 20; display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg"></div>
+  <img id="shot">
+  <div id="card"><img src="assets/logo.png"><h1></h1><div class="sub"></div><ul></ul></div>
+  <div id="phoneWrap"><div class="device"><img id="phoneImg"></div></div>
+  <div id="side"><h2></h2><ul></ul></div>
+  <div id="hl"></div><div id="ring"></div>
+  <svg id="ptr" viewBox="0 0 24 24"><path d="M4 2l14 9.5-6.2 1.3 3.8 7.6-2.8 1.4-3.8-7.6L4 18.5z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  <div id="chapter"></div>
+  <img id="brand" src="assets/logo.png">
+  <div id="subs"></div>
+  <div id="fade"></div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let TARGETS = {};
+const ease = (x) => (x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x));
+const PHONE = { x: 230 + 18, y: 24 + 18, k: 1 }; // posizione dello schermo del telefono
+
+/** testo diviso in pezzi brevi, mostrati in proporzione alla lunghezza */
+function chunks(text) {
+  const parts = text.match(/[^.!?:;]+[.!?:;]*/g) || [text];
+  const out = [];
+  for (let p of parts) {
+    p = p.trim();
+    while (p.length > 120) {
+      let cut = p.lastIndexOf(',', 110);
+      if (cut < 40) cut = p.lastIndexOf(' ', 110);
+      out.push(p.slice(0, cut + 1).trim());
+      p = p.slice(cut + 1).trim();
+    }
+    if (p) out.push(p);
+  }
+  return out;
+}
+
+function targetsOf(sc) {
+  if (sc.shot) {
+    const T = TARGETS[sc.shot] || {};
+    return (sc.point || []).map((n) => (Array.isArray(n) ? n : T[n])).filter(Boolean);
+  }
+  if (sc.phone && sc.tap) return sc.tap.map(([x, y]) => [PHONE.x + x * PHONE.k, PHONE.y + y * PHONE.k]);
+  return [];
+}
+
+let last = null;
+window.setup = (targets) => { TARGETS = targets; };
+window.draw = (sc, t, d) => {
+  const sig = [];
+  const key = JSON.stringify([sc.shot, sc.phone, sc.title]);
+  if (key !== last) {
+    last = key;
+    $('shot').style.display = sc.shot ? 'block' : 'none';
+    if (sc.shot) $('shot').src = 'shots/planner/' + sc.shot + '.png';
+    $('phoneWrap').style.display = sc.phone ? 'block' : 'none';
+    if (sc.phone) $('phoneImg').src = 'shots/phone/' + sc.phone + '.png';
+    $('card').style.display = sc.title ? 'block' : 'none';
+    $('side').style.display = sc.phone ? 'block' : 'none';
+    $('chapter').style.display = sc.chapter ? 'block' : 'none';
+    $('chapter').textContent = sc.chapter || '';
+    $('brand').style.display = sc.phone ? 'block' : 'none';
+    if (sc.title) {
+      $('card').querySelector('h1').textContent = sc.title;
+      $('card').querySelector('.sub').textContent = sc.sub || '';
+      $('card').querySelector('ul').innerHTML = (sc.list || []).map((l) => `<li>${l}</li>`).join('');
+    }
+    if (sc.phone) {
+      $('side').querySelector('h2').textContent = sc.chapter ? sc.chapter.replace(/^\d+ · /, '') : '';
+      $('side').querySelector('ul').innerHTML = (sc.side || []).map((l) => `<li>${l}</li>`).join('');
+    }
+  }
+  // dissolvenza in entrata e in uscita
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  const fadeIn = clamp(1 - t / 0.35);
+  const fadeOut = sc.end ? ease((t - (d - 1.5)) / 1.5) : 0.6 * clamp(1 - (d - t) / 0.25);
+  const fo = Math.max(fadeIn, fadeOut).toFixed(2);
+  $('fade').style.opacity = fo;
+  sig.push(fo);
+  // elenchi che compaiono uno alla volta
+  const items = [...document.querySelectorAll(sc.title ? '#card li' : '#side li')];
+  items.forEach((li, i) => {
+    const at = 0.5 + i * Math.min(1.6, (d - 1.5) / Math.max(1, items.length));
+    const a = ease((t - at) / 0.4);
+    li.style.opacity = a.toFixed(2); li.style.transform = `translateX(${Math.round((1 - a) * 30)}px)`;
+    sig.push(a.toFixed(2));
+  });
+  // sottotitoli
+  const cs = chunks(sc.say);
+  const total = cs.reduce((s, c) => s + c.length, 0);
+  let acc = 0, cur = cs[cs.length - 1];
+  const pos = (t / d) * total;
+  for (const c of cs) { acc += c.length; if (pos < acc) { cur = c; break; } }
+  $('subs').textContent = cur;
+  sig.push(cur.length, cur.slice(0, 12));
+  // puntatore ed evidenziazione
+  const tg = targetsOf(sc);
+  const hl = $('hl'), ring = $('ring'), ptr = $('ptr');
+  hl.style.display = ring.style.display = ptr.style.display = 'none';
+  if (tg.length) {
+    const span = Math.max(1, d - 1.0) / tg.length;
+    const k = Math.min(tg.length - 1, Math.floor(Math.max(0, t - 0.5) / span));
+    const local = Math.max(0, t - 0.5 - k * span);
+    const ctr = (r) => (r.length === 4 ? [r[0] + r[2] / 2, r[1] + r[3] / 2] : r);
+    const prev = k > 0 ? ctr(tg[k - 1]) : [1100, 700];
+    const now = ctr(tg[k]);
+    const m = ease(local / 0.6);
+    const px = prev[0] + (now[0] - prev[0]) * m, py = prev[1] + (now[1] - prev[1]) * m;
+    ptr.style.display = 'block';
+    ptr.style.left = px - 8 + 'px'; ptr.style.top = py - 4 + 'px';
+    sig.push(Math.round(px), Math.round(py), k);
+    const r = tg[k];
+    if (local > 0.6) {
+      if (r.length === 4 && r[2] > 30) {
+        hl.style.display = 'block';
+        const pad = 8;
+        hl.style.left = r[0] - pad + 'px'; hl.style.top = r[1] - pad + 'px';
+        hl.style.width = r[2] + pad * 2 + 'px'; hl.style.height = r[3] + pad * 2 + 'px';
+        hl.style.opacity = Math.min(1, (local - 0.6) / 0.25).toFixed(2);
+        sig.push('h' + hl.style.opacity);
+      } else {
+        // tocco: un'onda che si allarga una volta, poi resta il cerchio
+        const g = Math.min(1, (local - 0.6) / 0.5);
+        ring.style.display = 'block';
+        ring.style.left = now[0] + 'px'; ring.style.top = now[1] + 'px';
+        ring.style.transform = `scale(${(0.6 + g * 0.8).toFixed(2)})`; ring.style.opacity = (1 - g * 0.4).toFixed(2);
+        sig.push('r' + g.toFixed(2));
+      }
+    }
+  }
+  return key + sig.join('|');
+};
+</script>
+</body>
+</html>

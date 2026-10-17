@@ -193,7 +193,8 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .ride-dot { width: 18px; height: 18px; border-radius: 50%; background: #ff6d00; border: 3px solid #fff; box-shadow: 0 0 0 3px rgba(255,109,0,.35), 0 1px 4px rgba(0,0,0,.5); }
 
 /* finestra Mappe */
-.dlg.wide { width: min(760px, 92vw); }
+#mapsDialog { width: min(780px, 94vw); max-height: 92vh; }
+.dlg.wide { width: auto; }
 .dlg h4 { margin: 14px 0 6px; }
 .row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }

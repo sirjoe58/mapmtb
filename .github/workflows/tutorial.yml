@@ -1,0 +1,76 @@
+name: Videotutorial
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: [ 'tools/tutorial/**', '.github/workflows/tutorial.yml' ]
+
+permissions:
+  contents: write
+
+jobs:
+  video:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Strumenti (ffmpeg, caratteri)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-inter fonts-dejavu-core
+
+      - name: Planner (solo le librerie della pagina) e tutorial
+        run: |
+          cd desktop && npm ci --ignore-scripts
+          cd ../tools/tutorial && npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Voce italiana (Piper)
+        run: |
+          pip install piper-tts==1.8.0
+          mkdir -p voce-modello && cd voce-modello
+          python -m piper.download_voices it_IT-paola-medium
+          ls -la
+
+      - name: Schermate
+        working-directory: tools/tutorial
+        run: |
+          node shots-planner.js out/planner
+          node shots-phone.js out/phone
+
+      - name: Parlato
+        working-directory: tools/tutorial
+        run: node voice.js "$GITHUB_WORKSPACE/voce-modello/it_IT-paola-medium.onnx" out/voce
+
+      - name: Montaggio
+        working-directory: tools/tutorial
+        run: |
+          node render.js out out/SirJoe-MTB-Videotutorial.mp4 out/voce
+          ls -la out/*.mp4
+          echo "VER=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SirJoe-MTB-Videotutorial
+          path: tools/tutorial/out/SirJoe-MTB-Videotutorial.mp4
+
+      - name: Pubblica in Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tutorial-v${{ env.VER }}
+          target_commitish: ${{ github.sha }}
+          name: Videotutorial SirJoe MTB ${{ env.VER }}
+          make_latest: false
+          body: |
+            Videotutorial con voce e sottotitoli in italiano: app Android SirJoe MTB e SirJoe MTB Planner per Windows.
+            Le mappe nel video sono di esempio (generate per le riprese), non luoghi reali.
+          files: tools/tutorial/out/SirJoe-MTB-Videotutorial.mp4
