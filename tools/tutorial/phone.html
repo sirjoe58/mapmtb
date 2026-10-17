@@ -1,0 +1,252 @@
+<!doctype html>
+<!-- Riproduzione delle schermate dell'app Android per il tutorial (stessa grafica dell'app).
+     Uso: phone.html?s=<nome schermata> -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/desktop/node_modules/leaflet/dist/leaflet.css">
+<style>
+  @font-face { font-family: Russo; src: url(assets/russo_one.ttf); }
+  :root { --or: #FF6D00; --dk: #1B1B1B; --green: #2E7D32; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; font-family: Roboto, 'Inter', Arial, sans-serif; }
+  #phone { width: 400px; height: 820px; position: relative; overflow: hidden; background: #fff; border-radius: 0; }
+  #status { height: 24px; background: var(--dk); color: #fff; font-size: 12px; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; }
+  #content { position: absolute; top: 24px; left: 0; right: 0; bottom: 0; }
+  #map { position: absolute; inset: 0; background: #dfe6d8; }
+  .leaflet-control-attribution, .leaflet-control-zoom { display: none; }
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: rgba(255,255,255,.85); display: flex; border-top: 1px solid rgba(0,0,0,.08); z-index: 900; }
+  .nav div { flex: 1; text-align: center; font-size: 11.5px; color: #555; padding-top: 9px; }
+  .nav div i { display: block; width: 46px; height: 26px; margin: 0 auto 3px; border-radius: 13px; }
+  .nav div.on { color: #222; font-weight: 600; } .nav div.on i { background: #FFE0B2; }
+  .nav svg { width: 20px; height: 20px; margin-top: 3px; fill: #333; }
+  .databar { position: absolute; left: 0; right: 0; bottom: 64px; background: rgba(0,0,0,.55); display: flex; padding: 4px 6px; z-index: 900; }
+  .databar.low { bottom: 0; }
+  .databar > div { flex: 1; text-align: center; color: #fff; }
+  .databar b { font-family: Russo; font-weight: normal; font-size: 34px; display: block; line-height: 1.05; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+  .databar small { font-size: 11px; opacity: .85; }
+  .databar .clock { background: rgba(255,193,7,.35); border-radius: 10px; margin: 0 4px; }
+  .databar .clock b, .databar .clock small { color: #FFD54F; }
+  .side { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 900; opacity: .85; }
+  .fab { width: 42px; height: 42px; border-radius: 13px; background: rgba(255,255,255,.75); box-shadow: 0 2px 6px rgba(0,0,0,.3); display: grid; place-items: center; }
+  .fab.big { width: 56px; height: 56px; border-radius: 16px; background: var(--or); }
+  .fab.stop { background: #D84315; }
+  .fab svg { width: 22px; height: 22px; }
+  .logo { position: absolute; top: 10px; left: 10px; height: 30px; z-index: 900; opacity: .92; }
+  .banner { position: absolute; left: 50%; transform: translateX(-50%); top: 44px; background: rgba(0,0,0,.55); color: #fff; font-weight: 700; font-size: 16px; padding: 8px 14px; border-radius: 12px; z-index: 900; white-space: nowrap; }
+  .banner.red { background: #D84315; }
+  .banner.coach { top: 90px; font-size: 15px; text-align: center; line-height: 1.35; }
+  .cursor { position: absolute; left: 50%; top: 50%; width: 92px; height: 92px; margin: -74px 0 0 -46px; z-index: 800; }
+  .dim { position: absolute; inset: 0; background: rgba(0,0,0,.93); z-index: 2000; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 60px; color: rgba(255,255,255,.45); font-size: 14px; }
+  /* pagine */
+  .page { position: absolute; inset: 0 0 64px 0; background: #fff; overflow: hidden; z-index: 1000; }
+  .top { background: var(--dk); color: #fff; padding: 10px 14px; }
+  .btn { display: inline-block; background: #FFE0B2; color: #5d2a00; border-radius: 20px; padding: 9px 14px; font-size: 13px; font-weight: 600; margin: 3px 2px; }
+  .mbtn { display: block; text-align: center; background: var(--or); color: #fff; border-radius: 22px; padding: 11px; font-size: 13.5px; font-weight: 600; margin: 8px 12px; }
+  .list div { padding: 13px 16px; border-bottom: 1px solid #eee; font-size: 15px; color: #222; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+  .cell { background: #263238; color: #fff; border-radius: 12px; padding: 10px; text-align: center; }
+  .cell b { font-family: Russo; font-weight: normal; font-size: 30px; display: block; }
+  .cell small { font-size: 11px; color: #cfd8dc; }
+  .sw { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eee; font-size: 14px; color: #222; gap: 10px; }
+  .sw i { flex: none; width: 38px; height: 20px; border-radius: 10px; background: var(--or); position: relative; }
+  .sw i::after { content: ''; position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+  .sw i.off { background: #bbb; } .sw i.off::after { left: 2px; right: auto; }
+  .tbtn { color: var(--or); font-weight: 600; font-size: 14px; padding: 12px 16px; border-bottom: 1px solid #eee; }
+  .dialog-bg { position: absolute; inset: 0; background: rgba(0,0,0,.45); z-index: 3000; display: flex; align-items: center; justify-content: center; }
+  .dialog { width: 340px; background: #fdf6f0; border-radius: 26px; padding: 20px 22px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .dialog h3 { margin: 0 0 12px; font-size: 19px; font-weight: 500; color: #222; }
+  .dialog .it { padding: 11px 2px; font-size: 15px; color: #222; }
+  .dialog p { font-size: 13.5px; color: #444; line-height: 1.45; margin: 0 0 10px; }
+  .dialog .acts { text-align: right; color: var(--or); font-weight: 600; font-size: 14px; padding-top: 6px; }
+  .dialog .acts span { margin-left: 18px; }
+  .dialog .radio::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #777; margin-right: 12px; vertical-align: -2px; }
+  .dialog .radio.on::before { border-color: var(--or); background: radial-gradient(var(--or) 45%, transparent 50%); }
+  .scan { position: absolute; inset: 0; background: #111; z-index: 2500; }
+  .scan .view { position: absolute; inset: 0; background: linear-gradient(160deg, #3a3f44, #1d2124); }
+  .scan .frame { position: absolute; left: 60px; right: 60px; top: 230px; height: 280px; border: 3px solid rgba(255,255,255,.8); border-radius: 6px; }
+  .scan .laser { position: absolute; left: 60px; right: 60px; top: 370px; height: 2px; background: #f33; box-shadow: 0 0 8px #f33; }
+  .scan .txt { position: absolute; bottom: 120px; left: 20px; right: 20px; text-align: center; color: #fff; font-size: 14px; }
+  .scan .qr { position: absolute; left: 115px; top: 250px; width: 170px; height: 170px; opacity: .85; transform: rotate(-4deg); }
+  .plan-top { position: absolute; top: 0; left: 0; right: 0; background: rgba(27,27,27,.85); color: #fff; padding: 8px 12px; z-index: 900; font-size: 13px; }
+  .plan-top b { font-family: Russo; font-weight: normal; font-size: 20px; margin-right: 10px; }
+  .plan-btns { position: absolute; left: 0; right: 0; bottom: 64px; padding: 6px; background: rgba(255,255,255,.9); z-index: 900; white-space: normal; }
+  .cross { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px; z-index: 850; opacity: .7; }
+</style>
+</head>
+<body>
+<div id="phone">
+  <div id="status"><span id="time">10:42</span><span>▲ ◢ 87%</span></div>
+  <div id="content"><div id="map"></div></div>
+</div>
+<script src="/desktop/node_modules/leaflet/dist/leaflet.js"></script>
+<script>
+const S = new URLSearchParams(location.search).get('s') || 'nav';
+const C = document.getElementById('content');
+const add = (html) => { C.insertAdjacentHTML('beforeend', html); };
+const ICON = {
+  map: '<path d="M15 5.1 9 3 3 5v16l6-2.1 6 2.1 6-2V3z"/>', plan: '<path d="M4 18 L9 9 L13 14 L20 5" stroke="#333" stroke-width="2.4" fill="none"/>',
+  data: '<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>', tracks: '<path d="M4 6h16v2H4zM4 11h16v2H4zM4 16h10v2H4z"/>',
+  info: '<circle cx="12" cy="12" r="9" fill="none" stroke="#333" stroke-width="2"/><path d="M11 10h2v7h-2zM11 6h2v2h-2z"/>',
+  layers: '<path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5" stroke="#263238" stroke-width="2" fill="none"/>',
+  nav: '<path d="M12 2 19 21l-7-4-7 4z" fill="#263238"/>', loc: '<circle cx="12" cy="12" r="4" fill="#263238"/><circle cx="12" cy="12" r="8" fill="none" stroke="#263238" stroke-width="2"/>',
+  play: '<path d="M8 5v14l11-7z" fill="#fff"/>', pause: '<path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="#fff"/>', stop: '<path d="M7 7h10v10H7z" fill="#fff"/>'
+};
+const svg = (k) => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
+function nav(on, hidden) {
+  if (hidden) return;
+  const it = [['map', 'Mappa'], ['plan', 'Crea'], ['data', 'Dati'], ['tracks', 'Percorsi'], ['info', 'Info']];
+  add('<div class="nav">' + it.map(([k, l]) => `<div class="${k === on ? 'on' : ''}"><i>${svg(k)}</i>${l}</div>`).join('') + '</div>');
+}
+function databar(low, speed = '18,6', km = '12,40', clock = '10:42', unit = 'km') {
+  add(`<div class="databar ${low ? 'low' : ''}"><div><b>${speed}</b><small>km/h</small></div><div class="clock"><b>${clock}</b><small>ora</small></div><div><b>${km}</b><small>${unit}</small></div></div>`);
+}
+function side(rec) {
+  add(`<div class="side"><div class="fab">${svg('layers')}</div><div class="fab">${svg('nav')}</div><div class="fab">${svg('loc')}</div>
+    <div class="fab big">${svg(rec === 'rec' ? 'pause' : 'play')}</div>${rec ? `<div class="fab stop">${svg('stop')}</div>` : ''}</div>`);
+}
+function cursor(angle = 0) {
+  add(`<svg class="cursor" viewBox="0 0 160 160">
+    <ellipse cx="80" cy="150" rx="26" ry="7" fill="rgba(0,0,0,.25)"/>
+    <g transform="rotate(${angle} 80 17)"><path d="M80 0 98 30 80 22 62 30z" fill="#FF6D00" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/></g>
+    <rect x="36" y="44" width="88" height="9" rx="4.5" fill="#333" stroke="#fff" stroke-width="2.5"/>
+    <rect x="30" y="43" width="18" height="11" rx="5.5" fill="#FF6D00"/><rect x="112" y="43" width="18" height="11" rx="5.5" fill="#FF6D00"/>
+    <path d="M64 60h32l-6 8H70z" fill="#222" stroke="#fff" stroke-width="2"/>
+    <path d="M70 66 60 112M90 66l10 46" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+    <path d="M70 66 60 112M90 66l10 46" stroke="#FF6D00" stroke-width="6" stroke-linecap="round"/>
+    <rect x="67" y="96" width="26" height="54" rx="9" fill="#1b1b1b" stroke="#fff" stroke-width="3"/>
+    <path d="M70 108h20M70 120h20M70 132h20" stroke="#666" stroke-width="2"/></svg>`);
+}
+function dialog(title, inner, acts = '') {
+  add(`<div class="dialog-bg"><div class="dialog"><h3>${title}</h3>${inner}${acts ? `<div class="acts">${acts}</div>` : ''}</div></div>`);
+}
+function logo() { add('<img class="logo" src="assets/logo.png">'); }
+
+/* ------------------------------------------------- mappa di sfondo */
+const center = [45.872, 11.79];
+const m = L.map('map', { zoomControl: false, attributionControl: false, fadeAnimation: false, zoomAnimation: false }).setView(center, 15);
+L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png').addTo(m);
+function routeAround(c, r, n, wig, seed) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const rr = r * (1 + 0.18 * Math.sin(a * 3 + seed) + wig * Math.sin(a * 17 + seed));
+    pts.push([c[0] + Math.sin(a) * rr, c[1] + Math.cos(a) * rr * 1.45]);
+  }
+  return pts;
+}
+const loop = routeAround([45.872 + 0.008, 11.79], 0.009, 240, 0.04, 1);
+const here = loop[60];
+function showRoute(color = '#1565C0', done = 60) {
+  L.polyline(loop, { color: '#fff', weight: 10, opacity: .8 }).addTo(m);
+  L.polyline(loop, { color, weight: 6 }).addTo(m);
+  if (done) L.polyline(loop.slice(0, done + 1), { color: '#FF6D00', weight: 7, opacity: .95 }).addTo(m);
+}
+
+/* ------------------------------------------------------ schermate */
+const screens = {
+  nav() { showRoute(); m.setView(here, 16); logo(); cursor(-20); add('<div class="banner">Al traguardo: 12,4 km</div>'); side('rec'); databar(); nav('map'); },
+  hidden() { showRoute(); m.setView(here, 16); logo(); cursor(-20); add('<div class="banner">Al traguardo: 12,4 km</div>'); databar(true); },
+  climb() { showRoute(); m.setView(here, 16); logo(); cursor(-15); add('<div class="banner">Al traguardo: 11,9 km</div><div class="banner coach">Tra 200 m salita 9% · 800 m · ↗ 72 m</div>'); databar(true, '14,2', '12,92'); },
+  reverse() { showRoute('#1565C0', 0); m.setView(loop[150], 16); logo(); cursor(160); add('<div class="banner">⇄ Al traguardo: 5,2 km</div>'); databar(true, '19,4', '3,10'); },
+  offroute() { showRoute(); m.setView([here[0] + 0.0012, here[1] - 0.0016], 16); logo(); cursor(120); add('<div class="banner red">Fuori percorso: 85 m</div>'); databar(true, '9,8', '12,51'); },
+  ghost() {
+    showRoute(); m.setView(here, 16); logo();
+    L.circleMarker(loop[52], { radius: 15, color: '#fff', weight: 2.5, fillColor: '#7c3cc8', fillOpacity: .6 }).addTo(m);
+    cursor(-20); add('<div class="banner">Al traguardo: 12,4 km</div><div class="banner coach">Fantasma: avanti di 25 s</div>'); databar(true);
+  },
+  dim() { showRoute(); m.setView(here, 16); cursor(-20); databar(true); add('<div class="dim">Tocca lo schermo per riaccenderlo</div>'); },
+  start() { m.setView(center, 15); logo(); cursor(0); side(); databar(false, '0,0', '0,00'); nav('map'); },
+  avvertenze() {
+    m.setView(center, 15); side(); databar(false, '0,0', '0,00'); nav('map');
+    dialog('Avvertenze d\'uso', '<p>SirJoe MTB è un\'app gratuita e open source per USO PERSONALE e non commerciale. Usandola accetti queste avvertenze.</p><p><b>1. SICUREZZA ALLA GUIDA</b><br>• Non maneggiare il telefono mentre pedali…<br>• Tieni sempre l\'attenzione sul percorso…</p><p><b>2. LE MAPPE POSSONO ESSERE SBAGLIATE</b><br>…</p>', '<span>Esci</span><span>Ho letto e accetto</span>');
+  },
+  layers() {
+    showRoute(); m.setView(here, 15); logo(); cursor(-20); side(); databar(); nav('map');
+    dialog('Mappa', ['OpenTopoMap (sentieri e rilievo)', 'OpenStreetMap standard', 'Offline: OpenAndroMaps', 'Nascondi itinerari MTB', 'Mostra le mie uscite registrate', 'Dimensione testi mappa offline…'].map((t) => `<div class="it">${t}</div>`).join(''));
+  },
+  orient() {
+    showRoute(); m.setView(here, 15); logo(); cursor(-20); side(); databar(); nav('map');
+    dialog('Orientamento della mappa', `<div class="it radio on">Direzione di marcia (la mappa gira con te)</div><div class="it radio">Nord in alto</div><div class="it radio">Libera (la giri tu con due dita)</div>`, '<span>Chiudi</span>');
+  },
+  rides() {
+    m.setView([45.876, 11.79], 14); logo();
+    const rides = [routeAround([45.88, 11.79], 0.009, 200, 0.05, 1), routeAround([45.872, 11.77], 0.012, 200, 0.06, 2), routeAround([45.868, 11.81], 0.007, 200, 0.07, 3)];
+    rides.forEach((r) => L.polyline(r, { color: 'rgba(142,36,170,.6)', weight: 5 }).addTo(m));
+    cursor(0); side(); databar(false, '0,0', '0,00'); nav('map');
+  },
+  crea() {
+    m.setView([45.879, 11.79], 15);
+    const pts = loop.slice(20, 140);
+    L.polyline(pts, { color: '#fff', weight: 10, opacity: .8 }).addTo(m); L.polyline(pts, { color: '#1565C0', weight: 6 }).addTo(m);
+    [20, 60, 100, 139].forEach((i) => L.circleMarker(pts[Math.min(i, pts.length - 1)] || pts[0], { radius: 8, color: '#fff', weight: 3, fillColor: '#FF6D00', fillOpacity: 1 }).addTo(m));
+    L.marker([45.886, 11.785]).addTo(m);
+    add('<svg class="cross" viewBox="0 0 30 30"><path d="M15 0v30M0 15h30" stroke="#222" stroke-width="2"/></svg>');
+    add('<div class="plan-top"><b>6,64 km</b> ↗ 136 m &nbsp;·&nbsp; Fuoristrada / MTB</div>');
+    add('<div class="plan-btns"><span class="btn">+</span><span class="btn">Annulla</span><span class="btn">Chiudi anello</span><span class="btn">Inverti</span><span class="btn">Cancella</span><span class="btn">Modalità</span><span class="btn">Segnaposto</span><span class="btn">Salva</span><span class="btn">Segui ora</span><span class="btn">Condividi</span></div>');
+    nav('plan');
+  },
+  creatype() {
+    screens.crea();
+    dialog('Tipo di percorso', ['Fuoristrada / MTB', 'Equilibrato', 'Il più veloce', 'Il più corto', 'Il più lungo', 'Linea retta'].map((t, i) => `<div class="it radio ${i ? '' : 'on'}">${t}</div>`).join(''), '<span>Annulla</span>');
+  },
+  placemark() {
+    screens.crea();
+    dialog('Nuovo segnaposto', '<div style="border-bottom:2px solid #FF6D00;padding:8px 2px;font-size:16px">Fontana del Pian</div><div style="border-bottom:1px solid #aaa;padding:8px 2px;color:#888;margin-top:10px">Nota (facoltativa)</div><div class="it" style="margin-top:10px"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#00ACC1;margin-right:10px;vertical-align:-2px"></span>Fontana / acqua</div>', '<span>Elimina</span><span>Annulla</span><span>Salva</span>');
+  },
+  placemenu() {
+    screens.crea();
+    dialog('Fontana del Pian · 1,2 km', ['Naviga qui dalla mia posizione', 'Aggiungi al percorso in costruzione', 'Modifica nome, nota e tipo', 'Elimina'].map((t) => `<div class="it">${t}</div>`).join(''));
+  },
+  dati() {
+    add('<div class="page"><div class="grid">' + [['18,6', 'Velocità (km/h)'], ['16,2', 'Media (km/h)'], ['48,3', 'Massima (km/h)'], ['12,40', 'Distanza (km)'], ['0:45:58', 'Tempo in movimento'], ['0:52:10', 'Tempo totale'], ['10:42', 'Ora'], ['1.126', 'Quota (m)'], ['482', 'Dislivello + (m)'], ['8%', 'Pendenza'], ['NE', 'Direzione'], ['12,4', 'Al traguardo (km)']]
+      .map(([v, l]) => `<div class="cell"><b>${v}</b><small>${l}</small></div>`).join('') +
+      '</div><div style="margin:0 10px;padding:8px;background:#263238;border-radius:12px;color:#cfd8dc;font-size:12px">Profilo altimetrico del percorso<svg viewBox="0 0 300 70" style="width:100%;height:80px"><path d="M0 60 L30 52 60 40 90 44 120 25 150 18 180 30 210 22 240 38 270 45 300 55 L300 70 0 70z" fill="#4e6b3a"/><path d="M120 0v70" stroke="#FF6D00" stroke-width="2"/></svg></div></div>');
+    nav('data');
+  },
+  percorsi() {
+    add('<div class="page" style="padding-top:6px">' + ['Importa tracce e segnaposto (GPX, FIT, KML, KMZ, TCX, GeoJSON, CSV, ZIP)', 'SirJoe Link: scambia con il PC…', 'Esporta tutte le tracce (ZIP)', 'Mappe offline (OpenAndroMaps)…', 'Mostra / nascondi le mie uscite registrate sulla mappa'].map((t) => `<div class="mbtn">${t}</div>`).join('') +
+      '<div style="padding:10px 16px 4px;font-size:16px">Le mie tracce (tocca per aprire)</div><div class="list"><div>Uscita 2026-10-12 09-05</div><div>Giro del Grappa</div><div>Uscita 2026-10-05 15-30</div><div>Anello delle malghe</div></div></div>');
+    nav('tracks');
+  },
+  traccia() {
+    screens.percorsi();
+    dialog('Uscita 2026-10-12 09-05<br><small style="font-size:13px;color:#666">12,91 km · ↗ 482 m · 0:52:10</small>', ['Mostra e segui sulla mappa', 'Sfida il fantasma (rifai questa uscita)', 'Modifica / allunga nella pagina Crea', 'Condividi (Strava, social, app…)', 'Rinomina', 'Elimina'].map((t) => `<div class="it">${t}</div>`).join(''));
+  },
+  condividi() {
+    screens.percorsi();
+    dialog('Condividi "Uscita 2026-10-12"', ['Carica su Strava', 'Immagine per i social (Instagram, Facebook, WhatsApp, Telegram, X…)', 'File per app e piattaforme (Komoot, Garmin, Wahoo, Wikiloc, email…)', 'Salva su file nel telefono'].map((t) => `<div class="it">${t}</div>`).join(''));
+  },
+  offline() {
+    screens.percorsi();
+    dialog('Mappe offline', ['Scarica mappe e stile da openandromaps.org', 'Importa mappa (.map o .zip) o stile Elevate (.zip)', 'Elimina mappe offline', 'Elimina stile (torna allo stile standard)'].map((t) => `<div class="it">${t}</div>`).join(''));
+  },
+  link() {
+    screens.percorsi();
+    dialog('SirJoe Link', ['Inquadra il QR del PC', 'Inserisci codice (indirizzo e PIN)', 'Ricollega a PC-SERGIO', 'Come funziona'].map((t) => `<div class="it">${t}</div>`).join(''), '<span>Annulla</span>');
+  },
+  scan() { add('<div class="scan"><div class="view"></div><img class="qr" src="QRSRC"><div class="frame"></div><div class="laser"></div><div class="txt">Inquadra il QR di SirJoe Link sullo schermo del PC</div></div>'); },
+  linkok() {
+    screens.percorsi();
+    dialog('Collegato a PC-SERGIO', ['Ricevi percorsi dal PC (2)', 'Invia le mie uscite al PC (Sala analisi)'].map((t) => `<div class="it">${t}</div>`).join(''), '<span>Chiudi</span>');
+  },
+  info() {
+    add('<div class="page"><div style="text-align:center;padding:14px"><img src="assets/logo.png" style="height:54px"><div style="font-size:13px;color:#666">SirJoe MTB 1.8.0</div></div>' +
+      [['Pausa automatica quando sei fermo', 1], ['Sosta automatica: da fermo lo schermo si oscura, ripartendo si riaccende e la registrazione riprende', 1]].map(([t, on]) => `<div class="sw">${t}<i class="${on ? '' : 'off'}"></i></div>`).join('') +
+      '<div class="tbtn">Sosta dopo: 1 minuto da fermo</div>' +
+      [['Schermo acceso durante uscita e navigazione', 1]].map(([t, on]) => `<div class="sw">${t}<i></i></div>`).join('') +
+      '<div class="tbtn">Oscura lo schermo dopo 5 minuti senza tocchi</div>' +
+      '<div class="sw">Nascondi pulsanti e barra delle pagine 30 secondi dopo la partenza<i></i></div><div class="tbtn">Schermo: sempre verticale</div>' +
+      [['Avvisi vocali (ogni km, pausa)', 1], ['Avvisa prima delle salite del percorso', 1], ['Fantasma: sfida le tue uscite precedenti', 1]].map(([t]) => `<div class="sw">${t}<i></i></div>`).join('') + '</div>');
+    nav('info');
+  },
+  strava() {
+    screens.info();
+    dialog('Collega Strava', '<p>1. Da computer o browser apri strava.com/settings/api e crea un\'applicazione.<br>2. Nome: quello che vuoi. Sito: anche https://github.com.<br>3. In "Authorization Callback Domain" scrivi: localhost<br>4. Copia qui sotto Client ID e Client Secret.</p><div style="border-bottom:1px solid #999;padding:6px 0;color:#888">Client ID (numero)</div><div style="border-bottom:1px solid #999;padding:6px 0;color:#888;margin-top:8px">Client Secret</div>', '<span>Annulla</span><span>Salva e collega</span>');
+  }
+};
+(screens[S] || screens.nav)();
+setTimeout(() => { document.body.dataset.ready = '1'; }, 1500);
+</script>
+</body>
+</html>

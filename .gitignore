@@ -10,3 +10,7 @@
 .cxx/
 *.apk
 *.aab
+
+# tutorial
+tools/tutorial/node_modules/
+tools/tutorial/out/
