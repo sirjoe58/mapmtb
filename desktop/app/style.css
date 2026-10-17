@@ -102,14 +102,15 @@ a { color: var(--accent-2); }
 /* ---------- mappa ---------- */
 #main { flex: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
 #toolbar {
-  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px 10px; padding: 8px 12px; flex-wrap: wrap;
   background: var(--panel); border-bottom: 1px solid var(--line); z-index: 1000;
 }
 #toolbar select { width: auto; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; flex: none; }
 .seg-btn { border: 0; background: var(--bg); color: var(--muted); padding: 8px 12px; font: inherit; font-weight: 600; cursor: pointer; }
 .seg-btn.active { background: var(--accent); color: #fff; }
-.search { position: relative; flex: 1; max-width: 420px; }
+.search { position: relative; flex: 1 1 180px; min-width: 160px; max-width: 420px; }
+#toolbar .btn, #toolbar .check { flex: none; white-space: nowrap; }
 .results {
   position: absolute; top: 100%; left: 0; right: 0; list-style: none; margin: 4px 0 0; padding: 4px;
   background: var(--panel); border: 1px solid var(--line); border-radius: 8px; z-index: 2000;
@@ -201,3 +202,18 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .maps-list li { display: flex; align-items: center; gap: 8px; }
 .maps-list input[type=range] { width: 90px; }
 .maps-list small { display: block; color: var(--muted); word-break: break-all; }
+
+/* profilo altimetrico a scomparsa */
+#profileBox[hidden] { display: none; }
+.profile-tab {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1000;
+  border: 1px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0; padding: 4px 14px;
+  background: var(--panel); color: var(--text, inherit); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; opacity: .9;
+}
+.profile-tab:hover { opacity: 1; }
+.profile-tab[hidden] { display: none; }
+.profile-close {
+  position: absolute; top: 4px; right: 8px; z-index: 2; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); color: inherit; cursor: pointer; padding: 1px 8px;
+}
+#profileBtn.on { background: var(--accent); color: #fff; }
