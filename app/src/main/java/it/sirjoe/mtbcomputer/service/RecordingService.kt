@@ -97,9 +97,12 @@ class RecordingService : Service() {
     private var coachGhostMode = false
     private var progress: RouteProgress? = null
     private var climbs: List<Climb> = emptyList()
+    private var climbsRev: List<Climb> = emptyList()
+    private var routeTotal = 0.0
     private val announced = HashSet<Int>()
     private var ghost: Ghost? = null
     private var nextGhostKm = 1
+    private var lastReverse = false
     private var coachJob: Job? = null
 
     private var tts: TextToSpeech? = null
@@ -341,12 +344,15 @@ class RecordingService : Service() {
         announced.clear()
         nextGhostKm = 1
         if (route == null || route.points.size < 2) {
-            progress = null; climbs = emptyList(); ghost = null
+            progress = null; climbs = emptyList(); climbsRev = emptyList(); ghost = null
             RideRepository.updateCoach(null)
             return
         }
         progress = RouteProgress(route.points)
+        routeTotal = progress!!.total
         climbs = if (Prefs.climbAlerts(this)) RouteAnalysis.climbs(route.points) else emptyList()
+        // salite per chi percorre il giro al contrario
+        climbsRev = if (Prefs.climbAlerts(this)) RouteAnalysis.climbs(route.points.asReversed()) else emptyList()
         ghost = if (coachGhostMode && Prefs.ghost(this) && Ghost.canUse(route)) Ghost(route) else null
         RideRepository.updateCoach(null)
     }
@@ -355,13 +361,21 @@ class RecordingService : Service() {
         val route = RideRepository.route.value
         if (route !== coachRoute || RideRepository.ghostMode != coachGhostMode) setupCoach(route)
         val prog = progress ?: return
-        val done = prog.update(loc.latitude, loc.longitude)
+        val moving = loc.hasBearing() && loc.hasSpeed() && loc.speed > 1.5f
+        val fwd = prog.update(loc.latitude, loc.longitude, if (moving) loc.bearing else null)
         val onRoute = prog.offDistance < 80
+        // al contrario: distanze misurate dalla fine del percorso e salite del verso opposto
+        val rev = prog.reverse
+        val done = if (rev) routeTotal - fwd else fwd
+        val climbList = if (rev) climbsRev else climbs
+        if (rev != lastReverse) {
+            announced.clear(); lastReverse = rev
+        }
 
         // salite: avviso prima e indicazione durante
         var climbText: String? = null
         if (onRoute) {
-            for ((i, c) in climbs.withIndex()) {
+            for ((i, c) in climbList.withIndex()) {
                 val toStart = c.start - done
                 if (toStart in 0.0..250.0) {
                     if (announced.add(i)) {
@@ -384,7 +398,7 @@ class RecordingService : Service() {
         var gLon: Double? = null
         var diff: Int? = null
         val g = ghost
-        if (g != null) {
+        if (g != null && !rev) {
             val p = g.positionAt(s.elapsedMs)
             gLat = p.lat; gLon = p.lon
             if (onRoute) {

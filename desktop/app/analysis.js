@@ -331,9 +331,11 @@ const Analysis = {
    */
   async mapBackground(MAP, k, ox, oy) {
     if (!(window.sirjoe && window.sirjoe.fetchDataUrl)) return null;
-    const useOsm = store.get('base', 'topo') === 'osm';
+    // stessa mappa scelta nel Planner (satellite, topografica, le mie mappe a riquadri…)
+    const tpl = typeof Maps !== 'undefined' ? Maps.template(store.get('base', 'topo'))
+      : { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', maxZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap contributors, OpenTopoMap (CC-BY-SA)' };
     // zoom un po' più alto del necessario: riquadri rimpiccioliti, quindi nitidi
-    const maxZ = useOsm ? 19 : 17;
+    const maxZ = tpl.maxZoom || 18;
     const plan = (z) => {
       const n = 2 ** z, ts = k / n; // lato di un riquadro in pixel del video
       const tx0 = Math.floor((MAP.x - ox) / ts), tx1 = Math.floor((MAP.x + MAP.w - ox) / ts);
@@ -356,11 +358,17 @@ const Analysis = {
       while (i < jobs.length) {
         const [tx, ty] = jobs[i++];
         const x = ((tx % n) + n) % n;
-        const sub = 'abc'[(tx + ty) % 3];
-        const url = useOsm ? `https://tile.openstreetmap.org/${z}/${x}/${ty}.png` : `https://${sub}.tile.opentopomap.org/${z}/${x}/${ty}.png`;
+        const subs = tpl.subdomains || 'abc';
+        const url = tpl.url.replace('{s}', subs[(tx + ty) % subs.length]).replace('{z}', z).replace('{x}', x).replace('{y}', ty);
         try {
           const img = new Image();
-          img.src = await window.sirjoe.fetchDataUrl(url);
+          if (url.startsWith('sjtile:')) {
+            // mappa da file: riquadri letti direttamente
+            const blob = await (await fetch(url)).blob();
+            img.src = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(blob); });
+          } else {
+            img.src = await window.sirjoe.fetchDataUrl(url);
+          }
           await img.decode();
           c.drawImage(img, tx * ts + ox - MAP.x, ty * ts + oy - MAP.y, ts + 0.5, ts + 0.5);
           ok++;
@@ -377,7 +385,7 @@ const Analysis = {
     g.addColorStop(0, 'rgba(12,26,18,0)'); g.addColorStop(1, 'rgba(12,26,18,1)');
     c.fillStyle = g; c.fillRect(0, MAP.h - 90, MAP.w, 90);
     c.font = '600 18px "Segoe UI", Arial, sans-serif'; c.fillStyle = 'rgba(255,255,255,.85)'; c.textAlign = 'right';
-    c.fillText(useOsm ? '© OpenStreetMap contributors' : '© OpenStreetMap contributors, OpenTopoMap (CC-BY-SA)', MAP.w - 16, MAP.h - 14);
+    c.fillText(tpl.attribution || '', MAP.w - 16, MAP.h - 14);
     return cv;
   },
 

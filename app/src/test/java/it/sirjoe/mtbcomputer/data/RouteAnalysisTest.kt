@@ -48,6 +48,21 @@ class RouteAnalysisTest {
     }
 
     @Test
+    fun progressDetectsReverseDirection() {
+        val pts = route(2000, { 100.0 })
+        val p = RouteProgress(pts)
+        // parto dalla fine e vado verso l'inizio (direzione Sud = 180°)
+        for (i in 190 downTo 150 step 5) p.update(pts[i].lat, pts[i].lon, 180f)
+        assertTrue(p.reverse)
+        assertEquals(1500.0, p.remaining(), 20.0)
+        assertTrue(p.aheadIndex(50.0) < p.index)
+        // giro e torno nel verso giusto
+        for (i in 150..170 step 5) p.update(pts[i].lat, pts[i].lon, 0f)
+        assertFalse(p.reverse)
+        assertEquals(300.0, p.remaining(), 20.0)
+    }
+
+    @Test
     fun ghostTiming() {
         // 2 km a 5 m/s (0,2 s al metro): 400 secondi
         val track = Track("prima", route(2000, { 100.0 }, secPerM = 0.2))

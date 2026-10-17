@@ -34,6 +34,9 @@ jobs:
           pip install fitparse
           python -c "import fitparse; f=fitparse.FitFile('test-course.fit', check_crc=True); f.parse(); n=len(list(f.get_messages('record'))); assert n==60, n; print('fitparse ok', n)"
 
+      - name: Verifica lettori mappe (MBTiles, SQLiteDB, cartelle, GeoTIFF, KMZ, world file, OziExplorer)
+        run: node tools-check-maps.js
+
       - name: Crea gli eseguibili Windows
         run: npx electron-builder --win portable nsis --publish never
 

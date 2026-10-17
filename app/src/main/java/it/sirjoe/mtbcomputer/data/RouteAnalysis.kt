@@ -68,14 +68,22 @@ object RouteAnalysis {
 }
 
 /**
- * Avanzamento lungo un percorso: cerca il punto più vicino soprattutto in avanti,
- * così nei tratti che si incrociano o tornano indietro non "salta" all'altro passaggio.
+ * Avanzamento lungo un percorso, in qualsiasi senso di marcia e partendo da qualsiasi punto.
+ * Cerca il punto più vicino attorno all'ultimo trovato (così nei tratti che si incrociano
+ * non "salta" all'altro passaggio) e capisce da solo se lo stai percorrendo al contrario.
  */
 class RouteProgress(val points: List<TrackPoint>) {
     val cum: DoubleArray = Geo.cumulative(points)
-    private var idx = 0
+    val total: Double get() = if (cum.isEmpty()) 0.0 else cum.last()
+    private var idx = -1
+    var index = 0
+        private set
     var offDistance = 0.0
         private set
+    /** true se stai seguendo il percorso dalla fine verso l'inizio. */
+    var reverse = false
+        private set
+    private var anchor = -1.0
 
     private fun dist(lat: Double, lon: Double, i: Int): Double {
         val p = points[i]
@@ -83,31 +91,68 @@ class RouteProgress(val points: List<TrackPoint>) {
         return hypot((p.lon - lon) * 111320 * k, (p.lat - lat) * 110540)
     }
 
-    /** Distanza percorsa lungo il percorso, in metri. */
-    fun update(lat: Double, lon: Double): Double {
-        if (points.isEmpty()) return 0.0
-        var best = idx
+    private fun nearest(lat: Double, lon: Double, from: Int, to: Int): Pair<Int, Double> {
+        var best = from
         var bestD = Double.MAX_VALUE
-        val from = max(0, idx - 30)
-        val to = minOf(points.size - 1, idx + 400)
         for (i in from..to) {
             val d = dist(lat, lon, i)
             if (d < bestD) {
                 bestD = d; best = i
             }
         }
+        return best to bestD
+    }
+
+    /**
+     * Aggiorna la posizione; [bearing] è la direzione di marcia in gradi (null se fermo).
+     * Restituisce la distanza dall'inizio del percorso, in metri.
+     */
+    fun update(lat: Double, lon: Double, bearing: Float? = null): Double {
+        if (points.isEmpty()) return 0.0
+        var (best, bestD) = if (idx < 0) nearest(lat, lon, 0, points.lastIndex)
+        else nearest(lat, lon, max(0, idx - 400), minOf(points.lastIndex, idx + 400))
         // perso il filo (es. ripartito da un altro punto): ricerca su tutto il percorso
         if (bestD > 150) {
-            for (i in points.indices) {
-                val d = dist(lat, lon, i)
-                if (d < bestD) {
-                    bestD = d; best = i
-                }
+            val g = nearest(lat, lon, 0, points.lastIndex)
+            if (g.second < bestD) {
+                if (kotlin.math.abs(cum[g.first] - cum[best]) > 300) anchor = -1.0
+                best = g.first; bestD = g.second
             }
         }
         idx = best
+        index = best
         offDistance = bestD
-        return cum[best]
+        val done = cum[best]
+
+        // senso di marcia: dalla direzione del GPS quando ti muovi...
+        if (bearing != null && bestD < 60 && points.size >= 2) {
+            val a = points[if (best == points.lastIndex) best - 1 else best]
+            val b = points[if (best == points.lastIndex) best else best + 1]
+            val seg = Geo.bearing(a.lat, a.lon, b.lat, b.lon)
+            val diff = kotlin.math.abs(((bearing - seg) % 360 + 540) % 360 - 180)
+            if (diff > 120) reverse = true else if (diff < 60) reverse = false
+        }
+        // ...e comunque dall'avanzamento lungo il percorso
+        if (anchor < 0) anchor = done
+        else if (kotlin.math.abs(done - anchor) > 40) {
+            reverse = done < anchor
+            anchor = done
+        }
+        return done
+    }
+
+    /** Metri che mancano alla fine, nel senso in cui lo stai percorrendo. */
+    fun remaining(): Double = if (reverse) cum[index] else total - cum[index]
+
+    /** Punto [meters] metri più avanti, nel senso di marcia. */
+    fun aheadIndex(meters: Double): Int {
+        var j = index
+        if (reverse) {
+            while (j > 0 && cum[index] - cum[j] < meters) j--
+        } else {
+            while (j < points.lastIndex && cum[j] - cum[index] < meters) j++
+        }
+        return j
     }
 }
 
