@@ -521,6 +521,7 @@ async function routeThroughPlaces() {
 const elev = $('elev');
 let elevData = null;
 function drawProfile() {
+  if ($('profileBox').hidden) return; // profilo nascosto: niente da disegnare
   const pts = (window.Analysis && Analysis.active) ? Analysis.points : allPoints();
   const ctx = elev.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
@@ -579,6 +580,20 @@ elev.addEventListener('mousemove', (e) => {
 });
 elev.addEventListener('mouseleave', () => { if (hoverMarker) { map.removeLayer(hoverMarker); hoverMarker = null; } drawProfile(); });
 window.addEventListener('resize', drawProfile);
+
+/* profilo altimetrico a scomparsa: si apre su richiesta */
+function setProfile(open) {
+  $('profileBox').hidden = !open;
+  $('profileTab').hidden = open;
+  $('profileBtn').classList.toggle('on', open);
+  store.set('profileOpen', open);
+  map.invalidateSize();
+  if (open) drawProfile();
+}
+$('profileBtn').addEventListener('click', () => setProfile($('profileBox').hidden));
+$('profileTab').addEventListener('click', () => setProfile(true));
+$('profileClose').addEventListener('click', () => setProfile(false));
+setProfile(store.get('profileOpen', false));
 
 /* --------------------------------------------- salva, archivio, file */
 

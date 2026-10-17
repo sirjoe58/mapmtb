@@ -112,7 +112,7 @@
     <section class="panel" id="tab-rides">
       <div id="ridesHome">
         <p class="hint">Qui arrivano le uscite registrate col telefono tramite <b>📲 SirJoe Link</b>
-          (in alto a destra), oppure aggiungile da file. Cliccane una per aprire la <b>Sala analisi</b>.</p>
+          (primo pulsante in alto), oppure aggiungile da file. Cliccane una per aprire la <b>Sala analisi</b>.</p>
         <div class="grid2">
           <button id="addRide" class="btn">Aggiungi da file…</button>
           <button id="ridesFolder" class="btn">Apri cartella</button>
@@ -193,6 +193,7 @@
 
   <main id="main">
     <div id="toolbar">
+      <button id="linkBtn" class="btn primary" title="Collega il telefono via Wi-Fi: mostra il QR code da inquadrare con l'app">📲 SirJoe Link</button>
       <div class="seg" role="group" aria-label="Modalità clic">
         <button class="seg-btn active" data-mode="route" title="Il clic aggiunge punti al percorso">✚ Punti percorso</button>
         <button class="seg-btn" data-mode="draw" title="Disegna a mano libera con penna (tavoletta grafica) o mouse">✏️ Disegna</button>
@@ -209,7 +210,7 @@
       <button id="mapsBtn" class="btn" title="Satellite, altre mappe online e file di mappa">🗺 Mappe…</button>
       <label class="check light"><input type="checkbox" id="mtbOverlay" checked> Itinerari MTB</label>
       <label class="check light" title="Mostra sulla mappa tutte le uscite registrate (scheda Uscite)"><input type="checkbox" id="ridesOverlay"> Le mie uscite</label>
-      <button id="linkBtn" class="btn primary" title="Collega il telefono via Wi-Fi">📲 SirJoe Link</button>
+      <button id="profileBtn" class="btn" title="Mostra o nascondi il profilo altimetrico">⛰ Altimetria</button>
     </div>
     <div id="map"></div>
     <div id="drawBar" hidden>
@@ -218,7 +219,9 @@
       <button id="drawClear" class="btn danger" title="Cancella tutto il percorso (i segnaposto restano)">🗑 Cancella</button>
     </div>
     <div id="busy" hidden>Calcolo del percorso…</div>
-    <div id="profileBox">
+    <button id="profileTab" class="profile-tab" title="Mostra il profilo altimetrico">▲ Altimetria</button>
+    <div id="profileBox" hidden>
+      <button id="profileClose" class="profile-close" title="Nascondi il profilo altimetrico">▼</button>
       <canvas id="elev"></canvas>
       <div id="elevInfo">Profilo altimetrico: aggiungi almeno due punti</div>
     </div>
