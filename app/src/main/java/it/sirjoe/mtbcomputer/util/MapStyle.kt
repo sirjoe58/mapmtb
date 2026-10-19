@@ -7,7 +7,6 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -287,30 +286,61 @@ object MapStyle {
     /** Finestra per inserire la chiave MapTiler; onSaved viene chiamato dopo il salvataggio. */
     fun askMaptilerKey(ctx: Context, onSaved: () -> Unit) {
         val d = ctx.resources.displayMetrics.density
-        val input = EditText(ctx).apply {
-            hint = "Incolla qui la chiave"
+        fun dp(v: Int) = (v * d).toInt()
+
+        val steps = android.widget.TextView(ctx).apply {
+            text = "1. Tocca \"Apri il sito\" e registrati su MapTiler (piano Free, gratis)\n" +
+                "2. Nella pagina API keys copia la chiave (tieni premuto → Copia)\n" +
+                "3. Torna qui e incollala nel riquadro qui sotto, poi tocca Salva"
+            textSize = 14f
+        }
+        val field = com.google.android.material.textfield.TextInputLayout(
+            ctx, null, com.google.android.material.R.attr.textInputOutlinedStyle
+        ).apply { hint = "Chiave MapTiler" }
+        val input = com.google.android.material.textfield.TextInputEditText(field.context).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             isSingleLine = true
             setText(Prefs.maptilerKey(ctx) ?: "")
         }
-        val box = LinearLayout(ctx).apply {
-            val pad = (20 * d).toInt()
-            setPadding(pad, (8 * d).toInt(), pad, 0)
-            addView(input, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        field.addView(input)
+        val paste = com.google.android.material.button.MaterialButton(
+            ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = "Incolla la chiave copiata"
+            setOnClickListener {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                val txt = cm?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(ctx)?.toString()?.trim()
+                if (txt.isNullOrEmpty()) {
+                    Toast.makeText(ctx, "Negli appunti non c'è niente: copia prima la chiave dal sito", Toast.LENGTH_LONG).show()
+                } else {
+                    input.setText(txt)
+                    input.setSelection(txt.length)
+                }
+            }
         }
+        val note = android.widget.TextView(ctx).apply {
+            text = "La chiave resta solo sul telefono. Il piano gratuito ha un limite mensile di richieste: " +
+                "le zone già viste restano in memoria e non si richiedono di nuovo."
+            textSize = 12f
+            alpha = 0.75f
+        }
+        val box = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), 0)
+            val full = LinearLayout.LayoutParams.MATCH_PARENT
+            val wrap = LinearLayout.LayoutParams.WRAP_CONTENT
+            addView(steps, LinearLayout.LayoutParams(full, wrap))
+            addView(field, LinearLayout.LayoutParams(full, wrap).apply { topMargin = dp(16) })
+            addView(paste, LinearLayout.LayoutParams(full, wrap).apply { topMargin = dp(8) })
+            addView(note, LinearLayout.LayoutParams(full, wrap).apply { topMargin = dp(12) })
+        }
+        val scroll = android.widget.ScrollView(ctx).apply { addView(box) }
+
         MaterialAlertDialogBuilder(ctx)
-            .setTitle("Chiave MapTiler")
-            .setMessage(
-                "Per la mappa satellitare serve una chiave gratuita MapTiler (uso personale):\n\n" +
-                    "1. Registrati su maptiler.com (piano Free)\n" +
-                    "2. Apri Account → API keys\n" +
-                    "3. Copia la chiave e incollala qui sotto\n\n" +
-                    "La chiave resta solo sul telefono. Il piano gratuito ha un limite di richieste al mese: " +
-                    "le zone già viste restano in memoria e non vengono richieste di nuovo."
-            )
-            .setView(box)
+            .setTitle("Chiave MapTiler per il satellite")
+            .setView(scroll)
             .setPositiveButton("Salva") { _, _ ->
-                val key = input.text.toString().trim()
+                val key = input.text?.toString()?.trim().orEmpty()
                 if (key.isEmpty()) {
                     Prefs.setMaptilerKey(ctx, null)
                     if (Prefs.baseMap(ctx) == Prefs.BASE_SAT_MAPTILER) Prefs.setBaseMap(ctx, Prefs.BASE_TOPO)
@@ -325,6 +355,7 @@ object MapStyle {
             .setNeutralButton("Apri il sito") { _, _ ->
                 try {
                     ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(MAPTILER_KEYS_PAGE)))
+                    Toast.makeText(ctx, "Copiata la chiave, torna qui: Info → Mappa satellitare", Toast.LENGTH_LONG).show()
                 } catch (_: Exception) {
                     Toast.makeText(ctx, "Apri nel browser: $MAPTILER_KEYS_PAGE", Toast.LENGTH_LONG).show()
                 }

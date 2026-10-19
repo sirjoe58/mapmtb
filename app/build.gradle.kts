@@ -11,8 +11,8 @@ android {
         applicationId = "it.sirjoe.mtbcomputer"
         minSdk = 23
         targetSdk = 35
-        versionCode = 13
-        versionName = "1.9.0"
+        versionCode = 14
+        versionName = "1.9.1"
     }
 
     // Chiave di firma fissa: ogni nuova versione si installa sopra la precedente
