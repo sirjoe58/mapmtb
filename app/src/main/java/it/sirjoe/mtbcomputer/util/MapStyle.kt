@@ -1,7 +1,14 @@
 package it.sirjoe.mtbcomputer.util
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.text.InputType
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.data.OfflineMaps
@@ -17,14 +24,19 @@ import org.osmdroid.tileprovider.MapTileProviderBasic
 import org.osmdroid.tileprovider.modules.OfflineTileProvider
 import org.osmdroid.tileprovider.tilesource.FileBasedTileSource
 import org.osmdroid.tileprovider.tilesource.ITileSource
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver
+import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 
 /** Impostazione comune delle mappe (pagina Mappa e pagina Crea). */
 object MapStyle {
@@ -35,6 +47,45 @@ object MapStyle {
         arrayOf("https://tile.waymarkedtrails.org/mtb/"),
         "Itinerari MTB: waymarkedtrails.org, dati (c) OpenStreetMap contributors"
     )
+
+    // ------------------------------------------------------------ satellite
+
+    private const val MAPTILER_ATTR = "© MapTiler © OpenStreetMap contributors"
+    private const val ESRI_ATTR = "Immagini © Esri, Maxar, Earthstar Geographics"
+    const val MAPTILER_KEYS_PAGE = "https://cloud.maptiler.com/account/keys/"
+
+    /**
+     * Satellite MapTiler (piano gratuito con chiave personale). Riquadri da 256 px:
+     * ogni riquadro conta come 1 richiesta nel limite mensile del piano gratuito.
+     * Il nome non contiene la chiave: cambiandola, la cache resta valida.
+     */
+    private class MapTilerSatellite(private val key: String) : OnlineTileSourceBase(
+        "MapTilerSatellite", 0, 19, 256, ".jpg",
+        arrayOf("https://api.maptiler.com/maps/satellite/256/"), MAPTILER_ATTR
+    ) {
+        override fun getTileURLString(index: Long): String =
+            baseUrl + MapTileIndex.getZoom(index) + "/" + MapTileIndex.getX(index) + "/" +
+                MapTileIndex.getY(index) + ".jpg?key=" + key
+    }
+
+    /** Satellite Esri World Imagery (stessa fonte del Planner per Windows; ordine z/y/x). */
+    private val ESRI_SAT = object : OnlineTileSourceBase(
+        "EsriWorldImagery", 0, 19, 256, ".jpg",
+        arrayOf("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/"), ESRI_ATTR
+    ) {
+        override fun getTileURLString(index: Long): String =
+            baseUrl + MapTileIndex.getZoom(index) + "/" + MapTileIndex.getY(index) + "/" + MapTileIndex.getX(index)
+    }
+
+    /** Attribuzione sulla mappa (obbligatoria per MapTiler ed Esri): in alto a destra. */
+    private fun attribution(ctx: Context) = CopyrightOverlay(ctx).apply {
+        setAlignBottom(false)
+        setAlignRight(true)
+        setTextColor(Color.WHITE)
+        setTextSize(10)
+        val d = ctx.resources.displayMetrics.density
+        setOffset((6 * d).toInt(), (6 * d).toInt())
+    }
 
     /** Rotazione con due dita; onRotate viene chiamato quando l'utente gira la mappa. */
     class Rotation(map: MapView, private val callback: () -> Unit) : RotationGestureOverlay(map) {
@@ -116,11 +167,23 @@ object MapStyle {
             map.setTileSource(src)
             map.setUseDataConnection(false)
         } else {
-            val src = if (base == Prefs.BASE_OSM) TileSourceFactory.MAPNIK else TileSourceFactory.OpenTopo
+            val key = Prefs.maptilerKey(ctx)
+            val src: ITileSource = when {
+                base == Prefs.BASE_SAT_MAPTILER && key != null -> MapTilerSatellite(key)
+                base == Prefs.BASE_SAT_ESRI -> ESRI_SAT
+                base == Prefs.BASE_OSM -> TileSourceFactory.MAPNIK
+                else -> TileSourceFactory.OpenTopo
+            }
             map.setTileProvider(MapTileProviderBasic(ctx, src))
             map.setTileSource(src)
             map.setUseDataConnection(true)
             online = true
+        }
+
+        // attribuzione visibile solo sulle mappe satellitari (le altre sono nella pagina Info)
+        map.overlays.filterIsInstance<CopyrightOverlay>().forEach { map.overlays.remove(it) }
+        if (online && Prefs.isSatellite(base) && (base != Prefs.BASE_SAT_MAPTILER || Prefs.maptilerKey(ctx) != null)) {
+            map.overlays.add(attribution(ctx))
         }
 
         for (o in map.overlays.filterIsInstance<TilesOverlay>()) {
@@ -141,13 +204,17 @@ object MapStyle {
         val hasOffline = Prefs.offlineMapPath(ctx)?.let { File(it).exists() } == true
         val hasVector = OfflineMaps.vectorMaps(ctx).isNotEmpty()
         val mtbOn = Prefs.mtbOverlay(ctx)
-        val items = mutableListOf("OpenTopoMap (sentieri e rilievo)", "OpenStreetMap standard")
+        val items = mutableListOf(
+            "OpenTopoMap (sentieri e rilievo)", "OpenStreetMap standard",
+            "Satellite (MapTiler)", "Satellite Esri (senza chiave)"
+        )
         if (hasVector) items.add("Offline: OpenAndroMaps")
         if (hasOffline) items.add("Mappa offline importata (MBTiles)")
         items.add(if (mtbOn) "Nascondi itinerari MTB" else "Mostra itinerari MTB")
         val ridesOn = Prefs.showRides(ctx)
         items.add(if (ridesOn) "Nascondi le mie uscite registrate" else "Mostra le mie uscite registrate")
         if (hasVector) items.add("Dimensione testi mappa offline…")
+        items.add(if (Prefs.maptilerKey(ctx) == null) "Chiave MapTiler per il satellite…" else "Chiave MapTiler (cambia)…")
 
         MaterialAlertDialogBuilder(ctx)
             .setTitle("Mappa")
@@ -156,6 +223,26 @@ object MapStyle {
                 when {
                     label.startsWith("OpenTopo") -> Prefs.setBaseMap(ctx, Prefs.BASE_TOPO)
                     label.startsWith("OpenStreetMap") -> Prefs.setBaseMap(ctx, Prefs.BASE_OSM)
+                    label.startsWith("Satellite Esri") -> {
+                        Prefs.setBaseMap(ctx, Prefs.BASE_SAT_ESRI)
+                        satelliteNotice(ctx)
+                    }
+                    label.startsWith("Satellite") -> {
+                        if (Prefs.maptilerKey(ctx) == null) {
+                            // prima volta: chiede la chiave, poi attiva il satellite
+                            askMaptilerKey(ctx) {
+                                if (Prefs.maptilerKey(ctx) != null) Prefs.setBaseMap(ctx, Prefs.BASE_SAT_MAPTILER)
+                                onChanged()
+                            }
+                            return@setItems
+                        }
+                        Prefs.setBaseMap(ctx, Prefs.BASE_SAT_MAPTILER)
+                        satelliteNotice(ctx)
+                    }
+                    label.startsWith("Chiave MapTiler") -> {
+                        askMaptilerKey(ctx, onChanged)
+                        return@setItems
+                    }
                     label.startsWith("Dimensione") -> {
                         chooseScale(ctx, onChanged)
                         return@setItems
@@ -186,5 +273,88 @@ object MapStyle {
                 onChanged()
             }
             .show()
+    }
+
+    private fun satelliteNotice(ctx: Context) {
+        val offline = if (Prefs.mtbOverlay(ctx)) " con itinerari MTB" else ""
+        Toast.makeText(
+            ctx,
+            "Satellite$offline (serve Internet). Le zone già viste restano in memoria anche senza segnale.",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
+    /** Finestra per inserire la chiave MapTiler; onSaved viene chiamato dopo il salvataggio. */
+    fun askMaptilerKey(ctx: Context, onSaved: () -> Unit) {
+        val d = ctx.resources.displayMetrics.density
+        val input = EditText(ctx).apply {
+            hint = "Incolla qui la chiave"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            isSingleLine = true
+            setText(Prefs.maptilerKey(ctx) ?: "")
+        }
+        val box = LinearLayout(ctx).apply {
+            val pad = (20 * d).toInt()
+            setPadding(pad, (8 * d).toInt(), pad, 0)
+            addView(input, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        }
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Chiave MapTiler")
+            .setMessage(
+                "Per la mappa satellitare serve una chiave gratuita MapTiler (uso personale):\n\n" +
+                    "1. Registrati su maptiler.com (piano Free)\n" +
+                    "2. Apri Account → API keys\n" +
+                    "3. Copia la chiave e incollala qui sotto\n\n" +
+                    "La chiave resta solo sul telefono. Il piano gratuito ha un limite di richieste al mese: " +
+                    "le zone già viste restano in memoria e non vengono richieste di nuovo."
+            )
+            .setView(box)
+            .setPositiveButton("Salva") { _, _ ->
+                val key = input.text.toString().trim()
+                if (key.isEmpty()) {
+                    Prefs.setMaptilerKey(ctx, null)
+                    if (Prefs.baseMap(ctx) == Prefs.BASE_SAT_MAPTILER) Prefs.setBaseMap(ctx, Prefs.BASE_TOPO)
+                    Toast.makeText(ctx, "Chiave MapTiler rimossa", Toast.LENGTH_SHORT).show()
+                    onSaved()
+                    return@setPositiveButton
+                }
+                Prefs.setMaptilerKey(ctx, key)
+                checkMaptilerKey(ctx, key)
+                onSaved()
+            }
+            .setNeutralButton("Apri il sito") { _, _ ->
+                try {
+                    ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(MAPTILER_KEYS_PAGE)))
+                } catch (_: Exception) {
+                    Toast.makeText(ctx, "Apri nel browser: $MAPTILER_KEYS_PAGE", Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    /** Prova la chiave scaricando un riquadro e mostra l'esito. */
+    private fun checkMaptilerKey(ctx: Context, key: String) {
+        val app = ctx.applicationContext
+        val main = Handler(Looper.getMainLooper())
+        Thread {
+            val msg = try {
+                val c = URL("https://api.maptiler.com/maps/satellite/256/0/0/0.jpg?key=$key").openConnection() as HttpURLConnection
+                c.connectTimeout = 10_000
+                c.readTimeout = 10_000
+                c.setRequestProperty("User-Agent", org.osmdroid.config.Configuration.getInstance().userAgentValue)
+                val code = c.responseCode
+                c.disconnect()
+                when (code) {
+                    200 -> "Chiave MapTiler valida: satellite pronto"
+                    401, 403 -> "Chiave MapTiler non valida: controlla di averla copiata tutta"
+                    429 -> "Limite mensile MapTiler raggiunto: il satellite tornerà il mese prossimo"
+                    else -> "Risposta MapTiler inattesa ($code): riprova più tardi"
+                }
+            } catch (e: Exception) {
+                "Impossibile verificare la chiave (serve Internet). Salvata comunque."
+            }
+            main.post { Toast.makeText(app, msg, Toast.LENGTH_LONG).show() }
+        }.start()
     }
 }

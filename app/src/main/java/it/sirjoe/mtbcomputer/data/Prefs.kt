@@ -11,6 +11,10 @@ object Prefs {
     const val BASE_OSM = "osm"
     const val BASE_OFFLINE = "offline"
     const val BASE_VECTOR = "vector"
+    const val BASE_SAT_MAPTILER = "sat_maptiler"
+    const val BASE_SAT_ESRI = "sat_esri"
+
+    fun isSatellite(base: String) = base == BASE_SAT_MAPTILER || base == BASE_SAT_ESRI
 
     private fun p(ctx: Context): SharedPreferences =
         ctx.applicationContext.getSharedPreferences(NAME, Context.MODE_PRIVATE)
@@ -82,6 +86,10 @@ object Prefs {
 
     fun baseMap(ctx: Context): String = p(ctx).getString("base_map", BASE_TOPO) ?: BASE_TOPO
     fun setBaseMap(ctx: Context, v: String) = p(ctx).edit().putString("base_map", v).apply()
+
+    /** Chiave personale MapTiler (piano gratuito) per la mappa satellitare. */
+    fun maptilerKey(ctx: Context): String? = p(ctx).getString("maptiler_key", null)?.takeIf { it.isNotBlank() }
+    fun setMaptilerKey(ctx: Context, v: String?) = p(ctx).edit().putString("maptiler_key", v?.trim()).apply()
 
     fun offlineMapPath(ctx: Context): String? = p(ctx).getString("offline_map", null)
     fun setOfflineMapPath(ctx: Context, v: String?) = p(ctx).edit().putString("offline_map", v).apply()
