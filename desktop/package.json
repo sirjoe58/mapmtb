@@ -1,15 +1,16 @@
 {
   "name": "sirjoe-mtb-planner",
   "productName": "SirJoe MTB Planner",
-  "version": "1.4.2",
-  "description": "Pianificatore di percorsi MTB per Windows, compagno dell'app Android SirJoe MTB",
+  "version": "1.5.0",
+  "description": "Pianificatore di percorsi MTB per Windows e Mac, compagno dell'app Android SirJoe MTB",
   "main": "main.js",
   "author": "SirJoe",
   "license": "MIT",
   "private": true,
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win portable nsis --publish never"
+    "dist": "electron-builder --win portable nsis --publish never",
+    "dist:mac": "electron-builder --mac dmg zip --arm64 --x64 --publish never"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
@@ -56,6 +57,40 @@
     },
     "asarUnpack": [
       "node_modules/better-sqlite3/**"
-    ]
+    ],
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.sports",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "artifactName": "SirJoe-MTB-Planner-${version}-mac-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "SirJoe MTB Planner ${version}",
+      "artifactName": "SirJoe-MTB-Planner-${version}-mac-${arch}.${ext}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 150
+        },
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 270,
+          "y": 330,
+          "type": "file",
+          "path": "build/LEGGIMI - Installazione Mac.txt"
+        }
+      ]
+    }
   }
 }

@@ -47,7 +47,7 @@ const Link = {
 
   async show() {
     if (!(window.sirjoe && window.sirjoe.link)) {
-      return toast('SirJoe Link funziona nel programma per Windows');
+      return toast('SirJoe Link funziona nel programma per computer (Windows e Mac)');
     }
     const items = this.outbox();
     $('linkOut').innerHTML = items.length ? '' : '<li class="empty">Nessun percorso: creane uno o salvalo in archivio</li>';

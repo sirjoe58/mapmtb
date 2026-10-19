@@ -1,0 +1,55 @@
+SIRJOE MTB PLANNER PER MAC - ISTRUZIONI DI INSTALLAZIONE
+==========================================================
+
+1. INSTALLAZIONE
+   Trascina "SirJoe MTB Planner" sull'icona della cartella Applicazioni
+   che vedi in questa finestra. Poi puoi espellere il disco "SirJoe MTB Planner".
+
+2. PRIMO AVVIO
+   Il programma non è firmato da Apple, quindi la prima volta macOS lo blocca
+   con un messaggio del tipo "Apple non può verificare che l'app sia priva
+   di malware". È normale: segui questi passi una sola volta.
+
+   a) Apri il programma dalla cartella Applicazioni. Quando compare il
+      messaggio premi "Fine" (oppure "OK"). Non spostarlo nel Cestino.
+   b) Apri il menu Mela > Impostazioni di Sistema > Privacy e sicurezza.
+   c) Scorri in basso fino alla sezione "Sicurezza": c'è la scritta
+      "SirJoe MTB Planner è stato bloccato..." con il pulsante
+      "Apri comunque". Premilo.
+   d) Conferma con la password del Mac (o Touch ID) e premi "Apri".
+
+   Dalla volta successiva si apre normalmente.
+   Il pulsante "Apri comunque" resta visibile per circa un'ora dopo il
+   tentativo di apertura: se non lo vedi, ripeti il passo a).
+
+3. SE COMPARE "L'APP È DANNEGGIATA"
+   Apri l'app Terminale (Applicazioni > Utility > Terminale), incolla questa
+   riga e premi Invio:
+
+   xattr -cr "/Applications/SirJoe MTB Planner.app"
+
+   Poi apri il programma normalmente.
+
+4. QUALE FILE HO SCARICATO?
+   - ...-mac-arm64.dmg  = Mac con chip Apple (M1, M2, M3, M4 e successivi)
+   - ...-mac-x64.dmg    = Mac con processore Intel
+   Per scoprire che Mac hai: menu Mela > Informazioni su questo Mac,
+   alla voce "Chip" (Apple) oppure "Processore" (Intel).
+
+5. SIRJOE LINK (COLLEGAMENTO CON IL TELEFONO)
+   Al primo collegamento macOS può chiedere se consentire le connessioni in
+   entrata a SirJoe MTB Planner: rispondi "Consenti". Se il telefono non si
+   collega, apri Impostazioni di Sistema > Rete > Firewall > Opzioni e
+   consenti le connessioni in entrata per SirJoe MTB Planner.
+   Telefono e Mac devono essere sulla stessa rete Wi-Fi di casa.
+
+6. DOVE SONO I DATI
+   Impostazioni, uscite ricevute e archivio si trovano in:
+   ~/Library/Application Support/SirJoe MTB Planner
+   Per disinstallare: trascina il programma nel Cestino ed elimina quella
+   cartella.
+
+7. AVVERTENZE
+   Al primo avvio il programma mostra le avvertenze d'uso. I percorsi
+   calcolati possono passare su tratti chiusi, privati o vietati alle bici:
+   controllali sempre prima di partire.

@@ -532,7 +532,7 @@ $('addRide').addEventListener('click', () => $('rideFile').click());
 $('rideFile').addEventListener('change', (e) => { Analysis.addFiles(Array.from(e.target.files)); e.target.value = ''; });
 $('ridesFolder').addEventListener('click', () => {
   if (window.sirjoe && window.sirjoe.rides) window.sirjoe.rides.folder();
-  else toast('Disponibile nel programma per Windows');
+  else toast('Disponibile nel programma per computer (Windows e Mac)');
 });
 document.querySelector('.tab[data-tab=rides]').addEventListener('click', () => { if (!Analysis.active) Analysis.renderList(); });
 Analysis.renderList();
