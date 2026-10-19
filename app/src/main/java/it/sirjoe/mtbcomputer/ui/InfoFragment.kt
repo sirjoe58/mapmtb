@@ -16,6 +16,7 @@ import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.share.Strava
+import it.sirjoe.mtbcomputer.util.MapStyle
 
 /** Pagina "Info": logo, impostazioni, collegamento Strava, avvertenze d'uso, licenze. */
 class InfoFragment : Fragment(R.layout.fragment_info) {
@@ -123,6 +124,47 @@ class InfoFragment : Fragment(R.layout.fragment_info) {
         }
         view.findViewById<MaterialButton>(R.id.stravaSetup).setOnClickListener { setupStrava(thenConnect = false) }
         refreshStrava()
+
+        view.findViewById<MaterialButton>(R.id.satKey).setOnClickListener {
+            MapStyle.askMaptilerKey(ctx) {
+                refreshSatellite()
+                (activity as? MainActivity)?.onBaseMapChanged()
+            }
+        }
+        view.findViewById<MaterialButton>(R.id.satUse).setOnClickListener {
+            if (Prefs.maptilerKey(ctx) == null) {
+                MapStyle.askMaptilerKey(ctx) {
+                    if (Prefs.maptilerKey(ctx) != null) Prefs.setBaseMap(ctx, Prefs.BASE_SAT_MAPTILER)
+                    refreshSatellite()
+                    (activity as? MainActivity)?.onBaseMapChanged()
+                }
+            } else {
+                Prefs.setBaseMap(ctx, Prefs.BASE_SAT_MAPTILER)
+                refreshSatellite()
+                (activity as? MainActivity)?.onBaseMapChanged()
+                Toast.makeText(ctx, "Satellite attivo: torna alla pagina Mappa", Toast.LENGTH_SHORT).show()
+            }
+        }
+        refreshSatellite()
+    }
+
+    private fun refreshSatellite() {
+        val v = view ?: return
+        val ctx = requireContext()
+        val key = Prefs.maptilerKey(ctx)
+        val status = v.findViewById<TextView>(R.id.satStatus)
+        val keyBtn = v.findViewById<MaterialButton>(R.id.satKey)
+        val attivo = Prefs.baseMap(ctx) == Prefs.BASE_SAT_MAPTILER
+        if (key == null) {
+            status.text = "Per il satellite MapTiler serve una chiave gratuita personale: tocca " +
+                "\"Inserisci chiave MapTiler\" e segui i 3 passi. Senza chiave puoi usare " +
+                "\"Satellite Esri\" dal pulsante mappe (livelli)."
+            keyBtn.text = "Inserisci chiave MapTiler"
+        } else {
+            status.text = "Chiave MapTiler inserita (…" + key.takeLast(4) + ")." +
+                if (attivo) " Satellite attivo sulla mappa." else " Attivalo con \"Usa il satellite\" o dal pulsante mappe (livelli)."
+            keyBtn.text = "Cambia chiave"
+        }
     }
 
     fun refreshStrava() {
