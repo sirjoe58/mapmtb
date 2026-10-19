@@ -39,7 +39,7 @@ Dal pulsante mappe (livelli), nelle pagine **Mappa** e **Crea**:
   1. Registrati su [maptiler.com](https://www.maptiler.com) con il piano **Free** (uso personale e non commerciale).
   2. Apri **Account → API keys** ([cloud.maptiler.com/account/keys](https://cloud.maptiler.com/account/keys/)) e copia la chiave.
   3. Nell'app apri la pagina **Info → Mappa satellitare → Inserisci chiave MapTiler** (oppure scegli **Satellite (MapTiler)** dal pulsante mappe): nella finestra c'è il riquadro *Chiave MapTiler* e il pulsante **Incolla la chiave copiata**; il pulsante *Apri il sito* porta alla pagina delle chiavi. Tocca **Salva**: l'app prova subito la chiave e ti dice se funziona. Poi **Usa il satellite**. Per cambiarla: **Cambia chiave**.
-- **Satellite Esri (senza chiave)**: le stesse immagini Esri World Imagery del Planner per Windows.
+- **Satellite Esri (senza chiave)**: le stesse immagini Esri World Imagery del Planner per computer.
 
 Sopra il satellite restano visibili gli itinerari MTB, il percorso da seguire e la traccia; l'attribuzione del fornitore compare in alto a destra. Serve Internet, ma le zone già viste restano in memoria (nello stesso spazio da circa 1 GB delle altre mappe) e si vedono anche senza segnale: prima di un giro in zona senza campo, scorri la mappa sulla zona con il Wi-Fi. L'app non scarica aree intere in blocco, come chiedono le condizioni dei fornitori. Il piano gratuito MapTiler ha un limite di richieste al mese: la memoria evita di richiedere di nuovo le zone già viste.
 
@@ -76,7 +76,7 @@ Strava permette il caricamento solo tramite un'"applicazione API" personale, gra
 
 Client ID e Secret restano solo sul telefono. Strava accetta come attività solo le uscite registrate (con orari); i percorsi creati a mano si condividono come file GPX.
 
-## SirJoe MTB Planner per Windows
+## SirJoe MTB Planner per Windows e Mac
 
 Nella cartella `desktop/` c'è il programma per PC con cui preparare percorsi e segnaposto da mandare all'app:
 
@@ -91,7 +91,10 @@ Nella cartella `desktop/` c'è il programma per PC con cui preparare percorsi e 
 - **Le mie uscite** sulla mappa: tutte le uscite registrate in viola, cliccabili;
 - **Sala analisi** (scheda *Uscite*): traccia colorata per velocità, pendenza o quota; confronto tra percorso pianificato e fatto; replay animato; elenco salite; **video social da 20 secondi** con il logo BY SIRJOE.
 
-Scaricalo da **Releases** → "SirJoe MTB Planner per Windows": `…-portable.exe` (senza installazione) o `…-setup.exe`.
+Scaricalo da **Releases** → "SirJoe MTB Planner … per Windows e Mac":
+
+- **Windows**: `…-portable.exe` (senza installazione) o `…-setup.exe`.
+- **Mac**: `…-mac-arm64.dmg` per Mac con chip Apple (M1 e successivi) oppure `…-mac-x64.dmg` per Mac Intel. Apri il `.dmg` e trascina il programma in **Applicazioni**; nella stessa finestra c'è **LEGGIMI - Installazione Mac.txt**. Il programma non è firmato da Apple: al primo avvio macOS lo blocca, poi vai in **Impostazioni di Sistema → Privacy e sicurezza → Apri comunque**. Se compare "l'app è danneggiata", nel Terminale: `xattr -cr "/Applications/SirJoe MTB Planner.app"`.
 
 ### SirJoe Link (telefono ↔ PC, senza cloud)
 
@@ -99,7 +102,7 @@ Scaricalo da **Releases** → "SirJoe MTB Planner per Windows": `…-portable.ex
 2. Sul telefono: **Percorsi → 📲 SirJoe Link → Inquadra il QR** (telefono e PC sulla stessa rete Wi-Fi), oppure **Inserisci codice** con indirizzo e PIN scritti sotto il QR.
 3. Scegli *Ricevi percorsi dal PC* (quelli in archivio e quello aperto) o *Invia le mie uscite al PC*: le trovi nella scheda **Uscite** pronte per la Sala analisi.
 
-Se il telefono non si collega, apri nel suo browser l'indirizzo di prova mostrato dal PC (`http://IP:47891/ping`): se non risponde premi **🛡 Sblocca nel firewall di Windows** nella finestra Link.
+Se il telefono non si collega, apri nel suo browser l'indirizzo di prova mostrato dal PC (`http://IP:47891/ping`): se non risponde premi **🛡 Sblocca nel firewall di Windows** nella finestra Link. Sul Mac rispondi **Consenti** alla domanda sulle connessioni in entrata, oppure abilitale in *Impostazioni di Sistema → Rete → Firewall*.
 
 In alternativa resta il metodo classico: *Esporta file* in GPX, copialo sul telefono e importalo da **Percorsi → Importa**.
 

@@ -1,4 +1,4 @@
-name: Compila Planner Windows
+name: Compila Planner Windows e Mac
 
 on:
   push:
@@ -46,7 +46,63 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: SirJoe-MTB-Planner-${{ env.VERSION }}-windows
-          path: desktop/dist/*.exe
+          path: |
+            desktop/dist/SirJoe-MTB-Planner-*-portable.exe
+            desktop/dist/SirJoe-MTB-Planner-*-setup.exe
+
+  mac:
+    runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Installa dipendenze
+        run: npm ci
+
+      - name: Verifica formato FIT e lettori mappe
+        run: |
+          node tools-check-fit.js
+          node tools-check-maps.js
+
+      - name: Crea le app Mac (chip Apple e Intel)
+        run: npx electron-builder --mac dmg zip --arm64 --x64 --publish never
+
+      - name: Controlla le app create
+        run: |
+          ls -la dist
+          for a in arm64 x64; do
+            test -f dist/SirJoe-MTB-Planner-*-mac-$a.dmg
+          done
+          codesign -dv "dist/mac-arm64/SirJoe MTB Planner.app" 2>&1 | head -5 || true
+          file "dist/mac-arm64/SirJoe MTB Planner.app/Contents/Resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
+          file "dist/mac/SirJoe MTB Planner.app/Contents/Resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
+
+      - name: Leggi la versione
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SirJoe-MTB-Planner-${{ env.VERSION }}-mac
+          path: desktop/dist/SirJoe-MTB-Planner-*-mac-*.dmg
+
+  release:
+    needs: [windows, mac]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Leggi la versione
+        run: echo "VERSION=$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_ENV"
 
       - name: Controlla se la versione è già pubblicata
         run: |
@@ -56,19 +112,31 @@ jobs:
             echo "NEW_RELEASE=true" >> "$GITHUB_ENV"
           fi
 
+      - uses: actions/download-artifact@v4
+        if: env.NEW_RELEASE == 'true'
+        with:
+          path: pacchetti
+          merge-multiple: true
+
       - name: Pubblica in Releases
         if: env.NEW_RELEASE == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: planner-v${{ env.VERSION }}
           target_commitish: ${{ github.sha }}
-          name: SirJoe MTB Planner per Windows ${{ env.VERSION }}
+          name: SirJoe MTB Planner ${{ env.VERSION }} per Windows e Mac
           make_latest: false
           body: |
-            Programma per Windows per creare percorsi e segnaposto da importare in SirJoe MTB.
+            Programma per computer per creare percorsi e segnaposto da importare in SirJoe MTB.
+
+            **Windows**
             - **SirJoe-MTB-Planner-${{ env.VERSION }}-portable.exe**: si avvia senza installazione.
             - **SirJoe-MTB-Planner-${{ env.VERSION }}-setup.exe**: lo installa con icona nel menu Start.
             Al primo avvio Windows può mostrare "Windows ha protetto il PC": clic su *Ulteriori informazioni* → *Esegui comunque*.
-          files: |
-            desktop/dist/SirJoe-MTB-Planner-${{ env.VERSION }}-portable.exe
-            desktop/dist/SirJoe-MTB-Planner-${{ env.VERSION }}-setup.exe
+
+            **Mac**
+            - **SirJoe-MTB-Planner-${{ env.VERSION }}-mac-arm64.dmg**: Mac con chip Apple (M1 e successivi).
+            - **SirJoe-MTB-Planner-${{ env.VERSION }}-mac-x64.dmg**: Mac con processore Intel.
+            Apri il file .dmg e trascina il programma in Applicazioni. Nella stessa finestra c'è **LEGGIMI - Installazione Mac.txt**.
+            Al primo avvio macOS lo blocca perché non è firmato da Apple: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*.
+          files: pacchetti/*

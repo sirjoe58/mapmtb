@@ -15,7 +15,7 @@ const DISCLAIMER = `SirJoe MTB Planner è un programma gratuito e open source pe
 • Il programma non è un dispositivo di sicurezza. In montagna valuta meteo, orari e capacità, porta una cartina e informa qualcuno del tuo itinerario. In emergenza chiama il 112.
 • Una traccia condivisa mostra luoghi e spesso dove abiti: condividila con attenzione.
 • Mappe © OpenStreetMap contributors (ODbL), OpenTopoMap (CC-BY-SA); itinerari MTB waymarkedtrails.org; percorsi BRouter; ricerca Nominatim. Sono servizi gratuiti gestiti da volontari: il programma li usa con moderazione e non scarica aree in blocco. Non modificarlo per aggirare questi limiti.
-• Nel Planner per Windows puoi usare mappe satellitari e di altri fornitori (Esri, EOX Sentinel-2, CyclOSM) e aggiungere fonti online o file di mappa tuoi: rispetta le condizioni d'uso di ciascun fornitore (alcuni, come Google, non permettono di usare le loro immagini in altri programmi), lascia visibili le attribuzioni e importa solo mappe che hai il diritto di usare. Le immagini satellitari possono essere vecchie: sentieri, frane e costruzioni recenti possono non comparire.
+• Nel Planner per computer (Windows e Mac) puoi usare mappe satellitari e di altri fornitori (Esri, EOX Sentinel-2, CyclOSM) e aggiungere fonti online o file di mappa tuoi: rispetta le condizioni d'uso di ciascun fornitore (alcuni, come Google, non permettono di usare le loro immagini in altri programmi), lascia visibili le attribuzioni e importa solo mappe che hai il diritto di usare. Le immagini satellitari possono essere vecchie: sentieri, frane e costruzioni recenti possono non comparire.
 • Il programma è fornito "così com'è", senza garanzie (licenza MIT). Chi lo usa lo fa sotto la propria responsabilità.`;
 
 /* -------------------------------------------------------------- stato */
@@ -844,3 +844,20 @@ if (!store.get('accepted', false)) {
 }
 render();
 renderLibrary();
+
+
+/* -------------------------------------------------------------- Mac */
+
+// Sul Mac: scorciatoie con ⌘ e niente pulsante del firewall di Windows
+(function adattaMac() {
+  if (!(window.sirjoe && window.sirjoe.platform === 'darwin')) return;
+  document.documentElement.classList.add('mac');
+  for (const el of document.querySelectorAll('[title*="Ctrl+"]')) el.title = el.title.replace(/Ctrl\+/g, '⌘');
+  const fw = $('linkFw');
+  if (fw) fw.hidden = true;
+  const hint = $('linkFwHint');
+  if (hint) {
+    hint.textContent = 'se non compare "SirJoe Link OK", sul Mac apri Impostazioni di Sistema → Rete → Firewall ' +
+      'e consenti le connessioni in entrata a SirJoe MTB Planner (oppure rispondi "Consenti" alla domanda che compare al primo collegamento).';
+  }
+})();

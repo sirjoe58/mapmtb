@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('sirjoe', {
   desktop: true,
+  platform: process.platform,
   fetchText: (url) => ipcRenderer.invoke('fetch-text', url),
   fetchDataUrl: (url) => ipcRenderer.invoke('fetch-data-url', url),
   maps: {

@@ -189,7 +189,7 @@ const Maps = {
 
   /* ---------------------------------------------------- file di mappa */
   async openFiles(folder) {
-    if (!(window.sirjoe && window.sirjoe.maps)) return toast('I file di mappa si aprono nel programma per Windows');
+    if (!(window.sirjoe && window.sirjoe.maps)) return toast('I file di mappa si aprono nel programma per computer (Windows e Mac)');
     toast('Apertura della mappa…');
     const res = await window.sirjoe.maps.open(folder);
     for (const r of res) this.addResult(r, true);
