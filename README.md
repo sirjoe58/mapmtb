@@ -31,6 +31,18 @@ L'app legge le mappe vettoriali gratuite **[OpenAndroMaps](https://www.openandro
 
 Sono supportati anche file MBTiles/.sqlite/.gemf a immagini. Inoltre le zone viste online restano in memoria (fino a circa 1 GB) e si vedono anche senza segnale.
 
+## Mappa satellitare
+
+Dal pulsante mappe (livelli), nelle pagine **Mappa** e **Crea**:
+
+- **Satellite (MapTiler)**: immagini dettagliate con una chiave gratuita personale.
+  1. Registrati su [maptiler.com](https://www.maptiler.com) con il piano **Free** (uso personale e non commerciale).
+  2. Apri **Account → API keys** ([cloud.maptiler.com/account/keys](https://cloud.maptiler.com/account/keys/)) e copia la chiave.
+  3. Nell'app scegli **Satellite (MapTiler)**: alla prima volta compare la finestra in cui incollarla (il pulsante *Apri il sito* porta alla pagina delle chiavi). L'app prova subito la chiave e ti dice se funziona. Per cambiarla o toglierla: **Chiave MapTiler (cambia)…**.
+- **Satellite Esri (senza chiave)**: le stesse immagini Esri World Imagery del Planner per Windows.
+
+Sopra il satellite restano visibili gli itinerari MTB, il percorso da seguire e la traccia; l'attribuzione del fornitore compare in alto a destra. Serve Internet, ma le zone già viste restano in memoria (nello stesso spazio da circa 1 GB delle altre mappe) e si vedono anche senza segnale: prima di un giro in zona senza campo, scorri la mappa sulla zona con il Wi-Fi. L'app non scarica aree intere in blocco, come chiedono le condizioni dei fornitori. Il piano gratuito MapTiler ha un limite di richieste al mese: la memoria evita di richiedere di nuovo le zone già viste.
+
 ## Formati
 
 | Formato | Importa | Esporta | Per chi |
