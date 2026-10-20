@@ -29,10 +29,10 @@ const Link = {
   },
 
   async firewall() {
-    this.log('Richiesta del permesso di amministratore a Windows…');
+    this.log('Richiesta del permesso di amministratore…');
     const r = await window.sirjoe.link.firewall();
     if (r.ok) {
-      this.log('✔ Firewall sbloccato per SirJoe Link: riprova dal telefono');
+      this.log('✔ Firewall sbloccato per SirJoe Link' + (r.note ? ' (' + r.note + ')' : '') + ': riprova dal telefono');
       toast('Firewall sbloccato: riprova dal telefono');
     } else {
       this.log('Firewall non modificato: ' + r.error);

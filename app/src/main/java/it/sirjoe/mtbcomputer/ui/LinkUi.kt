@@ -93,7 +93,7 @@ object LinkUi {
                 "1. Telefono e PC sulla stessa rete Wi-Fi (non la rete \"ospiti\", non i dati mobili).\n" +
                 "2. Sul PC la finestra SirJoe Link deve restare aperta.\n" +
                 "3. Prova ad aprire nel browser del telefono:\n$ping\n" +
-                "Se non compare \"SirJoe Link OK\", sul PC premi \"🛡 Sblocca nel firewall di Windows\" e conferma.\n\n" +
+                "Se non compare \"SirJoe Link OK\", sul computer premi \"🛡 Sblocca nel firewall\" nella finestra SirJoe Link (Windows o Mac) e conferma (sul Mac serve la password del Mac).\n\n" +
                 "Dettaglio: ${e.message}"
         } else {
             "Il PC ha rifiutato il collegamento: ${e.message}\n\nChiudi e riapri SirJoe Link sul PC e inquadra il nuovo QR (o scrivi il nuovo PIN)."

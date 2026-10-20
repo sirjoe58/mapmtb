@@ -51,7 +51,8 @@ function createWindow() {
  * le porte 47891-47899 in entrata, su qualsiasi tipo di rete.
  */
 function unlockFirewall() {
-  if (process.platform !== 'win32') return Promise.resolve({ ok: false, error: 'Solo su Windows' });
+  if (process.platform === 'darwin') return unlockFirewallMac();
+  if (process.platform !== 'win32') return Promise.resolve({ ok: false, error: 'Solo su Windows e Mac' });
   const script = [
     "$ErrorActionPreference = 'SilentlyContinue'",
     "Get-NetFirewallApplicationFilter | Where-Object { $_.Program -like '*SirJoe*' } | Get-NetFirewallRule | Where-Object { $_.Direction -eq 'Inbound' -and $_.Action -eq 'Block' } | Remove-NetFirewallRule",
@@ -71,6 +72,42 @@ function unlockFirewall() {
       else resolve({ ok: false, error: 'Regola non creata (codice ' + code + ')' });
     });
   });
+}
+
+/**
+ * Mac: consente le connessioni in entrata al programma nel firewall di macOS
+ * (chiede la password di amministratore). Se il firewall blocca tutto, lo segnala.
+ */
+function unlockFirewallMac() {
+  const FW = '/usr/libexec/ApplicationFirewall/socketfilterfw';
+  const exe = process.execPath;                       // …/SirJoe MTB Planner.app/Contents/MacOS/…
+  const bundle = path.resolve(exe, '..', '..', '..');  // …/SirJoe MTB Planner.app
+  const run = (args) => new Promise((resolve) => {
+    execFile(FW, args, (err, out) => resolve(String(out || '') + (err ? ' ' + err.message : '')));
+  });
+  if (/AppTranslocation|^\/Volumes\//.test(bundle)) {
+    return Promise.resolve({ ok: false, error: 'il programma è aperto dal disco .dmg: trascinalo prima nella cartella Applicazioni, chiudilo e riaprilo da lì, poi riprova' });
+  }
+  return (async () => {
+    const globale = await run(['--getglobalstate']);
+    const bloccaTutto = await run(['--getblockall']);
+    if (/ENABLED|attivat|abilitat/i.test(bloccaTutto) && !/DISABLED|disattivat|disabilitat/i.test(bloccaTutto)) {
+      return { ok: false, error: 'nel firewall del Mac è attivo "Blocca tutte le connessioni in entrata": apri Impostazioni di Sistema → Rete → Firewall → Opzioni e disattivalo, poi riprova' };
+    }
+    const q = (s) => "'" + s.replace(/'/g, "'\\''") + "'";
+    const cmd = [bundle, exe].map((p) => `${FW} --add ${q(p)}; ${FW} --unblockapp ${q(p)}`).join('; ');
+    const script = `do shell script "${cmd}" with administrator privileges with prompt "SirJoe MTB Planner vuole consentire il collegamento Wi-Fi con il telefono."`;
+    return new Promise((resolve) => {
+      execFile('osascript', ['-e', script], (err, _out, errOut) => {
+        if (!err) {
+          const spento = /disabled|disattivat|disabilitat/i.test(globale);
+          return resolve({ ok: true, note: spento ? 'il firewall del Mac risulta già spento' : '' });
+        }
+        if (/-128/.test(String(errOut) + err.message)) return resolve({ ok: false, error: 'Password di amministratore non inserita' });
+        resolve({ ok: false, error: 'Regola non creata: ' + (String(errOut).trim() || err.message) });
+      });
+    });
+  })();
 }
 
 app.whenReady().then(() => {
