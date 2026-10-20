@@ -848,16 +848,16 @@ renderLibrary();
 
 /* -------------------------------------------------------------- Mac */
 
-// Sul Mac: scorciatoie con ⌘ e niente pulsante del firewall di Windows
+// Sul Mac: scorciatoie con ⌘ e pulsante per il firewall di macOS
 (function adattaMac() {
   if (!(window.sirjoe && window.sirjoe.platform === 'darwin')) return;
   document.documentElement.classList.add('mac');
   for (const el of document.querySelectorAll('[title*="Ctrl+"]')) el.title = el.title.replace(/Ctrl\+/g, '⌘');
   const fw = $('linkFw');
-  if (fw) fw.hidden = true;
+  if (fw) fw.textContent = '🛡 Sblocca nel firewall del Mac';
   const hint = $('linkFwHint');
   if (hint) {
-    hint.textContent = 'se non compare "SirJoe Link OK", sul Mac apri Impostazioni di Sistema → Rete → Firewall ' +
-      'e consenti le connessioni in entrata a SirJoe MTB Planner (oppure rispondi "Consenti" alla domanda che compare al primo collegamento).';
+    hint.textContent = 'se non compare "SirJoe Link OK" il firewall del Mac blocca il collegamento: premi il pulsante qui sotto ' +
+      'e inserisci la password del Mac. Il programma deve essere aperto dalla cartella Applicazioni.';
   }
 })();

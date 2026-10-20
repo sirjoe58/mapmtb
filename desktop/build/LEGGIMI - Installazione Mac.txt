@@ -39,8 +39,9 @@ SIRJOE MTB PLANNER PER MAC - ISTRUZIONI DI INSTALLAZIONE
 5. SIRJOE LINK (COLLEGAMENTO CON IL TELEFONO)
    Al primo collegamento macOS può chiedere se consentire le connessioni in
    entrata a SirJoe MTB Planner: rispondi "Consenti". Se il telefono non si
-   collega, apri Impostazioni di Sistema > Rete > Firewall > Opzioni e
-   consenti le connessioni in entrata per SirJoe MTB Planner.
+   collega, nella finestra SirJoe Link premi "Sblocca nel firewall del Mac"
+   e inserisci la password del Mac. Il programma deve essere aperto dalla
+   cartella Applicazioni, non dal disco .dmg.
    Telefono e Mac devono essere sulla stessa rete Wi-Fi di casa.
 
 6. DOVE SONO I DATI
