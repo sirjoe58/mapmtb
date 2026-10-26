@@ -384,8 +384,7 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
             setPadding(px(20), px(8), px(20), 0)
             addView(km); addView(up); addView(startSpinner); addView(dirSpinner)
             addView(TextView(ctx).apply {
-                text = "Tipo di percorso: " + Prefs.plannerProfile(ctx).label + " (cambialo con il pulsante del tipo di percorso).
-Serve Internet: il calcolo usa il server BRouter."
+                text = "Tipo di percorso: " + Prefs.plannerProfile(ctx).label + " (cambialo con il pulsante del tipo di percorso).\nServe Internet: il calcolo usa il server BRouter."
                 textSize = 13f
                 setPadding(0, px(8), 0, 0)
             })
