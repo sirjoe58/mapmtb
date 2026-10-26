@@ -79,4 +79,6 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
 
     testImplementation("junit:junit:4.13.2")
+    // org.json vero nei test (nel telefono è già incluso in Android)
+    testImplementation("org.json:json:20231013")
 }

@@ -96,10 +96,14 @@ object TrackIO {
 
         var inPoint = false
         var inLine = false
+        var inHeart = false
         var curLat: Double? = null
         var curLon: Double? = null
         var curEle: Double? = null
         var curTime: Long? = null
+        var curHr: Int? = null
+        var curCad: Int? = null
+        var curPow: Int? = null
         val buf = StringBuilder()
 
         var event = parser.eventType
@@ -114,6 +118,7 @@ object TrackIO {
                             curLon = parser.getAttributeValue(null, "lon")?.toDoubleOrNull()
                             curEle = null
                             curTime = null
+                            curHr = null; curCad = null; curPow = null
                         }
                         "Trackpoint" -> {
                             inPoint = true
@@ -121,8 +126,10 @@ object TrackIO {
                             curLon = null
                             curEle = null
                             curTime = null
+                            curHr = null; curCad = null; curPow = null
                         }
                         "LineString" -> inLine = true
+                        "HeartRateBpm" -> inHeart = true
                     }
                 }
                 XmlPullParser.TEXT -> buf.append(parser.text)
@@ -134,13 +141,18 @@ object TrackIO {
                         "time", "Time" -> if (inPoint) curTime = parseTime(t)
                         "LatitudeDegrees" -> if (inPoint) curLat = t.toDoubleOrNull()
                         "LongitudeDegrees" -> if (inPoint) curLon = t.toDoubleOrNull()
+                        "hr" -> if (inPoint) curHr = t.toDoubleOrNull()?.toInt()
+                        "cad", "Cadence" -> if (inPoint) curCad = t.toDoubleOrNull()?.toInt()
+                        "power", "Watts", "PowerInWatts" -> if (inPoint) curPow = t.toDoubleOrNull()?.toInt()
+                        "Value" -> if (inPoint && curHr == null && inHeart) curHr = t.toDoubleOrNull()?.toInt()
                         "trkpt", "rtept", "Trackpoint" -> {
                             val la = curLat
                             val lo = curLon
-                            if (la != null && lo != null) pts.add(TrackPoint(la, lo, curEle, curTime))
+                            if (la != null && lo != null) pts.add(TrackPoint(la, lo, curEle, curTime, curHr, curCad, curPow))
                             inPoint = false
                         }
                         "LineString" -> inLine = false
+                        "HeartRateBpm" -> inHeart = false
                         "coordinates" -> if (inLine) parseKmlCoordinates(t, kmlLine)
                         "when" -> gxWhens.add(parseTime(t))
                         "coord" -> {
@@ -348,13 +360,35 @@ object TrackIO {
     private fun writeGpx(t: Track): String {
         val sb = StringBuilder()
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-        sb.append("<gpx version=\"1.1\" creator=\"SirJoe MTB\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n")
+        sb.append("<gpx version=\"1.1\" creator=\"SirJoe MTB\" xmlns=\"http://www.topografix.com/GPX/1/1\"")
+        sb.append(" xmlns:gpxtpx=\"http://www.garmin.com/xmlschemas/TrackPointExtension/v1\">\n")
         sb.append("  <metadata><name>").append(esc(t.name)).append("</name></metadata>\n")
+        // segnaposto salvati con la traccia (es. segnalazioni fatte durante l'uscita)
+        for (w in t.waypoints) {
+            sb.append("  <wpt lat=\"").append(n(w.lat, 7)).append("\" lon=\"").append(n(w.lon, 7)).append("\">")
+            w.ele?.let { sb.append("<ele>").append(n(it, 1)).append("</ele>") }
+            sb.append("<name>").append(esc(w.name)).append("</name>")
+            if (w.note.isNotBlank()) sb.append("<desc>").append(esc(w.note)).append("</desc>")
+            sb.append("<type>").append(esc(w.type.id)).append("</type>")
+            sb.append("</wpt>\n")
+        }
         sb.append("  <trk>\n    <name>").append(esc(t.name)).append("</name>\n    <trkseg>\n")
         for (p in t.points) {
             sb.append("      <trkpt lat=\"").append(n(p.lat, 7)).append("\" lon=\"").append(n(p.lon, 7)).append("\">")
             p.ele?.let { sb.append("<ele>").append(n(it, 1)).append("</ele>") }
             p.time?.let { sb.append("<time>").append(iso(it)).append("</time>") }
+            // battito e cadenza nel formato Garmin (letto da Strava, Garmin Connect, Komoot...), potenza in <power>
+            if (p.hr != null || p.cad != null || p.power != null) {
+                sb.append("<extensions>")
+                p.power?.let { sb.append("<power>").append(it).append("</power>") }
+                if (p.hr != null || p.cad != null) {
+                    sb.append("<gpxtpx:TrackPointExtension>")
+                    p.hr?.let { sb.append("<gpxtpx:hr>").append(it).append("</gpxtpx:hr>") }
+                    p.cad?.let { sb.append("<gpxtpx:cad>").append(it).append("</gpxtpx:cad>") }
+                    sb.append("</gpxtpx:TrackPointExtension>")
+                }
+                sb.append("</extensions>")
+            }
             sb.append("</trkpt>\n")
         }
         sb.append("    </trkseg>\n  </trk>\n</gpx>\n")
@@ -392,7 +426,10 @@ object TrackIO {
             sb.append("<Position><LatitudeDegrees>").append(n(p.lat, 7)).append("</LatitudeDegrees>")
             sb.append("<LongitudeDegrees>").append(n(p.lon, 7)).append("</LongitudeDegrees></Position>")
             p.ele?.let { sb.append("<AltitudeMeters>").append(n(it, 1)).append("</AltitudeMeters>") }
-            sb.append("<DistanceMeters>").append(n(cum[i], 1)).append("</DistanceMeters></Trackpoint>\n")
+            sb.append("<DistanceMeters>").append(n(cum[i], 1)).append("</DistanceMeters>")
+            p.hr?.let { sb.append("<HeartRateBpm><Value>").append(it).append("</Value></HeartRateBpm>") }
+            p.cad?.let { sb.append("<Cadence>").append(it.coerceAtMost(254)).append("</Cadence>") }
+            sb.append("</Trackpoint>\n")
         }
         sb.append("      </Track>\n    </Course>\n  </Courses>\n</TrainingCenterDatabase>\n")
         return sb.toString()
