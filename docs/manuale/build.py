@@ -130,7 +130,7 @@ def build_html(pages):
     <p class="sub">Ciclocomputer, navigatore e planner per mountain bike</p>
     <div class="apps">
       <div class="app"><b>SirJoe MTB</b><span>App per Android · versione {APP_VER}</span></div>
-      <div class="app"><b>SirJoe MTB Planner</b><span>Programma per Windows · versione {PC_VER}</span></div>
+      <div class="app"><b>SirJoe MTB Planner</b><span>Programma per Windows e Mac · versione {PC_VER}</span></div>
     </div>
   </div>
   <div class="foot">Progetto personale gratuito e open source, non destinato alla vendita · github.com/sirjoe58/mapmtb · Ottobre 2026<br>
