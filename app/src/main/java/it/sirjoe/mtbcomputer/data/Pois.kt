@@ -66,28 +66,62 @@ object Pois {
         return out
     }
 
-    /** Testo della richiesta Overpass QL: punti utili entro [BUFFER_M] m dalla linea. */
+    /** Riquadro (sud, ovest, nord, est) attorno a un tratto, allargato di circa [BUFFER_M] + margine. */
+    data class Box(val s: Double, val w: Double, val n: Double, val e: Double)
+
+    /**
+     * Il percorso viene diviso in tratti di circa [chunkM] metri e per ogni tratto si cerca nel suo riquadro:
+     * le ricerche per riquadro sono velocissime sul server; i punti troppo lontani dalla linea
+     * vengono scartati dopo, sul telefono.
+     */
+    fun boxes(points: List<TrackPoint>, chunkM: Double = 8000.0): List<Box> {
+        if (points.isEmpty()) return emptyList()
+        val cum = Geo.cumulative(points)
+        val out = ArrayList<Box>()
+        var from = 0
+        while (from < points.size) {
+            var to = from
+            while (to < points.lastIndex && cum[to + 1] - cum[from] <= chunkM) to++
+            if (to == from && to < points.lastIndex) to++
+            val seg = points.subList(from, to + 1)
+            val midLat = seg.sumOf { it.lat } / seg.size
+            val dLat = (BUFFER_M + 150) / 111_000.0
+            val dLon = (BUFFER_M + 150) / (111_000.0 * kotlin.math.cos(Math.toRadians(midLat)).coerceAtLeast(0.2))
+            out.add(Box(seg.minOf { it.lat } - dLat, seg.minOf { it.lon } - dLon, seg.maxOf { it.lat } + dLat, seg.maxOf { it.lon } + dLon))
+            if (to >= points.lastIndex) break
+            from = to
+        }
+        return out
+    }
+
+    /** Testo della richiesta Overpass QL. */
     fun query(points: List<TrackPoint>, types: Set<PoiType>): String {
-        val line = simplify(points).joinToString(",") { String.format(Locale.US, "%.5f,%.5f", it.lat, it.lon) }
-        val around = "(around:$BUFFER_M,$line)"
-        val parts = ArrayList<String>()
+        val filters = ArrayList<String>()
         if (PoiType.WATER in types) {
-            parts.add("node[\"amenity\"=\"drinking_water\"]$around;")
-            parts.add("node[\"amenity\"=\"fountain\"][\"drinking_water\"=\"yes\"]$around;")
-            parts.add("node[\"man_made\"=\"water_tap\"][\"drinking_water\"!=\"no\"]$around;")
+            filters.add("node[\"amenity\"=\"drinking_water\"]")
+            filters.add("node[\"amenity\"=\"fountain\"][\"drinking_water\"=\"yes\"]")
+            filters.add("node[\"man_made\"=\"water_tap\"][\"drinking_water\"!=\"no\"]")
         }
-        if (PoiType.SPRING in types) parts.add("node[\"natural\"=\"spring\"]$around;")
+        if (PoiType.SPRING in types) filters.add("node[\"natural\"=\"spring\"]")
         if (PoiType.HUT in types) {
-            parts.add("nwr[\"tourism\"~\"^(alpine_hut|wilderness_hut)$\"]$around;")
-            parts.add("nwr[\"amenity\"=\"shelter\"]$around;")
+            filters.add("nwr[\"tourism\"=\"alpine_hut\"]")
+            filters.add("nwr[\"tourism\"=\"wilderness_hut\"]")
+            filters.add("nwr[\"amenity\"=\"shelter\"]")
         }
-        if (PoiType.FOOD in types) parts.add("nwr[\"amenity\"~\"^(cafe|bar|restaurant|pub)$\"]$around;")
+        if (PoiType.FOOD in types) {
+            for (a in listOf("cafe", "bar", "restaurant", "pub")) filters.add("nwr[\"amenity\"=\"$a\"]")
+        }
         if (PoiType.BIKE in types) {
-            parts.add("nwr[\"shop\"=\"bicycle\"]$around;")
-            parts.add("node[\"amenity\"=\"bicycle_repair_station\"]$around;")
+            filters.add("nwr[\"shop\"=\"bicycle\"]")
+            filters.add("node[\"amenity\"=\"bicycle_repair_station\"]")
         }
-        if (PoiType.VIEW in types) parts.add("node[\"tourism\"=\"viewpoint\"]$around;")
-        return "[out:json][timeout:60];(" + parts.joinToString("") + ");out center tags 400;"
+        if (PoiType.VIEW in types) filters.add("node[\"tourism\"=\"viewpoint\"]")
+        val sb = StringBuilder("[out:json][timeout:90];(")
+        for (b in boxes(points)) {
+            val bbox = String.format(Locale.US, "(%.5f,%.5f,%.5f,%.5f)", b.s, b.w, b.n, b.e)
+            for (f in filters) sb.append(f).append(bbox).append(';')
+        }
+        return sb.append(");out center tags;").toString()
     }
 
     fun typeOf(tags: JSONObject): PoiType? {
@@ -119,7 +153,7 @@ object Pois {
             val lat = if (e.has("lat")) e.getDouble("lat") else center?.optDouble("lat") ?: continue
             val lon = if (e.has("lon")) e.getDouble("lon") else center?.optDouble("lon") ?: continue
             val (along, off) = project(route, cum, lat, lon)
-            if (off > BUFFER_M * 1.5) continue
+            if (off > BUFFER_M) continue
             val name = tags.optString("name").ifBlank { type.label.substringBefore(" (") }
             out.add(Poi(type, name, lat, lon, along, off))
         }
@@ -131,17 +165,35 @@ object Pois {
         return dedup
     }
 
-    /** Distanza lungo il percorso del punto più vicino e distanza dal percorso. */
+    /**
+     * Distanza lungo il percorso del punto della linea più vicino e distanza dalla linea
+     * (calcolata sui segmenti, quindi giusta anche per i percorsi in linea retta con pochi punti).
+     */
     fun project(route: List<TrackPoint>, cum: DoubleArray, lat: Double, lon: Double): Pair<Double, Double> {
-        var best = 0
+        if (route.isEmpty()) return 0.0 to Double.MAX_VALUE
+        if (route.size == 1) return 0.0 to Geo.distance(lat, lon, route[0].lat, route[0].lon)
+        val k = kotlin.math.cos(Math.toRadians(lat)) * 111_320.0
+        val m = 110_540.0
+        var bestAlong = 0.0
         var bestD = Double.MAX_VALUE
-        for (i in route.indices) {
-            val d = Geo.distance(lat, lon, route[i].lat, route[i].lon)
+        for (i in 0 until route.size - 1) {
+            val ax = (route[i].lon - lon) * k
+            val ay = (route[i].lat - lat) * m
+            val bx = (route[i + 1].lon - lon) * k
+            val by = (route[i + 1].lat - lat) * m
+            val dx = bx - ax
+            val dy = by - ay
+            val len2 = dx * dx + dy * dy
+            val t = if (len2 > 0) ((-ax * dx - ay * dy) / len2).coerceIn(0.0, 1.0) else 0.0
+            val px = ax + t * dx
+            val py = ay + t * dy
+            val d = kotlin.math.sqrt(px * px + py * py)
             if (d < bestD) {
-                bestD = d; best = i
+                bestD = d
+                bestAlong = cum[i] + t * (cum[i + 1] - cum[i])
             }
         }
-        return cum.getOrElse(best) { 0.0 } to bestD
+        return bestAlong to bestD
     }
 
     /** Prossimo punto utile nel senso di marcia, entro [maxAheadM]. */
@@ -168,25 +220,58 @@ object Pois {
 
     // ------------------------------------------------------------ rete e archivio
 
+    /** Server Overpass pubblici: se il primo è occupato si prova il successivo. */
+    private val SERVERS = listOf(
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter"
+    )
+
     suspend fun fetch(route: List<TrackPoint>, types: Set<PoiType>): List<Poi> = withContext(Dispatchers.IO) {
+        if (route.size < 2) throw IllegalStateException("percorso troppo corto")
         val body = "data=" + URLEncoder.encode(query(route, types), "UTF-8")
-        val conn = URL(SERVER).openConnection() as HttpURLConnection
-        conn.requestMethod = "POST"
-        conn.doOutput = true
-        conn.connectTimeout = 20_000
-        conn.readTimeout = 90_000
-        conn.setRequestProperty("User-Agent", "SirJoeMTB/${BuildConfig.VERSION_NAME} (uso personale)")
-        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-        try {
-            conn.outputStream.use { it.write(body.toByteArray()) }
-            val code = conn.responseCode
-            if (code == 429) throw IllegalStateException("server OpenStreetMap occupato: riprova tra qualche minuto")
-            if (code != 200) throw IllegalStateException("errore $code dal server OpenStreetMap")
-            val json = conn.inputStream.bufferedReader().use { it.readText() }
-            parse(json, route, types)
-        } finally {
-            conn.disconnect()
+        var lastError = "nessun server raggiungibile"
+        for (server in SERVERS) {
+            val conn = URL(server).openConnection() as HttpURLConnection
+            try {
+                conn.requestMethod = "POST"
+                conn.doOutput = true
+                conn.connectTimeout = 20_000
+                conn.readTimeout = 100_000
+                conn.setRequestProperty("User-Agent", "SirJoeMTB/${BuildConfig.VERSION_NAME} (app personale; github.com/sirjoe58/mapmtb)")
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+                conn.setRequestProperty("Accept", "application/json")
+                conn.outputStream.use { it.write(body.toByteArray()) }
+                val code = conn.responseCode
+                if (code == 200) {
+                    val json = conn.inputStream.bufferedReader().use { it.readText() }
+                    // Overpass può rispondere 200 con un errore nel campo "remark"
+                    val remark = try {
+                        JSONObject(json).optString("remark")
+                    } catch (_: Exception) {
+                        throw IllegalStateException("risposta non valida dal server")
+                    }
+                    if (remark.contains("error", ignoreCase = true) || remark.contains("timed out", ignoreCase = true)) {
+                        lastError = "server occupato (" + remark.take(80) + ")"
+                        continue
+                    }
+                    return@withContext parse(json, route, types)
+                }
+                lastError = when (code) {
+                    429 -> "troppe richieste al server, riprova tra qualche minuto"
+                    504, 503, 502 -> "server OpenStreetMap occupato"
+                    400 -> "richiesta rifiutata (400)"
+                    else -> "errore $code"
+                }
+            } catch (e: java.net.UnknownHostException) {
+                throw IllegalStateException("nessuna connessione a Internet")
+            } catch (e: Exception) {
+                lastError = e.message ?: e.javaClass.simpleName
+            } finally {
+                conn.disconnect()
+            }
         }
+        throw IllegalStateException(lastError)
     }
 
     private fun dir(ctx: Context) = File(ctx.filesDir, "punti_utili").apply { mkdirs() }
