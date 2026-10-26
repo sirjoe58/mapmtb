@@ -26,8 +26,10 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Test (formato FIT)
-        run: gradle testDebugUnitTest --stacktrace
+      - name: Test (formato FIT e funzioni)
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest --console=plain 2>&1 | tee build-log.txt
 
       - name: Verifica FIT con fitparse
         run: |
@@ -38,10 +40,27 @@ jobs:
         run: gradle :app:dependencies --configuration debugRuntimeClasspath | grep -i -E "mapsforge|androidsvg" | sort -u | head -20
 
       - name: Controllo compatibilità Android 6+
-        run: gradle lintDebug
+        run: |
+          set -o pipefail
+          gradle lintDebug --console=plain 2>&1 | tee -a build-log.txt
 
       - name: Compila APK di debug
-        run: gradle assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug --console=plain 2>&1 | tee -a build-log.txt
+
+      - name: Riassunto errori
+        if: failure()
+        run: |
+          touch build-log.txt
+          grep -E "^e: |^w: .*(NewApi|InlinedApi)|Error:|FAILED|Exception|expected:<|AssertionError" build-log.txt | grep -v "^w: .*deprecat" | head -60 | while IFS= read -r l; do echo "::error::$l"; done
+          for f in app/build/test-results/testDebugUnitTest/*.xml; do
+            [ -f "$f" ] && grep -o '<failure message="[^"]*"' "$f" | head -10 | while IFS= read -r l; do echo "::error::test $(basename $f): $l"; done
+          done
+          for f in app/build/reports/lint-results-debug.txt; do
+            [ -f "$f" ] && grep -E "Error|error" "$f" | head -30 | while IFS= read -r l; do echo "::error::lint: $l"; done
+          done
+          true
 
       - name: Leggi la versione
         run: |
