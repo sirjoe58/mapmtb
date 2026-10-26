@@ -18,6 +18,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -75,6 +76,24 @@ class MainActivity : AppCompatActivity() {
                 (supportFragmentManager.findFragmentByTag(TAG_MAP) as? MapFragment)?.startLocationUpdates()
             }
         }
+
+    /** Richiesta di permessi qualsiasi (Bluetooth, SMS...) con risposta. */
+    private var permsCallback: ((Boolean) -> Unit)? = null
+    private val anyPermsLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val cb = permsCallback
+            permsCallback = null
+            cb?.invoke(result.values.all { it })
+        }
+
+    fun requestPerms(perms: Array<String>, then: (Boolean) -> Unit) {
+        val missing = perms.filter { ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
+        if (missing.isEmpty()) {
+            then(true); return
+        }
+        permsCallback = then
+        anyPermsLauncher.launch(missing.toTypedArray())
+    }
 
     private val saveLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
         val data = pendingSave

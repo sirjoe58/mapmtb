@@ -116,6 +116,13 @@
             android:minHeight="56dp"
             android:text="Mostra itinerari MTB sulla mappa" />
 
+        <!-- SOS, sensori Bluetooth e avvisi (costruiti nel codice: InfoExtras) -->
+        <LinearLayout
+            android:id="@+id/infoExtras"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

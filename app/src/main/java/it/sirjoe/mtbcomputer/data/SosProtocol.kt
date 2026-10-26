@@ -12,7 +12,7 @@ import java.util.UUID
  *   SOS|lat|lon|acc|t|motivo   richiesta d'aiuto confermata (conto alla rovescia finito o SOS manuale)
  *   POS|lat|lon|acc|t   posizione aggiornata dopo l'SOS
  *   CANCEL              falso allarme, annullato sul manubrio
- *   OK                  conferma ricezione (dal telefono in tasca)
+ *   OK|tipo             conferma ricezione del messaggio di quel tipo (dal telefono in tasca)
  *   CANCEL_POCKET       annullato dal telefono in tasca
  *
  * Nessuna dipendenza da Android (testabile).
@@ -39,7 +39,7 @@ object SosProtocol {
     fun encode(m: Msg): String {
         val sb = StringBuilder(m.type.name)
         when (m.type) {
-            Type.HELLO -> sb.append('|').append(clean(m.text))
+            Type.HELLO, Type.OK -> sb.append('|').append(clean(m.text))
             Type.ALERT, Type.SOS, Type.POS -> {
                 sb.append('|').append(m.lat?.let { String.format(Locale.US, "%.6f", it) } ?: "")
                 sb.append('|').append(m.lon?.let { String.format(Locale.US, "%.6f", it) } ?: "")
@@ -60,7 +60,7 @@ object SosProtocol {
             return null
         }
         return when (type) {
-            Type.HELLO -> Msg(type, text = p.getOrElse(1) { "" })
+            Type.HELLO, Type.OK -> Msg(type, text = p.getOrElse(1) { "" })
             Type.ALERT, Type.SOS, Type.POS -> Msg(
                 type,
                 lat = p.getOrNull(1)?.toDoubleOrNull(),

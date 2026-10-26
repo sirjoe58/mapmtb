@@ -146,6 +146,7 @@ class InfoFragment : Fragment(R.layout.fragment_info) {
             }
         }
         refreshSatellite()
+        InfoExtras(this, view.findViewById(R.id.infoExtras)).build()
     }
 
     private fun refreshSatellite() {

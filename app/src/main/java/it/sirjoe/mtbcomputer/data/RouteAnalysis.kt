@@ -207,5 +207,7 @@ data class CoachState(
     val ghostLat: Double? = null,
     val ghostLon: Double? = null,
     val ghostDiffSec: Int? = null,
-    val climbText: String? = null
+    val climbText: String? = null,
+    /** Altre righe: prossimo punto utile, tramonto... */
+    val extraLines: List<String> = emptyList()
 )

@@ -36,6 +36,24 @@ class App : Application() {
                 NotificationManager.IMPORTANCE_LOW
             )
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+            // allarme SOS: massima priorità, a schermo intero
+            val sos = NotificationChannel(
+                it.sirjoe.mtbcomputer.service.SosBike.CHANNEL_SOS,
+                "SOS e allarmi caduta",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Conto alla rovescia dopo una caduta e richiesta d'aiuto"
+                setBypassDnd(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            getSystemService(NotificationManager::class.java).createNotificationChannel(sos)
+        }
+        // telefono in tasca: il servizio SOS riparte da solo all'avvio dell'app
+        if (it.sirjoe.mtbcomputer.data.Prefs.sosRole(this) == it.sirjoe.mtbcomputer.data.Prefs.SOS_ROLE_POCKET) {
+            try {
+                it.sirjoe.mtbcomputer.service.SosPocketService.start(this)
+            } catch (_: Exception) {
+            }
         }
     }
 }

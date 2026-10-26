@@ -39,6 +39,11 @@ data class SosLinkState(
     val countdown: Int? = null,
     /** SOS inviato e non ancora annullato. */
     val sosSent: Boolean = false,
+    /** Allarme in corso (suono e schermata SOS). */
+    val alarm: Boolean = false,
+    val reason: String? = null,
+    val lat: Double? = null,
+    val lon: Double? = null,
     val message: String? = null
 )
 

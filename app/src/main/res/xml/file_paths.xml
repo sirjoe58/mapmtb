@@ -3,4 +3,8 @@
     <cache-path
         name="export"
         path="export/" />
+    <!-- foto delle segnalazioni sul sentiero -->
+    <files-path
+        name="segnalazioni"
+        path="segnalazioni/" />
 </paths>

@@ -14,7 +14,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import it.sirjoe.mtbcomputer.data.BleParse
+import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.RideRepository
+import it.sirjoe.mtbcomputer.data.SunCalc
 import it.sirjoe.mtbcomputer.util.Format
 import it.sirjoe.mtbcomputer.util.Geo
 import kotlinx.coroutines.delay
@@ -44,7 +47,13 @@ class DataFragment : Fragment() {
         "slope" to "Pendenza",
         "dir" to "Direzione",
         "togo" to "Al traguardo (km)",
-        "gps" to "Precisione GPS (m)"
+        "gps" to "Precisione GPS (m)",
+        "hr" to "Battito (bpm)",
+        "zone" to "Zona cardio",
+        "cad" to "Cadenza (rpm)",
+        "power" to "Potenza (W)",
+        "sunset" to "Tramonto",
+        "poi" to "Prossimo punto utile"
     )
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -136,6 +145,15 @@ class DataFragment : Fragment() {
         set("slope", Format.percent(s.slopePct))
         set("dir", if (loc != null && loc.hasBearing()) Format.cardinal(loc.bearing) else "--")
         set("gps", if (loc != null && loc.hasAccuracy()) Format.meters(loc.accuracy.toDouble()) else "--")
+        val sv = RideRepository.sensors.value
+        set("hr", sv.hr?.toString() ?: "--")
+        set("zone", sv.hr?.let { "Z" + BleParse.zone(it, Prefs.maxHr(requireContext())) } ?: "--")
+        set("cad", sv.cadence?.toString() ?: "--")
+        set("power", sv.power?.toString() ?: "--")
+        set("sunset", loc?.let { l ->
+            SunCalc.sunset(System.currentTimeMillis(), l.latitude, l.longitude)
+                ?.let { t -> SimpleDateFormat("HH:mm", Locale.ITALY).format(Date(t)) }
+        } ?: "--")
 
         val route = RideRepository.route.value
         if (route != null && loc != null && route.points.size >= 2) {
@@ -150,6 +168,9 @@ class DataFragment : Fragment() {
                 }
             }
             set("togo", Format.distanceKm(RideRepository.routeRemainingM ?: (cum.last() - cum[idx])))
+            val pois = RideRepository.pois.value
+            val ahead = pois.filter { it.along >= cum[idx] - 30 }.minByOrNull { it.along }
+            set("poi", ahead?.let { it.type.emoji + " " + Format.distanceKm(it.along - cum[idx]) + " km" } ?: "--")
             if (elevation.hasData()) {
                 val withEle = route.points.filter { it.ele != null }
                 var bestE = Double.MAX_VALUE
@@ -165,6 +186,7 @@ class DataFragment : Fragment() {
             }
         } else {
             set("togo", "--")
+            set("poi", "--")
             elevation.setCurrentDistance(null)
         }
     }
