@@ -7,6 +7,10 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
@@ -27,7 +31,11 @@ import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.Climb
 import it.sirjoe.mtbcomputer.data.CoachState
+import it.sirjoe.mtbcomputer.data.FallDetector
 import it.sirjoe.mtbcomputer.data.Ghost
+import it.sirjoe.mtbcomputer.data.Pois
+import it.sirjoe.mtbcomputer.data.Reports
+import it.sirjoe.mtbcomputer.data.SunCalc
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.RouteAnalysis
 import it.sirjoe.mtbcomputer.data.RouteProgress
@@ -45,8 +53,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.max
+import kotlin.math.sqrt
 
 /**
  * Servizio in primo piano che registra l'uscita: continua a funzionare
@@ -107,6 +118,31 @@ class RecordingService : Service() {
 
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+
+    // caduta e SOS
+    private var fall: FallDetector? = null
+    private var sensorManager: SensorManager? = null
+    private val accelListener = object : SensorEventListener {
+        override fun onSensorChanged(e: SensorEvent) {
+            val v = e.values
+            val mag = sqrt((v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).toDouble())
+            if (fall?.onAccel(mag, System.currentTimeMillis()) == true) onFall()
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    }
+
+    // tramonto e punti utili
+    private var ticks = 0
+    private var sunsetText: String? = null
+    private var lastSunsetWarn = 0L
+    private var sunsetHourWarned = false
+    private var sunsetDoneWarned = false
+    private var routeRemaining: Double? = null
+    private var poiText: String? = null
+    private val poiAnnounced = HashSet<String>()
+    private var lastClimbText: String? = null
+    private var lastGhost: Triple<Double?, Double?, Int?> = Triple(null, null, null)
 
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -169,6 +205,27 @@ class RecordingService : Service() {
             }
         }
         speak("Registrazione avviata")
+
+        // sensori Bluetooth (cardio, cadenza, potenza)
+        if (BleSensors.anyConfigured(this)) BleSensors.start(this)
+        // SOS: collegamento al telefono in tasca e riconoscimento cadute
+        if (SosBike.configured(this)) {
+            SosBike.start(this)
+            fall = FallDetector(Prefs.sosSensitivity(this).g)
+            sensorManager = getSystemService(SensorManager::class.java)
+            sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
+                sensorManager?.registerListener(accelListener, it, SensorManager.SENSOR_DELAY_GAME)
+            }
+        }
+        sunsetHourWarned = false
+        sunsetDoneWarned = false
+        lastSunsetWarn = 0L
+        poiAnnounced.clear()
+    }
+
+    private fun onFall() {
+        speak("Possibile caduta. Se stai bene premi annulla")
+        SosBike.trigger(this, "possibile caduta")
     }
 
     @SuppressLint("MissingPermission")
@@ -191,6 +248,8 @@ class RecordingService : Service() {
         val now = System.currentTimeMillis()
         val pausedNow = if (s.paused) now - pauseStarted else 0L
         RideRepository.updateStats(s.copy(elapsedMs = now - s.startTime - pausedAccumMs - pausedNow))
+        if (fall?.onTick(now) == true) onFall()
+        if (ticks++ % 30 == 0) checkSunset()
         // fermo da abbastanza tempo (anche se il GPS non manda più posizioni): sosta
         val since = stillSince
         if (!s.paused && !s.sleeping && Prefs.autoSleep(this) && since != null &&
@@ -310,7 +369,13 @@ class RecordingService : Service() {
             }
         }
 
-        if (isMoving) RideRepository.addPoint(TrackPoint(loc.latitude, loc.longitude, alt, loc.time))
+        if (fall?.onSpeed(speed, System.currentTimeMillis()) == true) onFall()
+        if (isMoving) RideRepository.addPoint(
+            TrackPoint(
+                loc.latitude, loc.longitude, alt, loc.time,
+                BleSensors.currentHr(), BleSensors.currentCadence(), BleSensors.currentPower()
+            )
+        )
         lastLoc = loc
         stillSince = if (speed < AUTOPAUSE_MS) (stillSince ?: System.currentTimeMillis()) else null
 
@@ -343,18 +408,26 @@ class RecordingService : Service() {
         coachGhostMode = RideRepository.ghostMode
         announced.clear()
         nextGhostKm = 1
+        poiAnnounced.clear()
+        poiText = null
+        routeRemaining = null
         if (route == null || route.points.size < 2) {
             progress = null; climbs = emptyList(); climbsRev = emptyList(); ghost = null
-            RideRepository.updateCoach(null)
+            RideRepository.setPois(emptyList())
+            publishCoach()
             return
         }
+        // punti utili cercati in precedenza per questo percorso
+        if (RideRepository.pois.value.isEmpty()) RideRepository.setPois(Pois.load(this, route.points))
         progress = RouteProgress(route.points)
         routeTotal = progress!!.total
         climbs = if (Prefs.climbAlerts(this)) RouteAnalysis.climbs(route.points) else emptyList()
         // salite per chi percorre il giro al contrario
         climbsRev = if (Prefs.climbAlerts(this)) RouteAnalysis.climbs(route.points.asReversed()) else emptyList()
         ghost = if (coachGhostMode && Prefs.ghost(this) && Ghost.canUse(route)) Ghost(route) else null
-        RideRepository.updateCoach(null)
+        lastClimbText = null
+        lastGhost = Triple(null, null, null)
+        publishCoach()
     }
 
     private fun updateCoach(loc: Location, s: RideStats) {
@@ -367,6 +440,8 @@ class RecordingService : Service() {
         // al contrario: distanze misurate dalla fine del percorso e salite del verso opposto
         val rev = prog.reverse
         val done = if (rev) routeTotal - fwd else fwd
+        routeRemaining = if (onRoute) routeTotal - done else null
+        updatePoi(fwd, rev, onRoute)
         val climbList = if (rev) climbsRev else climbs
         if (rev != lastReverse) {
             announced.clear(); lastReverse = rev
@@ -416,9 +491,91 @@ class RecordingService : Service() {
                 }
             }
         }
+        lastClimbText = climbText
+        lastGhost = Triple(gLat, gLon, diff)
+        publishCoach()
+    }
+
+    /** Banner sulla mappa: fantasma, salite, prossimo punto utile, tramonto. */
+    private fun publishCoach() {
+        val extra = listOfNotNull(poiText, sunsetText)
+        val (gLat, gLon, diff) = lastGhost
+        val climbText = lastClimbText
         RideRepository.updateCoach(
-            if (g == null && climbText == null) null else CoachState(gLat, gLon, diff, climbText)
+            if (gLat == null && diff == null && climbText == null && extra.isEmpty()) null
+            else CoachState(gLat, gLon, diff, climbText, extra)
         )
+    }
+
+    // ------------------------------------------------- punti utili
+
+    private fun updatePoi(fwd: Double, rev: Boolean, onRoute: Boolean) {
+        val list = RideRepository.pois.value
+        if (list.isEmpty() || !onRoute) {
+            poiText = null; return
+        }
+        val next = Pois.nextAhead(list, fwd, routeTotal, rev)
+        if (next == null) {
+            poiText = null; return
+        }
+        val (p, ahead) = next
+        poiText = p.type.emoji + " " + p.name + " tra " + Format.distanceKm(ahead) + " km"
+        val key = p.lat.toString() + p.lon
+        if (Prefs.poiVoice(this) && ahead <= 300 && poiAnnounced.add(key)) {
+            val m = (Math.round(ahead / 50.0) * 50).toInt()
+            speak(if (m < 50) "${p.type.spoken} qui vicino" else "${p.type.spoken} tra $m metri")
+        }
+    }
+
+    // ------------------------------------------------- tramonto
+
+    private fun hm(ms: Long): String = SimpleDateFormat("HH:mm", Locale.ITALY).format(Date(ms))
+    private fun spokenTime(ms: Long): String {
+        val c = java.util.Calendar.getInstance().apply { timeInMillis = ms }
+        val h = c.get(java.util.Calendar.HOUR_OF_DAY)
+        val m = c.get(java.util.Calendar.MINUTE)
+        return if (m == 0) "$h" else "$h e $m"
+    }
+    private fun minutes(ms: Long) = (ms / 60_000).toInt()
+
+    /** Avvisa se non si fa in tempo a rientrare prima del buio. */
+    private fun checkSunset() {
+        if (!Prefs.sunsetAlert(this)) {
+            if (sunsetText != null) { sunsetText = null; publishCoach() }
+            return
+        }
+        val l = lastLoc ?: RideRepository.location.value ?: return
+        val now = System.currentTimeMillis()
+        val sunset = SunCalc.sunset(now, l.latitude, l.longitude) ?: return
+        val s = RideRepository.stats.value
+        // distanza da fare: al traguardo del percorso, altrimenti la strada fatta per tornare alla partenza
+        val toGo = routeRemaining ?: s.distanceM
+        val speed = if (s.movingMs > 10 * 60_000L && s.avgSpeedMs > 1.5) s.avgSpeedMs else 3.3
+        val needMs = (toGo / speed * 1000).toLong()
+        val left = sunset - now
+        val target = if (routeRemaining != null) "arrivare" else "tornare alla partenza"
+        val old = sunsetText
+        sunsetText = when {
+            left < 0 -> "🌙 Sole tramontato alle ${hm(sunset)}: accendi le luci"
+            left < 90 * 60_000L -> "🌅 Tramonto ${hm(sunset)} · per $target ~${minutes(needMs)} min"
+            else -> null
+        }
+        if (left < 0) {
+            if (!sunsetDoneWarned && left > -60 * 60_000L) {
+                sunsetDoneWarned = true
+                speak("Il sole è tramontato. Accendi le luci e fai attenzione")
+            }
+        } else if (needMs + 15 * 60_000L > left && now - lastSunsetWarn > 15 * 60_000L) {
+            lastSunsetWarn = now
+            speak(
+                "Attenzione, il sole tramonta alle ${spokenTime(sunset)}, tra ${minutes(left)} minuti. " +
+                    "Per $target ti servono circa ${minutes(needMs)} minuti"
+            )
+        } else if (!sunsetHourWarned && left in 50 * 60_000L..60 * 60_000L) {
+            sunsetHourWarned = true
+            speak("Tra un'ora tramonta il sole, alle ${spokenTime(sunset)}")
+        }
+        if (old != sunsetText) publishCoach()
     }
 
     private fun pct(f: Double) = Math.round(f * 100).toInt()
@@ -453,10 +610,18 @@ class RecordingService : Service() {
         coachJob?.cancel()
         progress = null; ghost = null; climbs = emptyList(); coachRoute = null
         RideRepository.updateCoach(null)
+        sunsetText = null; poiText = null
+        sensorManager?.unregisterListener(accelListener)
+        sensorManager = null
+        fall = null
+        BleSensors.stop()
+        SosBike.stop()
         val s = RideRepository.stats.value
         val points = RideRepository.snapshotPoints()
         if (s.recording && points.size >= 2) {
-            val f = TrackStorage.saveRecorded(this, points)
+            // segnalazioni fatte durante l'uscita: salvate come segnaposto nella traccia
+            val reports = Reports.between(this, s.startTime, System.currentTimeMillis())
+            val f = TrackStorage.saveRecorded(this, points, Reports.asPlacemarks(reports))
             Toast.makeText(
                 this,
                 getString(R.string.ride_saved, f.nameWithoutExtension, Format.distanceKm(s.distanceM)),
@@ -496,6 +661,7 @@ class RecordingService : Service() {
 
     override fun onDestroy() {
         fused.removeLocationUpdates(callback)
+        sensorManager?.unregisterListener(accelListener)
         scope.cancel()
         tts?.shutdown()
         tts = null

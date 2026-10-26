@@ -35,6 +35,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.Placemarks
+import it.sirjoe.mtbcomputer.data.Pois
+import it.sirjoe.mtbcomputer.data.Reports
 import it.sirjoe.mtbcomputer.data.Prefs
 import it.sirjoe.mtbcomputer.data.CoachState
 import it.sirjoe.mtbcomputer.data.RideRepository
@@ -123,6 +125,11 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     private val iconCache = HashMap<Int, BitmapDrawable>()
     private val clockFmt = SimpleDateFormat("HH:mm", Locale.ITALY)
 
+    private lateinit var tools: MapTools
+    private val takePhoto = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { ok ->
+        if (::tools.isInitialized) tools.onPhoto(ok)
+    }
+
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             // Quando si registra, la posizione arriva gia' dal servizio
@@ -186,6 +193,9 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         marker.icon = navIcon(0)
 
         applyBaseMap()
+
+        tools = MapTools(this, map, takePhoto) { map.overlays.indexOf(marker).let { if (it < 0) map.overlays.size else it } }
+        view.findViewById<View>(R.id.btnTools).setOnClickListener { tools.menu() }
 
         // Trascinando con un dito la mappa smette di seguire la posizione
         // (lo zoom con due dita invece non la sgancia).
@@ -266,6 +276,11 @@ class MapFragment : Fragment(R.layout.fragment_map) {
                 launch { RideRepository.pointCount.collect { updateTrackLine(it) } }
                 launch { RideRepository.route.collect { showRoute(it); refreshBarsMode() } }
                 launch { Placemarks.items.collect { redrawPlaces() } }
+                launch { RideRepository.pois.collect { tools.drawPois(it) } }
+                launch {
+                    Reports.load(requireContext())
+                    Reports.items.collect { tools.drawReports(it) }
+                }
                 launch { RideRepository.coach.collect { showCoach(it) } }
                 launch {
                     while (true) {
@@ -649,6 +664,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     private fun showRoute(track: Track?) {
         offRoute = false
         if (track == null || track.points.isEmpty()) {
+            RideRepository.setPois(emptyList())
             routeLine.setPoints(emptyList())
             routePoints = emptyList()
             routeCum = null
@@ -659,6 +675,8 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             return
         }
         routePoints = track.points.map { GeoPoint(it.lat, it.lon) }
+        // punti utili cercati in precedenza per questo percorso
+        RideRepository.setPois(Pois.load(requireContext(), track.points))
         routeCum = Geo.cumulative(track.points)
         progress = RouteProgress(track.points)
         routeLine.setPoints(routePoints)
@@ -766,6 +784,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             )
         }
         c?.climbText?.let { lines.add(it) }
+        c?.extraLines?.let { lines.addAll(it) }
         coachTv.text = lines.joinToString("\n")
         coachTv.visibility = if (lines.isEmpty()) View.GONE else View.VISIBLE
 

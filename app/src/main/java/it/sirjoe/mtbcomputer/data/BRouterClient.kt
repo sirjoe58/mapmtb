@@ -80,6 +80,33 @@ object BRouterClient {
             throw IllegalStateException("BRouter: ${lastError?.message ?: "nessun percorso"}")
         }
 
+    /** Percorso che passa per tutti i punti in ordine con una sola richiesta (usato per gli anelli). */
+    suspend fun routeVia(points: List<TrackPoint>, profile: Profile): List<TrackPoint> = withContext(Dispatchers.IO) {
+        val lonlats = points.joinToString("|") { String.format(Locale.US, "%.6f,%.6f", it.lon, it.lat) }
+        var lastError: Exception? = null
+        for (p in profile.profiles) {
+            val url = SERVER + "?lonlats=" + URLEncoder.encode(lonlats, "UTF-8") + "&profile=" + p + "&alternativeidx=0&format=gpx"
+            val conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 15_000
+            conn.readTimeout = 60_000
+            conn.setRequestProperty("User-Agent", "SirJoeMTB/${BuildConfig.VERSION_NAME} (uso personale)")
+            try {
+                val code = conn.responseCode
+                if (code != 200) {
+                    val err = conn.errorStream?.bufferedReader()?.use { it.readText() }?.take(200)
+                    throw IllegalStateException(err ?: "errore $code")
+                }
+                val bytes = conn.inputStream.use { it.readBytes() }
+                return@withContext TrackIO.parse(bytes, "anello.gpx").points.map { it.copy(time = null) }
+            } catch (e: Exception) {
+                lastError = e
+            } finally {
+                conn.disconnect()
+            }
+        }
+        throw IllegalStateException("BRouter: ${lastError?.message ?: "nessun percorso"}")
+    }
+
     /**
      * Percorso che passa per tutti i punti in ordine, un tratto alla volta.
      * onLeg(i, n) viene chiamato dopo ogni tratto calcolato.

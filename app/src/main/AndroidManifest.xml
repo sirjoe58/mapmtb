@@ -12,12 +12,29 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Bluetooth: sensori (cardio, cadenza, potenza) e collegamento SOS con il telefono in tasca -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <!-- SOS: SMS dal telefono in tasca, allarme a schermo intero -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
 
     <!-- Per aprire l'app Strava (autorizzazione) se installata -->
     <queries>
+        <!-- app 112 Where ARE U sul telefono in tasca -->
+        <package android:name="it.Beta80Group.whereareu" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
@@ -114,6 +131,23 @@
             android:name=".service.RecordingService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- Telefono in tasca: riceve l'SOS dal telefono sul manubrio -->
+        <service
+            android:name=".service.SosPocketService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!-- Schermata SOS a tutto schermo -->
+        <activity
+            android:name=".ui.SosActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.SirJoeMTB"
+            tools:targetApi="o_mr1" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

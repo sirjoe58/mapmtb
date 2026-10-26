@@ -68,6 +68,17 @@
         android:orientation="vertical">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnTools"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="Strumenti: SOS, ritorno, segnalazioni, punti utili"
+            app:backgroundTint="@color/fab_bg"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_more"
+            app:tint="@color/sj_dark" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/btnLayers"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

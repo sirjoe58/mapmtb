@@ -18,6 +18,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.sirjoe.mtbcomputer.MainActivity
 import it.sirjoe.mtbcomputer.R
 import it.sirjoe.mtbcomputer.data.BRouterClient
+import it.sirjoe.mtbcomputer.data.LoopPlanner
+import it.sirjoe.mtbcomputer.data.Track
 import it.sirjoe.mtbcomputer.data.Placemark
 import it.sirjoe.mtbcomputer.data.Placemarks
 import it.sirjoe.mtbcomputer.data.PlannerState
@@ -58,6 +60,7 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
     private val wpMarkers = ArrayList<Marker>()
     private val placeMarkers = ArrayList<Marker>()
     private var working = false
+    private lateinit var tools: MapTools
     private var centered = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -106,10 +109,18 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
         view.findViewById<View>(R.id.planPlaces).setOnClickListener { placesMenu() }
         view.findViewById<View>(R.id.planUndo).setOnClickListener { if (!working) PlannerState.undo() }
         view.findViewById<View>(R.id.planModeBtn).setOnClickListener { chooseMode() }
+        tools = MapTools(this, map, null) { map.overlays.size }
         view.findViewById<View>(R.id.planLoop).setOnClickListener {
-            val first = PlannerState.firstWaypoint()
-            if (first == null || PlannerState.waypoints().size < 2) toast("Aggiungi almeno due punti")
-            else addPoint(GeoPoint(first.lat, first.lon))
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Anello")
+                .setItems(arrayOf("Chiudi l'anello (torna al primo punto)", "Crea un anello automatico… (km e dislivello)")) { _, w ->
+                    if (w == 0) {
+                        val first = PlannerState.firstWaypoint()
+                        if (first == null || PlannerState.waypoints().size < 2) toast("Aggiungi almeno due punti")
+                        else addPoint(GeoPoint(first.lat, first.lon))
+                    } else autoLoop()
+                }
+                .show()
         }
         view.findViewById<View>(R.id.planReverse).setOnClickListener { PlannerState.reverse() }
         view.findViewById<View>(R.id.planSave).setOnClickListener { save(followAfter = false) }
@@ -209,7 +220,8 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
             "Elenco segnaposto ($n)",
             "Percorso automatico tra segnaposto…",
             "Esporta / condividi segnaposto (GPX)",
-            "Elimina tutti i segnaposto"
+            "Elimina tutti i segnaposto",
+            "Punti utili lungo il percorso (fontane, rifugi, bar, officine…)"
         )
         MaterialAlertDialogBuilder(ctx)
             .setTitle("Segnaposto")
@@ -228,6 +240,11 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
                                     act.saveToFile("Segnaposto SirJoe MTB.gpx", TrackIO.writeWaypointsGpx(list))
                                 }
                                 .show()
+                    }
+                    5 -> {
+                        val pts = PlannerState.allPoints()
+                        if (pts.size < 2) toast("Crea prima un percorso")
+                        else tools.askPoiTypes(Track("Percorso", pts)) { list -> tools.drawPois(list) }
                     }
                     4 -> if (n > 0) MaterialAlertDialogBuilder(ctx)
                         .setTitle("Eliminare tutti i $n segnaposto?")
@@ -336,6 +353,100 @@ class PlannerFragment : Fragment(R.layout.fragment_planner) {
 
     fun applyBaseMap() {
         if (isAdded && view != null) MapStyle.apply(requireContext(), map)
+    }
+
+    // --------------------------------------------------------- anello automatico
+
+    private fun autoLoop() {
+        val ctx = requireContext()
+        val d = resources.displayMetrics.density
+        fun px(v: Int) = (v * d).toInt()
+        val km = EditText(ctx).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            hint = "Lunghezza in km (es. 25)"
+            setText("25")
+        }
+        val up = EditText(ctx).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            hint = "Dislivello in metri (facoltativo, es. 700)"
+        }
+        val dirs = arrayOf("Qualsiasi direzione", "Nord", "Nord-Est", "Est", "Sud-Est", "Sud", "Sud-Ovest", "Ovest", "Nord-Ovest")
+        val dirSpinner = android.widget.Spinner(ctx).apply {
+            adapter = android.widget.ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, dirs)
+        }
+        val here = RideRepository.location.value
+        val starts = if (here != null) arrayOf("Dalla mia posizione", "Dal centro della mappa (mirino)") else arrayOf("Dal centro della mappa (mirino)")
+        val startSpinner = android.widget.Spinner(ctx).apply {
+            adapter = android.widget.ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, starts)
+        }
+        val box = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(px(20), px(8), px(20), 0)
+            addView(km); addView(up); addView(startSpinner); addView(dirSpinner)
+            addView(TextView(ctx).apply {
+                text = "Tipo di percorso: " + Prefs.plannerProfile(ctx).label + " (cambialo con il pulsante del tipo di percorso).
+Serve Internet: il calcolo usa il server BRouter."
+                textSize = 13f
+                setPadding(0, px(8), 0, 0)
+            })
+        }
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Anello automatico")
+            .setView(box)
+            .setPositiveButton("Calcola") { _, _ ->
+                val lengthKm = km.text.toString().replace(',', '.').toDoubleOrNull()
+                if (lengthKm == null || lengthKm < 3 || lengthKm > 200) {
+                    toast("Lunghezza tra 3 e 200 km"); return@setPositiveButton
+                }
+                val start = if (here != null && startSpinner.selectedItemPosition == 0) TrackPoint(here.latitude, here.longitude)
+                else (map.mapCenter as GeoPoint).let { TrackPoint(it.latitude, it.longitude) }
+                val bearing = dirSpinner.selectedItemPosition.takeIf { it > 0 }?.let { (it - 1) * 45.0 }
+                val req = LoopPlanner.Request(
+                    start, lengthKm * 1000, up.text.toString().toDoubleOrNull(), bearing, candidates = 3
+                )
+                runLoop(req)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun runLoop(req: LoopPlanner.Request) {
+        if (working) return
+        working = true
+        busy.visibility = View.VISIBLE
+        val profile = Prefs.plannerProfile(requireContext())
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val loops = LoopPlanner.plan(req, { pts -> BRouterClient.routeVia(pts, profile) }) { i, n ->
+                    modeTv.text = "Calcolo anello: tentativo $i di $n…"
+                }
+                val names = arrayOf("N", "NE", "E", "SE", "S", "SO", "O", "NO")
+                val labels = loops.mapIndexed { i, l ->
+                    "${i + 1}. ${Format.distanceKm(l.lengthM)} km" +
+                        (l.ascentM?.let { " · ↗ ${Format.meters(it)} m" } ?: "") +
+                        " · verso " + names[(((l.bearing + 22.5) % 360) / 45).toInt() % 8]
+                }.toTypedArray()
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Anelli trovati: scegline uno")
+                    .setItems(labels) { _, w ->
+                        val l = loops[w]
+                        PlannerState.clear()
+                        PlannerState.addFirst(req.start)
+                        PlannerState.addSegment(l.points.last(), l.points)
+                        PlannerState.name = "Anello ${Format.distanceKm(l.lengthM)} km"
+                        zoomToRoute()
+                        toast("Anello caricato: puoi modificarlo, salvarlo o seguirlo")
+                    }
+                    .setNegativeButton("Chiudi", null)
+                    .show()
+            } catch (e: Exception) {
+                toast("Anello non calcolato (serve Internet): ${e.message}")
+            } finally {
+                working = false
+                busy.visibility = View.GONE
+                updateModeText()
+            }
+        }
     }
 
     override fun onResume() {
