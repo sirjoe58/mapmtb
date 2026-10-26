@@ -16,9 +16,9 @@ object TrackStorage {
             ?.sortedByDescending { it.lastModified() }
             ?: emptyList()
 
-    fun saveRecorded(ctx: Context, points: List<TrackPoint>): File {
+    fun saveRecorded(ctx: Context, points: List<TrackPoint>, waypoints: List<Placemark> = emptyList()): File {
         val name = "Uscita " + SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.ITALY).format(Date())
-        return save(ctx, Track(name, points))
+        return save(ctx, Track(name, points, waypoints))
     }
 
     fun save(ctx: Context, track: Track): File {
@@ -41,7 +41,14 @@ object TrackStorage {
     }
 
     fun load(file: File): Track {
-        val t = TrackIO.parse(file.readBytes(), file.name)
-        return t.copy(name = file.nameWithoutExtension)
+        val bytes = file.readBytes()
+        val t = TrackIO.parse(bytes, file.name)
+        // segnaposto salvati nello stesso file (es. segnalazioni fatte durante l'uscita)
+        val wpts = try {
+            TrackIO.parseWaypoints(bytes)
+        } catch (_: Exception) {
+            emptyList()
+        }
+        return t.copy(name = file.nameWithoutExtension, waypoints = wpts)
     }
 }

@@ -10,11 +10,37 @@ data class TrackPoint(
     val lat: Double,
     val lon: Double,
     val ele: Double? = null,
-    val time: Long? = null
+    val time: Long? = null,
+    /** Battito cardiaco (bpm), cadenza (giri/min) e potenza (W) dai sensori Bluetooth. */
+    val hr: Int? = null,
+    val cad: Int? = null,
+    val power: Int? = null
 )
 
-/** Una traccia o un percorso, con nome. */
-data class Track(val name: String, val points: List<TrackPoint>)
+/** Una traccia o un percorso, con nome; [waypoints] = segnaposto salvati nello stesso file (es. segnalazioni). */
+data class Track(val name: String, val points: List<TrackPoint>, val waypoints: List<Placemark> = emptyList())
+
+/** Ultimi valori dei sensori Bluetooth (null = sensore assente o dato vecchio). */
+data class SensorValues(
+    val hr: Int? = null,
+    val cadence: Int? = null,
+    val power: Int? = null,
+    /** Stato di collegamento per tipo di sensore, es. "hr" -> "collegato". */
+    val status: Map<String, String> = emptyMap()
+)
+
+/** Stato del collegamento SOS con il telefono in tasca. */
+data class SosLinkState(
+    val enabled: Boolean = false,
+    val connected: Boolean = false,
+    val peerName: String? = null,
+    val lastOkAt: Long = 0L,
+    /** Conto alla rovescia in corso (secondi rimasti), null se nessuno. */
+    val countdown: Int? = null,
+    /** SOS inviato e non ancora annullato. */
+    val sosSent: Boolean = false,
+    val message: String? = null
+)
 
 /** Statistiche dell'uscita in corso. */
 data class RideStats(
@@ -54,6 +80,25 @@ object RideRepository {
     private val points = ArrayList<TrackPoint>()
     private val _pointCount = MutableStateFlow(0)
     val pointCount: StateFlow<Int> = _pointCount.asStateFlow()
+
+    private val _sensors = MutableStateFlow(SensorValues())
+    val sensors: StateFlow<SensorValues> = _sensors.asStateFlow()
+    fun updateSensors(v: SensorValues) {
+        _sensors.value = v
+    }
+
+    private val _sos = MutableStateFlow(SosLinkState())
+    val sos: StateFlow<SosLinkState> = _sos.asStateFlow()
+    fun updateSos(v: SosLinkState) {
+        _sos.value = v
+    }
+
+    /** Punti utili del percorso caricato (cercati prima e salvati sul telefono). */
+    private val _pois = MutableStateFlow<List<Poi>>(emptyList())
+    val pois: StateFlow<List<Poi>> = _pois.asStateFlow()
+    fun setPois(list: List<Poi>) {
+        _pois.value = list
+    }
 
     fun updateStats(s: RideStats) {
         _stats.value = s

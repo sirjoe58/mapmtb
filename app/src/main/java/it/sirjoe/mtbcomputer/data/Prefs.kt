@@ -94,6 +94,60 @@ object Prefs {
     fun offlineMapPath(ctx: Context): String? = p(ctx).getString("offline_map", null)
     fun setOfflineMapPath(ctx: Context, v: String?) = p(ctx).edit().putString("offline_map", v).apply()
 
+    // ------------------------------------------------------------ SOS col telefono in tasca
+
+    const val SOS_ROLE_OFF = "off"
+    /** Telefono sul manubrio: riconosce le cadute e manda l'SOS al telefono in tasca. */
+    const val SOS_ROLE_BIKE = "bike"
+    /** Telefono in tasca: riceve l'SOS via Bluetooth e manda gli SMS. */
+    const val SOS_ROLE_POCKET = "pocket"
+
+    fun sosRole(ctx: Context): String = p(ctx).getString("sos_role", SOS_ROLE_OFF) ?: SOS_ROLE_OFF
+    fun setSosRole(ctx: Context, v: String) = p(ctx).edit().putString("sos_role", v).apply()
+
+    /** Indirizzo Bluetooth del telefono in tasca (scelto tra quelli accoppiati). */
+    fun sosPeer(ctx: Context): String? = p(ctx).getString("sos_peer", null)
+    fun sosPeerName(ctx: Context): String? = p(ctx).getString("sos_peer_name", null)
+    fun setSosPeer(ctx: Context, address: String?, name: String?) =
+        p(ctx).edit().putString("sos_peer", address).putString("sos_peer_name", name).apply()
+
+    fun sosSensitivity(ctx: Context): FallDetector.Sensitivity = FallDetector.Sensitivity.of(p(ctx).getString("sos_sens", null))
+    fun setSosSensitivity(ctx: Context, v: FallDetector.Sensitivity) = p(ctx).edit().putString("sos_sens", v.id).apply()
+
+    /** Secondi del conto alla rovescia prima di mandare l'SOS. */
+    fun sosCountdown(ctx: Context) = p(ctx).getInt("sos_countdown", 60)
+    fun setSosCountdown(ctx: Context, v: Int) = p(ctx).edit().putInt("sos_countdown", v).apply()
+
+    /** Numeri a cui il telefono in tasca manda l'SMS (separati da virgola). */
+    fun sosContacts(ctx: Context): List<String> =
+        (p(ctx).getString("sos_contacts", "") ?: "").split(',', ';', '\n').map { it.trim() }.filter { it.length >= 3 }
+    fun setSosContacts(ctx: Context, v: List<String>) = p(ctx).edit().putString("sos_contacts", v.joinToString(",")).apply()
+
+    /** Nome del ciclista nel messaggio SMS. */
+    fun sosName(ctx: Context): String = p(ctx).getString("sos_name", "") ?: ""
+    fun setSosName(ctx: Context, v: String) = p(ctx).edit().putString("sos_name", v.trim()).apply()
+
+    // ------------------------------------------------------------ sensori Bluetooth
+
+    fun sensorAddress(ctx: Context, kind: BleParse.Kind): String? = p(ctx).getString("ble_" + kind.id, null)
+    fun sensorName(ctx: Context, kind: BleParse.Kind): String? = p(ctx).getString("ble_name_" + kind.id, null)
+    fun setSensor(ctx: Context, kind: BleParse.Kind, address: String?, name: String?) =
+        p(ctx).edit().putString("ble_" + kind.id, address).putString("ble_name_" + kind.id, name).apply()
+
+    /** Frequenza cardiaca massima per le zone. */
+    fun maxHr(ctx: Context) = p(ctx).getInt("max_hr", 180)
+    fun setMaxHr(ctx: Context, v: Int) = p(ctx).edit().putInt("max_hr", v).apply()
+
+    // ------------------------------------------------------------ avvisi
+
+    /** Avviso "rientra prima del buio". */
+    fun sunsetAlert(ctx: Context) = p(ctx).getBoolean("sunset_alert", true)
+    fun setSunsetAlert(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("sunset_alert", v).apply()
+
+    /** Avvisi vocali dei punti utili lungo il percorso (fontanelle, rifugi...). */
+    fun poiVoice(ctx: Context) = p(ctx).getBoolean("poi_voice", true)
+    fun setPoiVoice(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("poi_voice", v).apply()
+
     // Pagina "Crea"
     fun plannerRouting(ctx: Context) = p(ctx).getBoolean("planner_routing", true)
     fun setPlannerRouting(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("planner_routing", v).apply()
