@@ -19,7 +19,23 @@ Ciclocomputer e navigatore per mountain bike su Android: mappa a tutto schermo, 
 | **Percorsi** | Archivio di uscite e percorsi. Importa, esporta, rinomina, modifica nella pagina Crea, condividi. Esporta tutto in un archivio ZIP. Mappe offline. |
 | **Percorsi in tutti i sensi** | Un percorso caricato si segue in qualsiasi senso di marcia e partendo da qualsiasi punto: l'app capisce da sola se lo fai al contrario (freccia, distanza al traguardo e avvisi salite si adeguano). Dal menu mappe o da *Percorsi* puoi mostrare sulla mappa tutte le uscite già registrate. |
 | **Fantasma e salite** | *Sfida il fantasma* (dal menu di un'uscita registrata): un'icona 👻 rifà la tua uscita precedente in tempo reale e la voce ti dice ogni km se sei avanti o indietro. Sui percorsi con quote l'app avvisa prima delle salite: "tra 200 metri salita al 9 per cento per 800 metri". |
-| **Info** | Impostazioni, collegamento a Strava, avvertenze, crediti. |
+| **Info** | Impostazioni, SOS, sensori Bluetooth, avvisi, collegamento a Strava, mappa satellitare, avvertenze, crediti. |
+
+## Novità della 2.0
+
+Dal pulsante **⋯** sulla mappa (Strumenti) e dalle pagine Crea, Dati e Info:
+
+| Funzione | Cosa fa |
+| --- | --- |
+| **SOS col telefono in tasca** | Il telefono sul manubrio (anche senza SIM) riconosce una probabile caduta: urto forte mentre pedali, poi fermo per 25 secondi. Suona e mostra un conto alla rovescia (30–120 s) con il grande pulsante *ANNULLA: STO BENE*. Se non annulli, avvisa via **Bluetooth** il telefono che hai in tasca, che manda un **SMS con la posizione** (link a Google Maps) ai contatti scelti, la aggiorna ogni 5 minuti e mostra i pulsanti **Apri 112 Where ARE U** e **Chiama il 112**. Se il collegamento si interrompe durante un allarme, l'SOS parte comunque dal telefono in tasca. Annullando dopo l'invio, i contatti ricevono un SMS di falso allarme. C'è anche l'**SOS manuale** (Strumenti → *Invia SOS ora*). |
+| **Rientro prima del buio** | Calcola l'ora del tramonto (anche offline) e il tempo che ti serve per arrivare al traguardo o tornare alla partenza con la tua velocità media; se non ce la fai, avvisa a voce e sul banner della mappa. |
+| **Riportami alla partenza** | Strumenti → *Riportami alla partenza*: ripercorre al contrario la strada fatta (senza Internet) oppure calcola la strada più breve sui sentieri (con Internet). |
+| **Anello automatico** | Pagina Crea → pulsante anello → *Crea un anello automatico*: scegli km, dislivello facoltativo, partenza e direzione; propone fino a 3 anelli sui sentieri (BRouter). |
+| **Punti utili lungo il percorso** | Fontanelle, sorgenti, rifugi, bar, officine bici e panorami da OpenStreetMap entro 250 m dal percorso; salvati sul telefono per l'uso offline, visibili sulla mappa, sul banner ("💧 Fontanella tra 3,2 km"), nella pagina Dati e con avviso vocale a 300 m. |
+| **Sensori Bluetooth** | Fascia cardio, cadenza e potenza (standard Bluetooth LE): battito, zona cardio, cadenza e watt nella pagina Dati, salvati nel GPX (Strava, Garmin Connect li leggono). |
+| **Segnalazioni con foto** | Strumenti → *Segnala un problema*: albero caduto, frana, fango, sentiero chiuso, pericolo; foto e nota restano sul punto, si vedono sulla mappa, si condividono e finiscono nella traccia dell'uscita come segnaposto. |
+
+**Preparare l'SOS** (una volta): installa SirJoe MTB su tutti e due i telefoni e accoppiali nelle impostazioni Bluetooth. Sul telefono in tasca: *Info → SOS → Ruolo: In tasca*, aggiungi i contatti e invia l'SMS di prova. Sul manubrio: *Info → SOS → Ruolo: Sul manubrio*, scegli il telefono in tasca e *Prova il collegamento*. Su Huawei e Xiaomi togli le restrizioni batteria all'app su entrambi i telefoni.
 
 ## Mappe offline
 

@@ -19,8 +19,8 @@ object Prefs {
     private fun p(ctx: Context): SharedPreferences =
         ctx.applicationContext.getSharedPreferences(NAME, Context.MODE_PRIVATE)
 
-    fun disclaimerAccepted(ctx: Context) = p(ctx).getBoolean("disclaimer_v1", false)
-    fun setDisclaimerAccepted(ctx: Context) = p(ctx).edit().putBoolean("disclaimer_v1", true).apply()
+    fun disclaimerAccepted(ctx: Context) = p(ctx).getBoolean("disclaimer_v2", false)
+    fun setDisclaimerAccepted(ctx: Context) = p(ctx).edit().putBoolean("disclaimer_v2", true).apply()
 
     fun autoPause(ctx: Context) = p(ctx).getBoolean("auto_pause", true)
     fun setAutoPause(ctx: Context, v: Boolean) = p(ctx).edit().putBoolean("auto_pause", v).apply()
