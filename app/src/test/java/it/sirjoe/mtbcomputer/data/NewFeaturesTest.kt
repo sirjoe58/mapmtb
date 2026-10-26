@@ -217,6 +217,28 @@ class NewFeaturesTest {
         assertEquals(PoiType.WATER, back!!.first.type)
     }
 
+    @Test
+    fun sparseRouteProjection() {
+        // percorso in linea retta con due soli punti (10 km): la fontanella a metà, 50 m a lato, va tenuta
+        val route = listOf(TrackPoint(45.0, 10.0), TrackPoint(45.09, 10.0))
+        val json = """{"elements":[{"type":"node","id":1,"lat":45.045,"lon":10.00064,"tags":{"amenity":"drinking_water"}}]}"""
+        val list = Pois.parse(json, route, setOf(PoiType.WATER))
+        assertEquals(1, list.size)
+        assertTrue("along ${list[0].along}", list[0].along in 4900.0..5100.0)
+        assertTrue("off ${list[0].offM}", list[0].offM in 40.0..60.0)
+    }
+
+    @Test
+    fun boxesCoverRoute() {
+        val route = (0..300).map { TrackPoint(45.0 + it * 0.0009, 10.0) } // ~30 km verso Nord
+        val b = Pois.boxes(route)
+        assertTrue("riquadri ${b.size}", b.size in 4..5)
+        assertTrue(b.first().s < 45.0 && b.last().n > 45.27)
+        val q = Pois.query(route, setOf(PoiType.WATER))
+        assertTrue(q.contains("(4"))
+        assertFalse(q.contains("around"))
+    }
+
     // ------------------------------------------------------------ protocollo SOS
 
     @Test
