@@ -46,6 +46,16 @@ SirJoe MTB è un'app gratuita e open source per USO PERSONALE e non commerciale.
 • Per l'uso offline importa mappe che hai il diritto di usare: le mappe OpenAndroMaps e lo stile Elevate sono gratuiti per uso personale secondo le condizioni del loro sito; i file MBTiles devono essere creati da te o avere una licenza che lo consente. Non ridistribuire le mappe scaricate.
 • Tracce scaricate da Strava, Komoot, Wikiloc o altri siti restano soggette alle condizioni di quei servizi e ai diritti dei loro autori: importale solo per uso personale.
 
-8. NESSUNA GARANZIA
+8. SOS, CADUTE E AVVISI
+• Il riconoscimento delle cadute è una stima basata su accelerometro e GPS: può non accorgersi di una caduta o scattare senza motivo. Non è un dispositivo di soccorso certificato e non sostituisce le normali precauzioni.
+• L'SOS funziona solo se il telefono in tasca è acceso, ha la SIM e il campo per gli SMS, ha il Bluetooth acceso, l'app SirJoe MTB con la ricezione SOS attiva e si trova vicino al telefono sul manubrio (pochi metri). Le impostazioni di risparmio batteria possono bloccarlo: provalo prima di partire.
+• Gli SMS di aiuto vanno ai contatti che scegli tu, non al 112. L'app non chiama il 112 da sola e non può avviare l'app 112 Where ARE U: in emergenza aprila tu o chiama il 112 (dal manubrio il 112 si chiama anche senza SIM, se c'è copertura).
+• Avvisa le persone che hai messo come contatti e fai una prova con l'SMS di prova. Gli SMS costano secondo il tuo piano tariffario.
+• Se annulli dopo che l'SOS è partito, i contatti ricevono un SMS di falso allarme.
+• Punti utili (fontanelle, sorgenti, rifugi, bar, officine) e anelli automatici vengono da OpenStreetMap e BRouter: possono essere sbagliati, chiusi o non adatti alla bici. L'acqua di una sorgente o di una fontanella non è garantita potabile.
+• L'avviso di rientro prima del buio è una stima basata sulla tua velocità media: porta sempre una luce.
+• Le segnalazioni con foto restano sul telefono; condividile solo se lo vuoi e senza riprendere persone riconoscibili.
+
+9. NESSUNA GARANZIA
 • L'app è fornita "così com'è", senza garanzie di alcun tipo, come previsto dalla licenza MIT. L'autore non è responsabile per danni, incidenti, sanzioni o smarrimenti derivanti dal suo uso.
 • Chi usa l'app lo fa sotto la propria responsabilità.
