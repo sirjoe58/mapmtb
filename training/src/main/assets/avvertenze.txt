@@ -1,0 +1,12 @@
+SirJoe Training è un'app gratuita per USO PERSONALE e non commerciale. Usandola accetti queste avvertenze.
+
+• NON È UN DISPOSITIVO MEDICO. Battito, zone e consigli servono solo a orientare l'allenamento e possono essere sbagliati (fascia spostata o asciutta, interferenze, FC max stimata).
+• Prima di iniziare un programma di allenamento, soprattutto dopo i 40 anni o se hai disturbi cardiaci, pressione alta o prendi farmaci, chiedi al tuo medico e fai una visita medico-sportiva. Usa la FC max misurata, non la stima dall'età.
+• Se senti dolore al petto, fiato corto anomalo, capogiri, palpitazioni o malessere FERMATI SUBITO, qualunque cosa dica l'app. In emergenza chiama il 112.
+• Gli avvisi (voce, bip, vibrazione, colore) possono arrivare in ritardo o non arrivare. Guarda il telefono solo da fermo o su tratti sicuri: in bici l'attenzione va alla strada e al sentiero.
+• Percorri solo strade e sentieri dove la bici è consentita e rispetta il codice della strada.
+• I dati restano sul telefono. Vengono inviati solo al tuo PC nella rete Wi-Fi di casa, quando lo chiedi tu.
+• ANT+ Android SDK © Garmin Canada Inc., distribuito secondo la ANT+ Shared Source License. ANT+ è un marchio di Garmin. Questa app non è prodotta né approvata da Garmin o Decathlon.
+• L'app è fornita "così com'è", senza garanzie (licenza MIT). Chi la usa lo fa sotto la propria responsabilità.
+
+BY SIRJOE

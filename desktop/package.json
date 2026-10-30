@@ -1,7 +1,7 @@
 {
   "name": "sirjoe-mtb-planner",
   "productName": "SirJoe MTB Planner",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "Pianificatore di percorsi MTB per Windows e Mac, compagno dell'app Android SirJoe MTB",
   "main": "main.js",
   "author": "SirJoe",
