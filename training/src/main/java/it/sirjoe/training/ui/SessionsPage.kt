@@ -47,7 +47,7 @@ class SessionsPage(act: MainActivity) : Page(act) {
         Ui.add(r1, Ui.button(ctx, "📷  Inquadra QR") { scan() }, 0, weight = 1f)
         Ui.add(r1, Ui.button(ctx, "🔢  PIN") { pinDialog() }, 8, weight = 1f)
         Ui.add(card, r1, 10)
-        Ui.add(card, Ui.button(ctx, "⬇  Scarica programmi e FC max dal PC", Ui.BLUE) { download() }, 8)
+        Ui.add(card, Ui.button(ctx, "⇅  Sincronizza programmi e FC max col PC", Ui.BLUE) { download() }, 8)
         Ui.add(card, Ui.button(ctx, "⬆  Invia al PC le uscite nuove", Ui.GREEN) { sendAll() }, 8)
         Ui.add(card, pcLog, 8)
         col.addView(card, Ui.lp())
@@ -131,17 +131,27 @@ class SessionsPage(act: MainActivity) : Page(act) {
         val pc = LinkClient.last(ctx) ?: return act.toast("Prima collega il PC (QR o PIN)")
         if (busy) return
         busy = true
-        log("Scarico i programmi…")
+        log("Sincronizzo i programmi…")
         act.lifecycleScope.launch {
             try {
+                // 1) i programmi fatti o modificati sul telefono vanno al PC
+                val mine = withContext(Dispatchers.IO) { Storage.mine(ctx) }
+                var sent = 0
+                if (mine.isNotEmpty()) sent = LinkClient.uploadWorkouts(pc, mine)
+                // 2) il telefono riceve l'elenco completo del PC (che ora li contiene)
                 val r = LinkClient.training(pc)
-                withContext(Dispatchers.IO) { Storage.savePcWorkouts(ctx, r.workouts) }
+                withContext(Dispatchers.IO) {
+                    Storage.savePcWorkouts(ctx, r.workouts)
+                    val onPc = r.workouts.map { it.id }.toSet()
+                    for (m in mine) if (m.id in onPc) Storage.deleteMine(ctx, m.id)
+                }
                 val extra = ArrayList<String>()
                 if (r.maxHr in 100..230) {
                     Prefs.setMaxHr(ctx, r.maxHr); extra += "FC max ${r.maxHr}"
                 }
                 if (r.age in 10..100) Prefs.setAge(ctx, r.age)
-                log("✔ ${r.workouts.size} programmi ricevuti" + if (extra.isNotEmpty()) " · " + extra.joinToString() else "")
+                log((if (sent > 0) "✔ $sent programmi inviati al PC\n" else "") +
+                    "✔ ${r.workouts.size} programmi dal PC" + if (extra.isNotEmpty()) " · " + extra.joinToString() else "")
                 act.toast("Programmi aggiornati: li trovi nella pagina Allenamento")
             } catch (e: Exception) {
                 log("✖ " + (e.message ?: "errore"))

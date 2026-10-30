@@ -62,7 +62,14 @@ const Training = {
   sessionFile: null,
 
   workouts() { return store.get('trWorkouts', []); },
-  saveWorkouts(list) { store.set('trWorkouts', list); },
+  saveWorkouts(list) {
+    store.set('trWorkouts', list);
+    this.offer();
+  },
+  /** aggiorna i programmi offerti al telefono (se la finestra SirJoe Link è aperta) */
+  offer() {
+    if (window.sirjoe && window.sirjoe.link && window.sirjoe.link.training) window.sirjoe.link.training(this.payload());
+  },
   profile() { return store.get('trProfile', { age: 0, maxHr: 0 }); },
   maxHr() {
     const p = this.profile();
@@ -105,6 +112,7 @@ const Training = {
     const age = parseInt($('trAge').value, 10) || 0;
     const maxHr = parseInt($('trMax').value, 10) || 0;
     store.set('trProfile', { age: age >= 10 && age <= 100 ? age : 0, maxHr: maxHr >= 100 && maxHr <= 230 ? maxHr : 0 });
+    this.offer();
     this.renderProfile();
     this.renderList();
   },
@@ -141,13 +149,130 @@ const Training = {
     }
   },
 
-  addTemplates() {
-    const have = new Set(this.workouts().map((w) => w.name));
-    const add = TR_TEMPLATES.filter((t) => !have.has(t.name)).map((t, i) => ({ ...JSON.parse(JSON.stringify(t)), id: 'w' + Date.now() + i }));
-    if (!add.length) return toast('Gli esempi sono già nell\'elenco');
-    this.saveWorkouts([...this.workouts(), ...add]);
+  /** piani pronti: esempi base + piani completi (plans.js, uguali all'app) */
+  plans() {
+    return [{ id: 'esempi', name: 'Esempi base', note: 'Quattro programmi singoli: fondo lento, agilità, salite in zona 3, recupero attivo.', workouts: TR_TEMPLATES.map((t, i) => ({ ...t, id: 'base-' + i })) },
+      ...(typeof TR_PLANS !== 'undefined' ? TR_PLANS : [])];
+  },
+
+  showPlans() {
+    const box = $('planChoices');
+    box.innerHTML = '';
+    for (const p of this.plans()) {
+      const d = document.createElement('div');
+      d.className = 'plan-card';
+      d.innerHTML = `<b></b><p class="small"></p><ul class="small"></ul>${p.calendar ? '<details><summary>Calendario</summary><ol class="small cal"></ol></details>' : ''}
+        <button type="button" class="btn primary">➕ Aggiungi ${p.workouts.length} programmi</button>`;
+      d.querySelector('b').textContent = p.name;
+      d.querySelector('p').textContent = p.note;
+      d.querySelector('ul').innerHTML = p.workouts.map((w) => `<li>${esc(w.name)} · ${Math.round(this.total(w) / 60)} min</li>`).join('');
+      if (p.calendar) d.querySelector('.cal').innerHTML = p.calendar.map((c) => `<li>${esc(c)}</li>`).join('');
+      d.querySelector('button').addEventListener('click', () => { this.addPlan(p); $('planDialog').close(); });
+      box.appendChild(d);
+    }
+    $('planDialog').showModal();
+  },
+
+  addPlan(p) {
+    const list = this.workouts();
+    const have = new Set(list.map((w) => w.name));
+    let n = 0;
+    p.workouts.forEach((w, i) => {
+      if (have.has(w.name)) return;
+      list.push({ ...JSON.parse(JSON.stringify(w)), id: (p.id === 'esempi' ? 'w' + Date.now() + i : w.id) });
+      n++;
+    });
+    this.saveWorkouts(list);
+    if (p.calendar) {
+      const plans = store.get('trPlans', []).filter((x) => x.id !== p.id);
+      store.set('trPlans', [...plans, { id: p.id, name: p.name, note: p.note, calendar: p.calendar }]);
+    }
+    this.renderPlanBox();
     this.renderList();
-    toast(add.length + ' esempi aggiunti: modificali come vuoi');
+    toast(n ? n + ' programmi aggiunti: modificali come vuoi e inviali col 📲 SirJoe Link' : 'I programmi sono già nell\'elenco');
+  },
+
+  /** calendario dei piani aggiunti, sempre visibile nella scheda */
+  renderPlanBox() {
+    const plans = store.get('trPlans', []);
+    $('trPlanBox').innerHTML = plans.map((p) => `<div class="plan-card"><div class="row"><b>${esc(p.name)}</b>
+      <button type="button" class="btn small danger" data-id="${esc(p.id)}" title="Togli il calendario (i programmi restano)">✕</button></div>
+      <ol class="small cal">${p.calendar.map((c) => `<li>${esc(c)}</li>`).join('')}</ol></div>`).join('');
+    $('trPlanBox').querySelectorAll('button[data-id]').forEach((b) => b.addEventListener('click', () => {
+      store.set('trPlans', store.get('trPlans', []).filter((x) => x.id !== b.dataset.id));
+      this.renderPlanBox();
+    }));
+  },
+
+  /** programmi modificati o creati sul telefono: sostituiscono quelli con lo stesso id */
+  mergeFromPhone(list) {
+    const cur = this.workouts();
+    let n = 0;
+    for (const w of list) {
+      const clean = this.clean(w);
+      if (!clean) continue;
+      const i = cur.findIndex((x) => x.id === clean.id);
+      if (i >= 0) cur[i] = clean; else cur.push(clean);
+      n++;
+    }
+    this.saveWorkouts(cur);
+    this.renderList();
+    return n;
+  },
+
+  /** controlla e normalizza un programma letto da file o dal telefono */
+  clean(w) {
+    if (!w || !Array.isArray(w.steps) || !w.steps.length) return null;
+    const z = (v) => Math.max(0, Math.min(5, parseInt(v, 10) || 0));
+    const c = (v) => Math.max(0, Math.min(200, parseInt(v, 10) || 0));
+    return {
+      id: String(w.id || ('w' + Date.now() + Math.random().toString(36).slice(2, 6))),
+      name: String(w.name || 'Programma').slice(0, 80),
+      note: String(w.note || '').slice(0, 400),
+      steps: w.steps.map((s) => {
+        const zLo = z(s.zLo), cLo = c(s.cLo);
+        return {
+          label: String(s.label || 'Fase').slice(0, 40), sec: Math.max(10, Math.min(6 * 3600, parseInt(s.sec, 10) || 60)),
+          zLo, zHi: zLo ? Math.max(zLo, z(s.zHi)) : 0, cLo, cHi: cLo ? Math.max(cLo, c(s.cHi)) : 0, tip: String(s.tip || '').slice(0, 200)
+        };
+      })
+    };
+  },
+
+  async importFile(file) {
+    let j;
+    try { j = JSON.parse(await file.text()); } catch (e) { return toast('Il file non è un elenco di programmi (.json)'); }
+    // accetta: elenco di programmi, { workouts: [...] }, oppure elenco di piani
+    let list = Array.isArray(j) ? j : (j && j.workouts) || [];
+    if (list.length && list[0] && Array.isArray(list[0].workouts)) list = list.flatMap((p) => p.workouts);
+    const cur = this.workouts();
+    let n = 0;
+    for (const w of list) {
+      const clean = this.clean(w);
+      if (!clean) continue;
+      const i = cur.findIndex((x) => x.id === clean.id);
+      if (i >= 0) cur[i] = clean; else cur.push(clean);
+      n++;
+    }
+    if (!n) return toast('Nessun programma valido nel file');
+    this.saveWorkouts(cur);
+    this.renderList();
+    toast(n + ' programmi importati');
+  },
+
+  async exportFile() {
+    const list = this.workouts();
+    if (!list.length) return toast('Nessun programma da esportare');
+    const data = JSON.stringify({ app: 'SirJoe Training', format: 1, workouts: list }, null, 1);
+    if (window.sirjoe && window.sirjoe.saveFile) {
+      const p = await window.sirjoe.saveFile('Programmi SirJoe Training.json', data, 'json');
+      if (p) toast('Salvato: ' + p);
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+      a.download = 'Programmi SirJoe Training.json';
+      a.click();
+    }
   },
 
   /* ---------------------------------------------------------- editor */
@@ -376,7 +501,14 @@ const Training = {
   $('trAge').addEventListener('change', () => Training.saveProfile());
   $('trMax').addEventListener('change', () => Training.saveProfile());
   $('trNew').addEventListener('click', () => Training.edit(null));
-  $('trTemplates').addEventListener('click', () => Training.addTemplates());
+  $('trTemplates').addEventListener('click', () => Training.showPlans());
+  $('trImport').addEventListener('click', () => $('trImportFile').click());
+  $('trImportFile').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (f) Training.importFile(f);
+  });
+  $('trExport').addEventListener('click', () => Training.exportFile());
   $('woAdd').addEventListener('click', () => {
     const last = Training.draft.steps[Training.draft.steps.length - 1];
     Training.draft.steps.push(last ? { ...last, label: 'Nuova fase', tip: '' } : { label: 'Fase', sec: 300, zLo: 2, zHi: 2, cLo: 0, cHi: 0, tip: '' });
@@ -392,10 +524,12 @@ const Training = {
   });
   $('trRefresh').addEventListener('click', () => Training.renderSessions());
   document.querySelector('.tab[data-tab="training"]').addEventListener('click', () => {
+    Training.renderPlanBox();
     Training.renderProfile();
     Training.renderList();
     Training.renderSessions();
   });
+  Training.renderPlanBox();
   Training.renderProfile();
   Training.renderList();
 })();

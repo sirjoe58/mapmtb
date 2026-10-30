@@ -167,6 +167,7 @@ app.whenReady().then(() => {
   });
   ipcMain.handle('link-start', async (_e, outbox, training) => { link.setOutbox(outbox); link.setTraining(training); return link.start(); });
   ipcMain.handle('link-qr', (_e, address) => link.qrFor(address));
+  ipcMain.handle('link-training', (_e, t) => { link.setTraining(t); return true; });
   ipcMain.handle('link-stop', () => { link.stop(); return true; });
   ipcMain.handle('link-firewall', () => unlockFirewall());
   ipcMain.handle('rides-list', () => link.listRides());

@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('sirjoe', {
   link: {
     start: (outbox, training) => ipcRenderer.invoke('link-start', outbox, training),
     qr: (address) => ipcRenderer.invoke('link-qr', address),
+    training: (t) => ipcRenderer.invoke('link-training', t),
     stop: () => ipcRenderer.invoke('link-stop'),
     firewall: () => ipcRenderer.invoke('link-firewall'),
     onEvent: (cb) => ipcRenderer.on('link-event', (_e, ev) => cb(ev))

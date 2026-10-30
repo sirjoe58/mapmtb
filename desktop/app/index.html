@@ -182,11 +182,16 @@
       <div id="trMaxInfo" class="small"></div>
       <div id="trZones" class="zones"></div>
 
+      <div id="trPlanBox"></div>
+
       <h3>Programmi</h3>
       <div class="grid2">
         <button id="trNew" class="btn primary">➕ Nuovo programma</button>
-        <button id="trTemplates" class="btn">📋 Esempi pronti</button>
+        <button id="trTemplates" class="btn">📋 Piani pronti…</button>
+        <button id="trImport" class="btn" title="Carica programmi da un file .json (anche quelli esportati da un altro PC o Mac)">📂 Importa…</button>
+        <button id="trExport" class="btn" title="Salva tutti i programmi in un file .json">💾 Esporta…</button>
       </div>
+      <input id="trImportFile" type="file" accept=".json,application/json" hidden>
       <ul id="trList" class="list"></ul>
 
       <h3>Allenamenti ricevuti</h3>
@@ -332,6 +337,16 @@
     </form>
   </dialog>
 
+  <!-- piani pronti -->
+  <dialog id="planDialog">
+    <form method="dialog" class="dlg">
+      <h3>📋 Piani pronti</h3>
+      <p class="small">Aggiungono i programmi all'elenco: poi li puoi modificare come vuoi e inviarli al telefono con 📲 SirJoe Link.</p>
+      <div id="planChoices"></div>
+      <div class="dlg-actions"><span class="spacer"></span><button value="close" class="btn">Chiudi</button></div>
+    </form>
+  </dialog>
+
   <!-- dettaglio di un allenamento ricevuto -->
   <dialog id="sesDialog">
     <form method="dialog" class="dlg">
@@ -437,6 +452,7 @@
   <script src="routing.js"></script>
   <script src="app.js"></script>
   <script src="analysis.js"></script>
+  <script src="plans.js"></script>
   <script src="training.js"></script>
   <script src="link.js"></script>
   <script src="maps.js"></script>

@@ -137,6 +137,12 @@ Si collega al **Planner per PC** con lo stesso QR di SirJoe Link: dalla scheda *
 prepari i programmi (fasi, minuti, zone, cadenza, ripetute) e il profilo (età, FC max); il telefono li scarica
 e ti rimanda gli allenamenti fatti, che nel Planner si aprono con grafico di battito e cadenza e tempo nelle zone.
 
+**Piani pronti**: è incluso il *Piano dimagrimento 8 settimane* (8 programmi "Dimagrire 1…8" con calendario:
+3 uscite a settimana, quasi tutte in zona 2, tratti in zona 3 dalla terza settimana). Nel Planner si aggiunge da
+*Training → Piani pronti*; nell'app è già presente. I programmi si modificano sia sul PC sia sul telefono
+(✎ Modifica) e restano allineati con *Uscite → Sincronizza*. Dal Planner si possono anche esportare e importare
+in un file `.json` (per passarli tra Windows e Mac). I piani sono in `tools/piani/genera.py`, unica fonte per PC e app.
+
 Per l'ANT+ servono le app gratuite di Garmin dal Play Store **ANT+ Plugins Service** e **ANT Radio Service**
 (e **ANT USB Service** se il telefono non ha il chip ANT+ e usi una chiavetta USB).
 L'APK si trova in **Releases** come `SirJoeTraining-vX.Y.Z.apk`.

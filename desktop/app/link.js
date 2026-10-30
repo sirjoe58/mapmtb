@@ -98,6 +98,13 @@ const Link = {
       this.log('PIN cambiato (' + ev.reason + ')');
     }
     else if (ev.type === 'sent') this.log('➜ Inviato al telefono: ' + ev.name);
+    else if (ev.type === 'workouts') {
+      const n = Training.mergeFromPhone(ev.workouts || []);
+      this.log('⬇ Ricevuti dal telefono ' + n + ' programmi (scheda Training)');
+      toast('Programmi ricevuti dal telefono: ' + n);
+      // l'elenco aggiornato è subito disponibile per il telefono
+      if (window.sirjoe.link.training) window.sirjoe.link.training(Training.payload());
+    }
     else if (ev.type === 'training') this.log('➜ Inviati a SirJoe Training ' + ev.count + ' programmi di allenamento');
     else if (ev.type === 'session') {
       this.log('⬇ Ricevuto allenamento: ' + ev.name + ' (scheda Training)');

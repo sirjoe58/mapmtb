@@ -178,6 +178,25 @@ class TrainingTest {
         assertTrue(s.hasGps)
     }
 
+    // ------------------------------------------------------------ piani pronti (file condiviso col Planner)
+
+    @Test
+    fun piano_dimagrimento_valido() {
+        val arr = org.json.JSONArray(java.io.File("src/main/assets/piani.json").readText())
+        val plan = arr.getJSONObject(0)
+        val list = WorkoutJson.listFrom(plan.getJSONArray("workouts"), fromPc = false)
+        assertEquals(8, list.size)
+        assertEquals(8, plan.getJSONArray("calendar").length())
+        for (w in list) {
+            assertTrue(w.name, w.steps.all { it.hasHr && it.zoneHi <= 3 })
+            // ogni programma citato nel calendario esiste
+        }
+        val cal = (0 until 8).joinToString(" ") { plan.getJSONArray("calendar").getString(it) }
+        for (i in 1..8) assertTrue("Dimagrire $i nel calendario", cal.contains("Dimagrire $i"))
+        assertEquals(45 * 60, list[0].totalSeconds)
+        assertEquals(120 * 60, list[7].totalSeconds)
+    }
+
     // ------------------------------------------------------------ sensori Bluetooth
 
     @Test

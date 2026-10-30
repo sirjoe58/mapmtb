@@ -69,7 +69,7 @@ object LinkClient {
             }
             val stream = if (code in 200..299) c.inputStream else c.errorStream
             val bytes = stream?.use { it.readBytes() } ?: ByteArray(0)
-            if (code == 404) throw LinkError("il Planner sul PC è vecchio: aggiornalo alla versione 1.6 o successiva", false)
+            if (code == 404) throw LinkError("il Planner sul PC è vecchio: aggiornalo alla versione 1.7 o successiva", false)
             if (code !in 200..299) {
                 val msg = try {
                     JSONObject(String(bytes)).optString("error")
@@ -107,6 +107,17 @@ object LinkClient {
             maxHr = j.optInt("maxHr", 0),
             age = j.optInt("age", 0)
         )
+    }
+
+    /** Invia al PC i programmi creati o modificati sul telefono (finiscono nella scheda Training). */
+    suspend fun uploadWorkouts(pc: Pc, list: List<Workout>): Int = withContext(Dispatchers.IO) {
+        val bytes = JSONObject().put("workouts", WorkoutJson.listTo(list)).toString().toByteArray(Charsets.UTF_8)
+        val c = open(pc, "/workouts", "POST")
+        c.doOutput = true
+        c.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+        c.setFixedLengthStreamingMode(bytes.size)
+        c.outputStream.use { it.write(bytes) }
+        JSONObject(String(readBody(c))).optInt("count", list.size)
     }
 
     /** Invia un'uscita completa (JSON con battito e cadenza secondo per secondo). */
