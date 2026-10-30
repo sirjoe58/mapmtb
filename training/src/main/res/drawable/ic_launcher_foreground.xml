@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- cuore con linea del battito -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M54,78 C40,67 30,58 30,47 C30,40 35.5,35 42,35 C47,35 51,38 54,42 C57,38 61,35 66,35 C72.5,35 78,40 78,47 C78,58 68,67 54,78Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3.5"
+        android:pathData="M26,53 L42,53 L46,45 L52,62 L57,49 L60,53 L82,53" />
+</vector>

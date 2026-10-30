@@ -3,7 +3,7 @@ name: Compila APK
 on:
   push:
     branches: [ main ]
-    paths-ignore: [ 'desktop/**', '.github/workflows/desktop.yml' ]
+    paths-ignore: [ 'desktop/**', '.github/workflows/desktop.yml', 'training/**', '.github/workflows/training.yml' ]
     tags: [ 'v*' ]
   pull_request:
   workflow_dispatch:
@@ -29,7 +29,7 @@ jobs:
       - name: Test (formato FIT e funzioni)
         run: |
           set -o pipefail
-          gradle testDebugUnitTest --console=plain 2>&1 | tee build-log.txt
+          gradle :app:testDebugUnitTest --console=plain 2>&1 | tee build-log.txt
 
       - name: Verifica FIT con fitparse
         run: |
@@ -42,12 +42,12 @@ jobs:
       - name: Controllo compatibilità Android 6+
         run: |
           set -o pipefail
-          gradle lintDebug --console=plain 2>&1 | tee -a build-log.txt
+          gradle :app:lintDebug --console=plain 2>&1 | tee -a build-log.txt
 
       - name: Compila APK di debug
         run: |
           set -o pipefail
-          gradle assembleDebug --console=plain 2>&1 | tee -a build-log.txt
+          gradle :app:assembleDebug --console=plain 2>&1 | tee -a build-log.txt
 
       - name: Riassunto errori
         if: failure()

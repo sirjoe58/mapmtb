@@ -58,13 +58,19 @@ const Link = {
       li.querySelector('small').textContent = it.km + ' km' + (it.id === 'current' && state.places.length ? ' · ' + state.places.length + ' segnaposto' : '');
       $('linkOut').appendChild(li);
     }
+    const nw = Training.payload().workouts.length;
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="grow"><b></b><small></small></span>';
+    li.querySelector('b').textContent = '❤ Programmi di allenamento: ' + nw;
+    li.querySelector('small').textContent = 'per l\'app SirJoe Training (pagina Uscite → Scarica programmi)';
+    $('linkOut').appendChild(li);
     $('linkLog').innerHTML = '';
     $('linkQr').removeAttribute('src');
     $('linkAddr').textContent = 'Avvio…';
     $('linkDialog').showModal();
     this.open = true;
     try {
-      const r = await window.sirjoe.link.start(items);
+      const r = await window.sirjoe.link.start(items, Training.payload());
       $('linkQr').src = r.qr;
       this.port = r.port;
       this.pin = r.pin;
@@ -92,6 +98,12 @@ const Link = {
       this.log('PIN cambiato (' + ev.reason + ')');
     }
     else if (ev.type === 'sent') this.log('➜ Inviato al telefono: ' + ev.name);
+    else if (ev.type === 'training') this.log('➜ Inviati a SirJoe Training ' + ev.count + ' programmi di allenamento');
+    else if (ev.type === 'session') {
+      this.log('⬇ Ricevuto allenamento: ' + ev.name + ' (scheda Training)');
+      toast('Allenamento ricevuto: ' + ev.name);
+      Training.renderSessions();
+    }
     else if (ev.type === 'received') {
       this.log('⬇ Ricevuta uscita: ' + ev.name + ' (scheda Uscite)');
       toast('Uscita ricevuta dal telefono: ' + ev.name);

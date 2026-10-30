@@ -13,7 +13,7 @@ contextBridge.exposeInMainWorld('sirjoe', {
   saveFile: (name, data, ext) => ipcRenderer.invoke('save-file', { name, data, ext }),
   openFiles: () => ipcRenderer.invoke('open-files'),
   link: {
-    start: (outbox) => ipcRenderer.invoke('link-start', outbox),
+    start: (outbox, training) => ipcRenderer.invoke('link-start', outbox, training),
     qr: (address) => ipcRenderer.invoke('link-qr', address),
     stop: () => ipcRenderer.invoke('link-stop'),
     firewall: () => ipcRenderer.invoke('link-firewall'),
@@ -25,5 +25,11 @@ contextBridge.exposeInMainWorld('sirjoe', {
     remove: (file) => ipcRenderer.invoke('ride-delete', file),
     add: (name, text) => ipcRenderer.invoke('ride-add', name, text),
     folder: () => ipcRenderer.invoke('rides-folder')
+  },
+  sessions: {
+    list: () => ipcRenderer.invoke('sessions-list'),
+    read: (file) => ipcRenderer.invoke('session-read', file),
+    remove: (file) => ipcRenderer.invoke('session-delete', file),
+    folder: () => ipcRenderer.invoke('sessions-folder')
   }
 });

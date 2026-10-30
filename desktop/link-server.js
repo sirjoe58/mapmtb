@@ -15,6 +15,7 @@ const PREFERRED_PORT = 47891;
 const LAST_PORT = 47899; // porte provate in ordine (la regola del firewall copre 47891-47899)
 const QR_OPTS = { scale: 8, margin: 4, errorCorrectionLevel: 'L', color: { dark: '#000000', light: '#ffffff' } };
 const MAX_UPLOAD = 30 * 1024 * 1024;
+const MAX_SESSION = 20 * 1024 * 1024;
 
 /** Indirizzi IPv4 della rete locale, i più probabili per primi */
 function localAddresses() {
@@ -48,6 +49,10 @@ class LinkServer {
     this.onEvent = onEvent || (() => {});
     this.ridesDir = path.join(dataDir, 'uscite');
     fs.mkdirSync(this.ridesDir, { recursive: true });
+    // allenamenti ricevuti dall'app SirJoe Training (battito e cadenza secondo per secondo)
+    this.sessionsDir = path.join(dataDir, 'allenamenti');
+    fs.mkdirSync(this.sessionsDir, { recursive: true });
+    this.training = { workouts: [], maxHr: 0, age: 0 };
     this.token = this._loadToken();
     this.outbox = [];
     this.server = null;
@@ -77,6 +82,12 @@ class LinkServer {
   /** percorsi offerti al telefono: [{ id, name, km, gpx }] */
   setOutbox(items) {
     this.outbox = (items || []).map((it, i) => ({ id: String(it.id || i), name: it.name, km: it.km, gpx: it.gpx }));
+  }
+
+  /** programmi di allenamento e profilo offerti a SirJoe Training: { workouts, maxHr, age } */
+  setTraining(t) {
+    const w = (t && Array.isArray(t.workouts)) ? t.workouts : [];
+    this.training = { workouts: w, maxHr: Number(t && t.maxHr) || 0, age: Number(t && t.age) || 0 };
   }
 
   _send(res, code, body, type = 'application/json; charset=utf-8') {
@@ -118,7 +129,31 @@ class LinkServer {
     const remote = (req.socket.remoteAddress || '').replace('::ffff:', '');
     if (req.method === 'GET' && url.pathname === '/info') {
       this.onEvent({ type: 'connected', from: remote });
-      return this._send(res, 200, { app: 'SirJoe MTB Planner', name: this.pcName, items: this.outbox.length });
+      return this._send(res, 200, { app: 'SirJoe MTB Planner', name: this.pcName, items: this.outbox.length, workouts: this.training.workouts.length });
+    }
+    if (req.method === 'GET' && url.pathname === '/training') {
+      this.onEvent({ type: 'training', count: this.training.workouts.length, from: remote });
+      return this._send(res, 200, this.training);
+    }
+    if (req.method === 'POST' && url.pathname === '/sessions') {
+      const chunks = [];
+      let size = 0;
+      let tooBig = false;
+      req.on('data', (c) => {
+        size += c.length;
+        if (size > MAX_SESSION) { tooBig = true; req.destroy(); return; }
+        chunks.push(c);
+      });
+      req.on('end', () => {
+        if (tooBig) return;
+        let j;
+        try { j = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { return this._send(res, 400, { error: 'Dati non validi' }); }
+        if (!j || !Array.isArray(j.samples)) return this._send(res, 400, { error: 'Non è un allenamento di SirJoe Training' });
+        const file = this.addSession(j);
+        this.onEvent({ type: 'session', name: j.name || file, file, from: remote });
+        this._send(res, 200, { ok: true, name: j.name || file });
+      });
+      return;
     }
     if (req.method === 'GET' && url.pathname === '/outbox') {
       return this._send(res, 200, this.outbox.map(({ id, name, km }) => ({ id, name, km })));
@@ -224,5 +259,46 @@ class LinkServer {
     return path.basename(file);
   }
 }
+
+/* ------------------------------- allenamenti ricevuti da SirJoe Training */
+
+LinkServer.prototype.listSessions = function () {
+  return fs.readdirSync(this.sessionsDir)
+    .filter((f) => f.toLowerCase().endsWith('.json'))
+    .map((f) => {
+      const p = path.join(this.sessionsDir, f);
+      try {
+        const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+        return {
+          file: f, name: j.name || f, start: j.start || 0, seconds: j.seconds || 0, distanceM: j.distanceM || 0,
+          avgHr: j.avgHr, maxHrSeen: j.maxHrSeen, avgCad: j.avgCad, workout: j.workout, zoneSeconds: j.zoneSeconds || []
+        };
+      } catch (e) { return null; }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.start - a.start);
+};
+
+LinkServer.prototype._sessionPath = function (file) {
+  const p = path.join(this.sessionsDir, path.basename(String(file)));
+  if (!p.startsWith(this.sessionsDir)) throw new Error('Percorso non valido');
+  return p;
+};
+
+LinkServer.prototype.readSession = function (file) {
+  return JSON.parse(fs.readFileSync(this._sessionPath(file), 'utf8'));
+};
+
+LinkServer.prototype.deleteSession = function (file) {
+  fs.unlinkSync(this._sessionPath(file));
+};
+
+/** salva un allenamento: lo stesso (stessa ora di partenza) inviato due volte viene sostituito */
+LinkServer.prototype.addSession = function (j) {
+  const start = Number(j.start) || Date.now();
+  const file = 'allenamento-' + start + '.json';
+  fs.writeFileSync(path.join(this.sessionsDir, file), JSON.stringify(j));
+  return file;
+};
 
 module.exports = { LinkServer, localAddresses };

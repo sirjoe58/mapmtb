@@ -218,3 +218,42 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   background: var(--bg); color: inherit; cursor: pointer; padding: 1px 8px;
 }
 #profileBtn.on { background: var(--accent); color: #fff; }
+
+/* ---------- 1.6: scheda Training (SirJoe Training) ---------- */
+.tab { font-size: 12.5px; padding: 9px 1px; }
+.zones { display: grid; gap: 4px; margin: 8px 0 4px; }
+.zones .zone { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 6px; font-size: 12.5px; }
+.zones .zone span { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; }
+.list li.ses .zbar, .zbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 5px; }
+.zbar i { display: block; }
+#woDialog { width: min(1040px, 96vw); max-height: 94vh; }
+.steps-table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 13px; }
+.steps-table th { text-align: left; font-size: 11px; color: var(--muted); font-weight: 600; padding: 4px; }
+.steps-table td { padding: 3px 4px; vertical-align: middle; }
+.steps-table td:first-child { color: var(--muted); width: 22px; }
+.steps-table input, .steps-table select { padding: 6px 7px; }
+.steps-table .num { width: 64px; }
+.steps-table .pair { white-space: nowrap; }
+.steps-table .pair select, .steps-table .pair input { width: 58px; display: inline-block; margin-right: 3px; }
+.steps-table .acts { white-space: nowrap; }
+.steps-table .acts .btn { padding: 4px 8px; margin-left: 2px; }
+.repeat-box { display: flex; align-items: center; gap: 6px; margin-top: 8px; background: var(--bg); padding: 8px 10px; border-radius: 8px; }
+.repeat-box[hidden] { display: none; }
+.repeat-box .num { width: 64px; }
+#sesDialog { width: min(920px, 96vw); max-height: 94vh; }
+#sesChart { width: 100%; height: auto; background: var(--bg); border-radius: 8px; display: block; }
+.zone-bars .zrow { display: grid; grid-template-columns: 130px 1fr 60px 40px; gap: 8px; align-items: center; font-size: 12.5px; margin: 3px 0; }
+.zone-bars .track { height: 12px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+.zone-bars .track i { display: block; height: 100%; }
+.zone-bars b { text-align: right; font-variant-numeric: tabular-nums; }
+.zone-bars small { color: var(--muted); }
+.key { display: inline-block; width: 18px; height: 3px; vertical-align: middle; }
+.key.hr { background: #ff5252; }
+.key.cad { background: #42a5f5; }
+#side input[type=number], dialog input[type=number] {
+  width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); font: inherit;
+}
+.steps-table input[type=number] { padding: 6px 7px; }
+.steps-table .pair input[type=number] { width: 58px; }
+.steps-table input.num, .repeat-box input.num { width: 64px; }

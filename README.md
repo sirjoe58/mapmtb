@@ -122,6 +122,26 @@ Se il telefono non si collega, apri nel suo browser l'indirizzo di prova mostrat
 
 In alternativa resta il metodo classico: *Esporta file* in GPX, copialo sul telefono e importalo da **Percorsi → Importa**.
 
+## SirJoe Training (app separata per l'allenamento)
+
+App Android a parte (cartella `training/`), che si installa **accanto** a SirJoe MTB:
+
+- legge **fascia cardio** e **sensore di cadenza** in **ANT+** (es. fascia Garmin) o **Bluetooth** (es. Van Rysel sulla pedivella);
+- pagina **In bici**: battito grande colorato con la zona cardio, cadenza, velocità GPS, tempo e distanza;
+- pagina **Allenamento**: programma da seguire fase per fase, con zona, battiti e cadenza da tenere e come comportarsi;
+- **avvisi** con voce in italiano, bip, vibrazione e schermo colorato ("rallenta", "spingi", "pedala più agile", cambio fase);
+- avviso di sicurezza sempre attivo sopra il 95 % della FC max;
+- uscite salvate con battito e cadenza secondo per secondo (anche GPX per Strava).
+
+Si collega al **Planner per PC** con lo stesso QR di SirJoe Link: dalla scheda **Training** del Planner
+prepari i programmi (fasi, minuti, zone, cadenza, ripetute) e il profilo (età, FC max); il telefono li scarica
+e ti rimanda gli allenamenti fatti, che nel Planner si aprono con grafico di battito e cadenza e tempo nelle zone.
+
+Per l'ANT+ servono le app gratuite di Garmin dal Play Store **ANT+ Plugins Service** e **ANT Radio Service**
+(e **ANT USB Service** se il telefono non ha il chip ANT+ e usi una chiavetta USB).
+L'APK si trova in **Releases** come `SirJoeTraining-vX.Y.Z.apk`.
+Non è un dispositivo medico: leggi le avvertenze nell'app.
+
 ## Installazione
 
 1. Vai su **Releases**: ogni versione ha il suo file, ad esempio `SirJoeMTB-v1.4.1.apk` (in alternativa: **Actions** → ultima esecuzione → artefatto `SirJoeMTB-v…`).

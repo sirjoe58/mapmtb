@@ -20,6 +20,7 @@
       <button class="tab" data-tab="places">Segnaposto</button>
       <button class="tab" data-tab="rides">Uscite</button>
       <button class="tab" data-tab="library">Archivio</button>
+      <button class="tab" data-tab="training" title="Programmi e allenamenti per l'app SirJoe Training">Training</button>
       <button class="tab" data-tab="info">Info</button>
     </nav>
 
@@ -168,6 +169,34 @@
       </div>
     </section>
 
+    <!-- TRAINING: programmi per l'app SirJoe Training e allenamenti ricevuti -->
+    <section class="panel" id="tab-training">
+      <p class="hint">Qui prepari i <b>programmi di allenamento</b> per l'app <b>SirJoe Training</b> (fascia cardio e cadenza).
+        Il telefono li scarica con <b>📲 SirJoe Link</b> e ti rimanda gli allenamenti fatti, con battito e cadenza.</p>
+
+      <h3>Profilo</h3>
+      <div class="grid2">
+        <label class="field"><span>Età</span><input id="trAge" type="number" min="10" max="100" placeholder="anni"></label>
+        <label class="field"><span>FC max</span><input id="trMax" type="number" min="100" max="230" placeholder="stima"></label>
+      </div>
+      <div id="trMaxInfo" class="small"></div>
+      <div id="trZones" class="zones"></div>
+
+      <h3>Programmi</h3>
+      <div class="grid2">
+        <button id="trNew" class="btn primary">➕ Nuovo programma</button>
+        <button id="trTemplates" class="btn">📋 Esempi pronti</button>
+      </div>
+      <ul id="trList" class="list"></ul>
+
+      <h3>Allenamenti ricevuti</h3>
+      <div class="grid2">
+        <button id="trFolder" class="btn">Apri cartella</button>
+        <button id="trRefresh" class="btn">Aggiorna</button>
+      </div>
+      <ul id="trSessions" class="list"></ul>
+    </section>
+
     <!-- ARCHIVIO -->
     <section class="panel" id="tab-library">
       <p class="hint">I percorsi salvati restano su questo PC.</p>
@@ -255,7 +284,8 @@
         <div>
           <ol class="steps">
             <li>Telefono e PC sulla <b>stessa rete Wi-Fi</b>.</li>
-            <li>Sul telefono apri <b>SirJoe MTB → Percorsi → SirJoe Link</b>.</li>
+            <li>Sul telefono apri <b>SirJoe MTB → Percorsi → SirJoe Link</b>
+              (oppure <b>SirJoe Training → Uscite</b>).</li>
             <li>Tocca <b>Inquadra QR</b> e punta questo codice, oppure <b>Inserisci codice</b> e scrivi indirizzo e PIN qui a sinistra.</li>
           </ol>
           <p class="small"><b>Il telefono non si collega?</b> Apri sul telefono il browser all'indirizzo
@@ -271,6 +301,61 @@
       <h3>Attività</h3>
       <ul id="linkLog" class="log"></ul>
       <div class="dlg-actions"><span class="spacer"></span><button value="close" class="btn">Chiudi</button></div>
+    </form>
+  </dialog>
+
+  <!-- editor del programma di allenamento -->
+  <dialog id="woDialog">
+    <form method="dialog" class="dlg">
+      <h3>Programma di allenamento</h3>
+      <div class="grid2">
+        <label class="field"><span>Nome</span><input id="woName" required placeholder="Es. Salite in zona 3"></label>
+        <label class="field"><span>Durata totale</span><input id="woTotal" readonly></label>
+      </div>
+      <label class="field"><span>Descrizione (facoltativa)</span><input id="woNote" placeholder="A cosa serve questo allenamento"></label>
+      <table class="steps-table">
+        <thead><tr><th>#</th><th>Fase</th><th>Min</th><th>Sec</th><th>Zona da–a</th><th>Cadenza da–a</th><th>Consiglio</th><th></th></tr></thead>
+        <tbody id="woSteps"></tbody>
+      </table>
+      <div class="row-btns">
+        <button type="button" class="btn" id="woAdd">➕ Aggiungi fase</button>
+        <button type="button" class="btn" id="woRepeat" title="Ripete le ultime fasi (es. ripetute: salita + recupero)">🔁 Ripeti ultime fasi…</button>
+      </div>
+      <p class="small">Zona 0 = battito libero, cadenza 0 = libera. Le zone sono calcolate sulla FC max del telefono
+        (quella del profilo qui a lato viene inviata insieme ai programmi).</p>
+      <div class="dlg-actions">
+        <button value="delete" class="btn danger" id="woDelete" formnovalidate>Elimina</button>
+        <span class="spacer"></span>
+        <button value="cancel" class="btn" formnovalidate>Annulla</button>
+        <button value="save" class="btn primary">Salva</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- dettaglio di un allenamento ricevuto -->
+  <dialog id="sesDialog">
+    <form method="dialog" class="dlg">
+      <h3 id="sesName">Allenamento</h3>
+      <div id="sesWhen" class="small"></div>
+      <div class="stats six">
+        <div><b id="sesTime">0:00</b><small>tempo</small></div>
+        <div><b id="sesDist">0</b><small>km</small></div>
+        <div><b id="sesAvgHr">--</b><small>battito medio</small></div>
+        <div><b id="sesMaxHr">--</b><small>battito max</small></div>
+        <div><b id="sesCad">--</b><small>cadenza media</small></div>
+        <div><b id="sesSpeed">--</b><small>km/h media</small></div>
+      </div>
+      <h4>Tempo nelle zone</h4>
+      <div id="sesZones" class="zone-bars"></div>
+      <h4>Battito e cadenza</h4>
+      <canvas id="sesChart" width="860" height="260"></canvas>
+      <div class="small"><span class="key hr"></span> battito &nbsp; <span class="key cad"></span> cadenza &nbsp; fasce colorate = zone cardio</div>
+      <div class="dlg-actions">
+        <button value="delete" class="btn danger">Elimina</button>
+        <button value="csv" class="btn">Esporta CSV</button>
+        <span class="spacer"></span>
+        <button value="close" class="btn primary">Chiudi</button>
+      </div>
     </form>
   </dialog>
 
@@ -352,6 +437,7 @@
   <script src="routing.js"></script>
   <script src="app.js"></script>
   <script src="analysis.js"></script>
+  <script src="training.js"></script>
   <script src="link.js"></script>
   <script src="maps.js"></script>
 </body>

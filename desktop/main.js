@@ -165,7 +165,7 @@ app.whenReady().then(() => {
     pcName: os.hostname() || 'PC',
     onEvent: (ev) => { if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('link-event', ev); }
   });
-  ipcMain.handle('link-start', async (_e, outbox) => { link.setOutbox(outbox); return link.start(); });
+  ipcMain.handle('link-start', async (_e, outbox, training) => { link.setOutbox(outbox); link.setTraining(training); return link.start(); });
   ipcMain.handle('link-qr', (_e, address) => link.qrFor(address));
   ipcMain.handle('link-stop', () => { link.stop(); return true; });
   ipcMain.handle('link-firewall', () => unlockFirewall());
@@ -174,6 +174,11 @@ app.whenReady().then(() => {
   ipcMain.handle('ride-delete', (_e, file) => { link.deleteRide(file); return true; });
   ipcMain.handle('ride-add', (_e, name, text) => link.addRide(name, text));
   ipcMain.handle('rides-folder', () => { shell.openPath(link.ridesDir); return link.ridesDir; });
+  // allenamenti ricevuti da SirJoe Training
+  ipcMain.handle('sessions-list', () => link.listSessions());
+  ipcMain.handle('session-read', (_e, file) => link.readSession(file));
+  ipcMain.handle('session-delete', (_e, file) => { link.deleteSession(file); return true; });
+  ipcMain.handle('sessions-folder', () => { shell.openPath(link.sessionsDir); return link.sessionsDir; });
 
   // "Salva con nome": scegli nome e cartella
   ipcMain.handle('save-file', async (e, { name, data, ext }) => {
