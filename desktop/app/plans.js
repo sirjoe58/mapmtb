@@ -1,0 +1,482 @@
+/* Piani di allenamento pronti (generato da tools/piani/genera.py: non modificare a mano) */
+'use strict';
+const TR_PLANS = [
+ {
+  "id": "dimagrire-8",
+  "name": "Piano dimagrimento 8 settimane",
+  "note": "3 uscite a settimana in giorni non consecutivi, quasi tutte in zona 2 (la più adatta a bruciare grassi e a migliorare la resistenza), con tratti in zona 3 dalla terza settimana. Un quarto giorno facoltativo: Recupero attivo 30'. Se sei stanco o il battito a riposo è più alto del solito, fai l'uscita più corta o riposa.",
+  "calendar": [
+   "Sett. 1: mar Dimagrire 1 · gio Dimagrire 1 · sab/dom Dimagrire 2",
+   "Sett. 2: mar Dimagrire 1 · gio Dimagrire 1 · sab/dom Dimagrire 2",
+   "Sett. 3: mar Dimagrire 3 · gio Dimagrire 4 · sab/dom Dimagrire 2",
+   "Sett. 4: mar Dimagrire 3 · gio Dimagrire 4 · sab/dom Dimagrire 5",
+   "Sett. 5 (più leggera): mar Dimagrire 1 · gio Dimagrire 3 · sab/dom Dimagrire 2",
+   "Sett. 6: mar Dimagrire 6 · gio Dimagrire 7 · sab/dom Dimagrire 5",
+   "Sett. 7: mar Dimagrire 6 · gio Dimagrire 7 · sab/dom Dimagrire 8",
+   "Sett. 8: mar Dimagrire 3 · gio Dimagrire 7 · sab/dom Dimagrire 8"
+  ],
+  "workouts": [
+   {
+    "id": "dim-1",
+    "name": "Dimagrire 1 · Fondo 45'",
+    "note": "Settimane 1-2 e 5. Base del piano: quasi tutto in zona 2.",
+    "steps": [
+     {
+      "label": "Riscaldamento",
+      "sec": 600,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Rapporto leggero, gambe sciolte, parti piano."
+     },
+     {
+      "label": "Fondo",
+      "sec": 1800,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Ritmo da chiacchierata: devi riuscire a parlare. In salita scala marcia presto per restare in zona 2."
+     },
+     {
+      "label": "Defaticamento",
+      "sec": 300,
+      "zLo": 1,
+      "zHi": 1,
+      "cLo": 75,
+      "cHi": 95,
+      "tip": "Rallenta e lascia scendere il battito."
+     }
+    ]
+   },
+   {
+    "id": "dim-2",
+    "name": "Dimagrire 2 · Lungo facile 75'",
+    "note": "Settimane 1-3 e 5, nel fine settimana. Lungo e tranquillo.",
+    "steps": [
+     {
+      "label": "Riscaldamento",
+      "sec": 600,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Rapporto leggero, gambe sciolte, parti piano."
+     },
+     {
+      "label": "Fondo lungo",
+      "sec": 3600,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Ritmo da chiacchierata: devi riuscire a parlare. In salita scala marcia presto per restare in zona 2. Se il battito sale troppo anche col rapporto più leggero, scendi e spingi la bici."
+     },
+     {
+      "label": "Defaticamento",
+      "sec": 300,
+      "zLo": 1,
+      "zHi": 1,
+      "cLo": 75,
+      "cHi": 95,
+      "tip": "Rallenta e lascia scendere il battito."
+     }
+    ]
+   },
+   {
+    "id": "dim-3",
+    "name": "Dimagrire 3 · Fondo 60'",
+    "note": "Settimane 3-5 e 8.",
+    "steps": [
+     {
+      "label": "Riscaldamento",
+      "sec": 600,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Rapporto leggero, gambe sciolte, parti piano."
+     },
+     {
+      "label": "Fondo",
+      "sec": 2700,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Ritmo da chiacchierata: devi riuscire a parlare. In salita scala marcia presto per restare in zona 2."
+     },
+     {
+      "label": "Defaticamento",
+      "sec": 300,
+      "zLo": 1,
+      "zHi": 1,
+      "cLo": 75,
+      "cHi": 95,
+      "tip": "Rallenta e lascia scendere il battito."
+     }
+    ]
+   },
+   {
+    "id": "dim-4",
+    "name": "Dimagrire 4 · Ritmo 3×6' (55')",
+    "note": "Settimane 3-4. Primi tratti in zona 3: solo se le uscite in zona 2 vanno bene.",
+    "steps": [
+     {
+      "label": "Riscaldamento",
+      "sec": 720,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Rapporto leggero, gambe sciolte, parti piano."
+     },
+     {
+      "label": "Ritmo",
+      "sec": 360,
+      "zLo": 3,
+      "zHi": 3,
+      "cLo": 75,
+      "cHi": 90,
+      "tip": "Sostenuto ma controllato: riesci a dire frasi brevi. Seduto, rapporto che non ti fa piantare."
+     },
+     {
+      "label": "Recupero",
+      "sec": 240,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Scendi di rapporto e respira."
+     },
+     {
+      "label": "Ritmo",
+      "sec": 360,
+      "zLo": 3,
+      "zHi": 3,
+      "cLo": 75,
+      "cHi": 90,
+      "tip": "Sostenuto ma controllato: riesci a dire frasi brevi. Seduto, rapporto che non ti fa piantare."
+     },
+     {
+      "label": "Recupero",
+      "sec": 240,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Scendi di rapporto e respira."
+     },
+     {
+      "label": "Ritmo",
+      "sec": 360,
+      "zLo": 3,
+      "zHi": 3,
+      "cLo": 75,
+      "cHi": 90,
+      "tip": "Sostenuto ma controllato: riesci a dire frasi brevi. Seduto, rapporto che non ti fa piantare."
+     },
+     {
+      "label": "Recupero",
+      "sec": 240,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Scendi di rapporto e respira."
+     },
+     {
+      "label": "Fondo",
+      "sec": 480,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": ""
+     },
+     {
+      "label": "Defaticamento",
+      "sec": 300,
+      "zLo": 1,
+      "zHi": 1,
+      "cLo": 75,
+      "cHi": 95,
+      "tip": "Rallenta e lascia scendere il battito."
+     }
+    ]
+   },
+   {
+    "id": "dim-5",
+    "name": "Dimagrire 5 · Lungo 90'",
+    "note": "Settimane 4 e 6. Porta acqua e qualcosa da mangiare.",
+    "steps": [
+     {
+      "label": "Riscaldamento",
+      "sec": 600,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Rapporto leggero, gambe sciolte, parti piano."
+     },
+     {
+      "label": "Fondo lungo",
+      "sec": 4500,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Ritmo da chiacchierata: devi riuscire a parlare. In salita scala marcia presto per restare in zona 2. Bevi un sorso ogni 15-20 minuti."
+     },
+     {
+      "label": "Defaticamento",
+      "sec": 300,
+      "zLo": 1,
+      "zHi": 1,
+      "cLo": 75,
+      "cHi": 95,
+      "tip": "Rallenta e lascia scendere il battito."
+     }
+    ]
+   },
+   {
+    "id": "dim-6",
+    "name": "Dimagrire 6 · Fondo agile 70'",
+    "note": "Settimane 6-7. Zona 2 con brevi tratti a cadenza alta.",
+    "steps": [
+     {
+      "label": "Riscaldamento",
+      "sec": 600,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Rapporto leggero, gambe sciolte, parti piano."
+     },
+     {
+      "label": "Fondo",
+      "sec": 720,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Ritmo da chiacchierata: devi riuscire a parlare. In salita scala marcia presto per restare in zona 2."
+     },
+     {
+      "label": "Agile",
+      "sec": 180,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 95,
+      "cHi": 105,
+      "tip": "Rapporto leggero, pedala veloce senza saltare sulla sella."
+     },
+     {
+      "label": "Fondo",
+      "sec": 720,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Ritmo da chiacchierata: devi riuscire a parlare. In salita scala marcia presto per restare in zona 2."
+     },
+     {
+      "label": "Agile",
+      "sec": 180,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 95,
+      "cHi": 105,
+      "tip": "Rapporto leggero, pedala veloce senza saltare sulla sella."
+     },
+     {
+      "label": "Fondo",
+      "sec": 720,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Ritmo da chiacchierata: devi riuscire a parlare. In salita scala marcia presto per restare in zona 2."
+     },
+     {
+      "label": "Agile",
+      "sec": 180,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 95,
+      "cHi": 105,
+      "tip": "Rapporto leggero, pedala veloce senza saltare sulla sella."
+     },
+     {
+      "label": "Fondo",
+      "sec": 600,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": ""
+     },
+     {
+      "label": "Defaticamento",
+      "sec": 300,
+      "zLo": 1,
+      "zHi": 1,
+      "cLo": 75,
+      "cHi": 95,
+      "tip": "Rallenta e lascia scendere il battito."
+     }
+    ]
+   },
+   {
+    "id": "dim-7",
+    "name": "Dimagrire 7 · Ritmo 4×8' (70')",
+    "note": "Settimane 6-8.",
+    "steps": [
+     {
+      "label": "Riscaldamento",
+      "sec": 720,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Rapporto leggero, gambe sciolte, parti piano."
+     },
+     {
+      "label": "Ritmo",
+      "sec": 480,
+      "zLo": 3,
+      "zHi": 3,
+      "cLo": 75,
+      "cHi": 90,
+      "tip": "Sostenuto ma controllato: riesci a dire frasi brevi. Seduto, rapporto che non ti fa piantare."
+     },
+     {
+      "label": "Recupero",
+      "sec": 240,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Scendi di rapporto e respira."
+     },
+     {
+      "label": "Ritmo",
+      "sec": 480,
+      "zLo": 3,
+      "zHi": 3,
+      "cLo": 75,
+      "cHi": 90,
+      "tip": "Sostenuto ma controllato: riesci a dire frasi brevi. Seduto, rapporto che non ti fa piantare."
+     },
+     {
+      "label": "Recupero",
+      "sec": 240,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Scendi di rapporto e respira."
+     },
+     {
+      "label": "Ritmo",
+      "sec": 480,
+      "zLo": 3,
+      "zHi": 3,
+      "cLo": 75,
+      "cHi": 90,
+      "tip": "Sostenuto ma controllato: riesci a dire frasi brevi. Seduto, rapporto che non ti fa piantare."
+     },
+     {
+      "label": "Recupero",
+      "sec": 240,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Scendi di rapporto e respira."
+     },
+     {
+      "label": "Ritmo",
+      "sec": 480,
+      "zLo": 3,
+      "zHi": 3,
+      "cLo": 75,
+      "cHi": 90,
+      "tip": "Sostenuto ma controllato: riesci a dire frasi brevi. Seduto, rapporto che non ti fa piantare."
+     },
+     {
+      "label": "Recupero",
+      "sec": 240,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Scendi di rapporto e respira."
+     },
+     {
+      "label": "Defaticamento",
+      "sec": 600,
+      "zLo": 1,
+      "zHi": 1,
+      "cLo": 75,
+      "cHi": 95,
+      "tip": "Rallenta e lascia scendere il battito."
+     }
+    ]
+   },
+   {
+    "id": "dim-8",
+    "name": "Dimagrire 8 · Lungo 2 ore",
+    "note": "Settimane 7-8. Porta acqua e qualcosa da mangiare.",
+    "steps": [
+     {
+      "label": "Riscaldamento",
+      "sec": 600,
+      "zLo": 1,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 90,
+      "tip": "Rapporto leggero, gambe sciolte, parti piano."
+     },
+     {
+      "label": "Fondo lungo",
+      "sec": 3000,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Ritmo da chiacchierata: devi riuscire a parlare. In salita scala marcia presto per restare in zona 2. Bevi ogni 15-20 minuti."
+     },
+     {
+      "label": "Ritmo leggero",
+      "sec": 600,
+      "zLo": 2,
+      "zHi": 3,
+      "cLo": 75,
+      "cHi": 90,
+      "tip": "Solo se ti senti bene, altrimenti resta in zona 2."
+     },
+     {
+      "label": "Fondo lungo",
+      "sec": 2400,
+      "zLo": 2,
+      "zHi": 2,
+      "cLo": 80,
+      "cHi": 95,
+      "tip": "Mangia qualcosa e continua tranquillo."
+     },
+     {
+      "label": "Defaticamento",
+      "sec": 600,
+      "zLo": 1,
+      "zHi": 1,
+      "cLo": 75,
+      "cHi": 95,
+      "tip": "Rallenta e lascia scendere il battito."
+     }
+    ]
+   }
+  ]
+ }
+];

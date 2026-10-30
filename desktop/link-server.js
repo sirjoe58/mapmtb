@@ -135,6 +135,28 @@ class LinkServer {
       this.onEvent({ type: 'training', count: this.training.workouts.length, from: remote });
       return this._send(res, 200, this.training);
     }
+    // programmi creati o modificati sul telefono
+    if (req.method === 'POST' && url.pathname === '/workouts') {
+      const chunks = [];
+      let size = 0;
+      req.on('data', (c) => { size += c.length; if (size < 2 * 1024 * 1024) chunks.push(c); });
+      req.on('end', () => {
+        let j;
+        try { j = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { return this._send(res, 400, { error: 'Dati non validi' }); }
+        const list = (Array.isArray(j) ? j : (j && j.workouts) || []).filter((w) => w && Array.isArray(w.steps) && w.steps.length);
+        if (!list.length) return this._send(res, 400, { error: 'Nessun programma valido' });
+        // subito disponibili anche per lo scaricamento che segue (la finestra li salva poi in archivio)
+        const cur = this.training.workouts.slice();
+        for (const w of list) {
+          const i = cur.findIndex((x) => x.id === w.id);
+          if (i >= 0) cur[i] = w; else cur.push(w);
+        }
+        this.training = { ...this.training, workouts: cur };
+        this.onEvent({ type: 'workouts', workouts: list, from: remote });
+        this._send(res, 200, { ok: true, count: list.length });
+      });
+      return;
+    }
     if (req.method === 'POST' && url.pathname === '/sessions') {
       const chunks = [];
       let size = 0;

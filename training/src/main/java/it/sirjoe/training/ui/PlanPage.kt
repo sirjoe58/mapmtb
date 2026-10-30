@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import androidx.appcompat.app.AlertDialog
 import it.sirjoe.training.data.Coach
 import it.sirjoe.training.data.Prefs
 import it.sirjoe.training.data.Storage
@@ -36,6 +37,7 @@ class PlanPage(act: MainActivity) : Page(act) {
     private val nowNext = Ui.text(ctx, "", 14f, Ui.MUTED)
 
     private val listBox = Ui.vbox(ctx)
+    private val planBox = Ui.vbox(ctx)
     private val detailBox = Ui.vbox(ctx)
     private val zonesBox = Ui.vbox(ctx)
     private var shownStep = -2
@@ -52,8 +54,10 @@ class PlanPage(act: MainActivity) : Page(act) {
         Ui.add(nowCard, Ui.button(ctx, "⏭  Passa alla fase successiva") { RideService.skip(ctx) }, 10)
         col.addView(nowCard, Ui.lp())
 
+        col.addView(planBox)
         col.addView(Ui.title(ctx, "Programmi"))
-        col.addView(Ui.text(ctx, "Tocca un programma per vederne le fasi. 💻 = arrivato dal PC (pagina Uscite → Scarica programmi).", 13f, Ui.MUTED))
+        col.addView(Ui.text(ctx, "Tocca un programma per vederne le fasi. 💻 = dal PC · ✎ = tuo (creato o modificato qui) · 📋 = piano pronto.", 13f, Ui.MUTED))
+        Ui.add(col, Ui.button(ctx, "➕  Nuovo programma") { WorkoutEditor(act, null) { w -> select(w.id) }.show() }, 8)
         Ui.add(col, listBox, 6)
         Ui.add(col, detailBox, 10)
         col.addView(Ui.title(ctx, "Le tue zone cardio"))
@@ -61,6 +65,7 @@ class PlanPage(act: MainActivity) : Page(act) {
     }
 
     override fun onShow() {
+        buildPlans()
         buildList()
         buildDetail()
         buildZones(null)
@@ -68,19 +73,50 @@ class PlanPage(act: MainActivity) : Page(act) {
 
     private fun selected(): Workout? = Storage.workout(ctx, Prefs.str(ctx, "selected_workout"))
 
+    private fun select(id: String) {
+        Prefs.putStr(ctx, "selected_workout", id)
+        buildList()
+        buildDetail()
+    }
+
+    private fun badge(w: Workout): String = when {
+        Storage.isMine(ctx, w.id) -> "✎ "
+        w.fromPc -> "💻 "
+        Storage.plans(ctx).any { p -> p.workouts.any { it.id == w.id } } -> "📋 "
+        else -> ""
+    }
+
+    /** Piani pronti con il calendario delle settimane (si apre e si chiude toccandolo). */
+    private fun buildPlans() {
+        planBox.removeAllViews()
+        for (p in Storage.plans(ctx)) {
+            planBox.addView(Ui.title(ctx, p.name))
+            val c = Ui.card(ctx)
+            c.addView(Ui.text(ctx, p.note, 13f, Ui.MUTED))
+            val cal = Ui.text(ctx, p.calendar.joinToString("\n"), 14f, Ui.TEXT).apply { visibility = View.GONE }
+            val toggle = Ui.text(ctx, "▸ Mostra il calendario delle ${p.calendar.size} settimane", 14f, Ui.ORANGE, true)
+            toggle.setPadding(0, Ui.dp(ctx, 8), 0, Ui.dp(ctx, 4))
+            toggle.setOnClickListener {
+                val open = cal.visibility != View.VISIBLE
+                cal.visibility = if (open) View.VISIBLE else View.GONE
+                toggle.text = (if (open) "▾ Nascondi" else "▸ Mostra") + " il calendario delle ${p.calendar.size} settimane"
+            }
+            c.addView(toggle)
+            c.addView(cal)
+            c.addView(Ui.text(ctx, "I programmi del piano sono qui sotto (📋). Scegline uno e premi Avvia.", 13f, Ui.MUTED))
+            planBox.addView(c, Ui.lp())
+        }
+    }
+
     private fun buildList() {
         listBox.removeAllViews()
         val sel = Prefs.str(ctx, "selected_workout")
         for (w in Storage.allWorkouts(ctx)) {
             val c = Ui.card(ctx, if (w.id == sel) 0xFF3E2A12.toInt() else Ui.CARD)
             if (w.id == sel) c.background = Ui.rounded(0xFF3E2A12.toInt(), Ui.dp(ctx, 12).toFloat(), Ui.ORANGE, Ui.dp(ctx, 2))
-            c.addView(Ui.text(ctx, (if (w.fromPc) "💻 " else "") + w.name, 17f, Ui.TEXT, true))
+            c.addView(Ui.text(ctx, badge(w) + w.name, 17f, Ui.TEXT, true))
             c.addView(Ui.text(ctx, "${w.totalSeconds / 60} minuti · ${w.steps.size} fasi" + if (w.note.isNotBlank()) "\n${w.note}" else "", 13f, Ui.MUTED))
-            c.setOnClickListener {
-                Prefs.putStr(ctx, "selected_workout", w.id)
-                buildList()
-                buildDetail()
-            }
+            c.setOnClickListener { select(w.id) }
             Ui.add(listBox, c, 6)
         }
     }
@@ -105,6 +141,29 @@ class PlanPage(act: MainActivity) : Page(act) {
             t += s.seconds
         }
         Ui.add(detailBox, Ui.button(ctx, "▶  Avvia \"${w.name}\"", Ui.GREEN) { act.startRide(w.id) }, 12)
+        val mine = Storage.isMine(ctx, w.id)
+        val r = Ui.hbox(ctx)
+        Ui.add(r, Ui.button(ctx, "✎  Modifica") {
+            // un programma del PC o un piano pronto si modifica qui e diventa "tuo" (stesso nome e codice:
+            // con Sincronizza aggiorna anche quello sul PC)
+            WorkoutEditor(act, w) { saved -> select(saved.id) }.show()
+        }, 0, weight = 1f)
+        Ui.add(r, Ui.button(ctx, "⧉  Copia") {
+            val copy = w.copy(id = "m" + System.currentTimeMillis(), name = w.name + " (copia)", fromPc = false)
+            WorkoutEditor(act, copy) { saved -> select(saved.id) }.show()
+        }, 6, weight = 1f)
+        if (mine) Ui.add(r, Ui.button(ctx, "✕", Ui.RED) {
+            AlertDialog.Builder(ctx)
+                .setMessage("Togliere le tue modifiche a \"${w.name}\"?" +
+                    if (w.id.startsWith("m")) " Il programma verrà eliminato dal telefono." else " Torna la versione originale.")
+                .setPositiveButton("Sì") { _, _ ->
+                    Storage.deleteMine(ctx, w.id)
+                    buildList(); buildDetail()
+                }
+                .setNegativeButton("No", null)
+                .show()
+        }, 6, weight = 0.5f)
+        Ui.add(detailBox, r, 8)
     }
 
     private fun buildZones(current: Int?) {
