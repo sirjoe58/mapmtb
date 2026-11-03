@@ -59,6 +59,17 @@ object Ui {
         gravity = Gravity.CENTER
     }
 
+    /**
+     * Il numero si rimpicciolisce da solo per stare tutto nel riquadro (schermi piccoli,
+     * riquadri bassi): da [max] sp fino a 14 sp. Serve una vista con altezza fissata dal layout.
+     */
+    fun autoFit(tv: TextView, max: Float) {
+        tv.textSize = max
+        androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+            tv, 14, max.toInt().coerceAtLeast(15), 1, TypedValue.COMPLEX_UNIT_SP
+        )
+    }
+
     fun title(ctx: Context, s: String): TextView = text(ctx, s.uppercase(), 13f, MUTED, true).apply {
         letterSpacing = 0.08f
         setPadding(0, dp(ctx, 18), 0, dp(ctx, 6))

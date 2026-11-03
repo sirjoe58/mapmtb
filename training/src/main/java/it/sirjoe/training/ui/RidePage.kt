@@ -81,21 +81,23 @@ class RidePage(act: MainActivity) : Page(act) {
 
         // battito: il riquadro più grande
         hrBox.gravity = Gravity.CENTER
+        hrAdvice.maxLines = 2
         hrBox.addView(hrLabel, Ui.lp())
-        hrBox.addView(hrValue, Ui.lp())
+        Ui.autoFit(hrValue, 84f)
+        hrBox.addView(hrValue, Ui.lp(h = 0, weight = 1f))
         hrBox.addView(hrZone, Ui.lp())
         hrBox.addView(hrAdvice, Ui.lp())
-        root.addView(hrBox, Ui.lp(h = 0, weight = 1.4f).apply { topMargin = Ui.dp(ctx, 8) })
+        root.addView(hrBox, Ui.lp(h = 0, weight = 1.3f).apply { topMargin = Ui.dp(ctx, 8) })
 
         val row1 = Ui.hbox(ctx)
         row1.addView(cadBox, Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
         row1.addView(tile("VELOCITÀ", speedValue, speedNote), Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply { marginStart = Ui.dp(ctx, 8) })
-        root.addView(row1, Ui.lp(h = 0, weight = 0.8f).apply { topMargin = Ui.dp(ctx, 8) })
+        root.addView(row1, Ui.lp(h = 0, weight = 1.0f).apply { topMargin = Ui.dp(ctx, 8) })
 
         val row2 = Ui.hbox(ctx)
         row2.addView(tile("TEMPO", timeValue, timeNote), Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
         row2.addView(tile("DISTANZA", distValue, distNote), Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply { marginStart = Ui.dp(ctx, 8) })
-        root.addView(row2, Ui.lp(h = 0, weight = 0.6f).apply { topMargin = Ui.dp(ctx, 8) })
+        root.addView(row2, Ui.lp(h = 0, weight = 0.75f).apply { topMargin = Ui.dp(ctx, 8) })
 
         root.addView(cueText, Ui.lp().apply { topMargin = Ui.dp(ctx, 8) })
         root.addView(sensorsText, Ui.lp().apply { topMargin = Ui.dp(ctx, 4) })
@@ -106,11 +108,18 @@ class RidePage(act: MainActivity) : Page(act) {
         root.addView(btnRow, Ui.lp().apply { topMargin = Ui.dp(ctx, 8) })
     }
 
+    @Suppress("DEPRECATION")
     private fun tile(label: String, value: TextView, note: TextView): LinearLayout {
         val t = Ui.card(ctx)
         t.gravity = Gravity.CENTER
-        t.addView(Ui.text(ctx, label, 12f, Ui.MUTED, true).apply { gravity = Gravity.CENTER }, Ui.lp())
-        t.addView(value, Ui.lp())
+        val pad = Ui.dp(ctx, 6)
+        t.setPadding(pad, pad, pad, pad)
+        t.addView(Ui.text(ctx, label, 12f, Ui.MUTED, true).apply { gravity = Gravity.CENTER; maxLines = 1 }, Ui.lp())
+        // il numero prende tutta l'altezza rimasta e si rimpicciolisce se non ci sta
+        Ui.autoFit(value, value.textSize / ctx.resources.displayMetrics.scaledDensity)
+        t.addView(value, Ui.lp(h = 0, weight = 1f))
+        note.maxLines = 1
+        note.ellipsize = android.text.TextUtils.TruncateAt.END
         t.addView(note, Ui.lp())
         return t
     }
