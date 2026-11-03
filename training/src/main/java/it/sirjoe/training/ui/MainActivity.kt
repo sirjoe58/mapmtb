@@ -30,6 +30,7 @@ import it.sirjoe.training.service.Snapshot
 class MainActivity : AppCompatActivity() {
 
     private lateinit var container: FrameLayout
+    private lateinit var bar: LinearLayout
     private val tabs = ArrayList<TextView>()
     lateinit var ride: RidePage
     lateinit var plan: PlanPage
@@ -70,7 +71,7 @@ class MainActivity : AppCompatActivity() {
         container = FrameLayout(this)
         root.addView(container, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        val bar = LinearLayout(this).apply {
+        bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setBackgroundColor(0xFF08100C.toInt())
         }
@@ -87,6 +88,16 @@ class MainActivity : AppCompatActivity() {
         }
         root.addView(bar, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         setContentView(root)
+        // Android 15 e successivi disegnano l'app sotto le barre di sistema: lascia lo spazio
+        // per la barra di stato in alto e per i tasti/gesti di navigazione in basso,
+        // altrimenti il menu in fondo finisce sotto i tasti del telefono e non si può toccare
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val b = insets.getInsets(
+                androidx.core.view.WindowInsetsCompat.Type.systemBars() or androidx.core.view.WindowInsetsCompat.Type.displayCutout()
+            )
+            v.setPadding(b.left, b.top, b.right, b.bottom)
+            androidx.core.view.WindowInsetsCompat.CONSUMED
+        }
 
         show(if (RideState.now.running) 0 else Prefs.int(this, "last_page", 0))
         if (!Prefs.bool(this, "accepted", false)) showDisclaimer(firstRun = true)
@@ -110,6 +121,11 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
     }
 
+    /** Menu in fondo: visibile o nascosto (durante l'uscita si nasconde per lasciare spazio ai numeri). */
+    fun setMenuVisible(v: Boolean) {
+        bar.visibility = if (v) View.VISIBLE else View.GONE
+    }
+
     fun show(i: Int) {
         current = i
         Prefs.putInt(this, "last_page", i)
@@ -119,6 +135,8 @@ class MainActivity : AppCompatActivity() {
             t.setTextColor(if (j == i) Ui.ORANGE else Ui.MUTED)
             t.setBackgroundColor(if (j == i) 0xFF15241B.toInt() else 0)
         }
+        // il menu si nasconde solo nella pagina In bici (che lo rimostra quando lo tocchi)
+        if (i != 0) setMenuVisible(true)
         pages[i].onShow()
         pages[i].onSnapshot(RideState.now)
     }
