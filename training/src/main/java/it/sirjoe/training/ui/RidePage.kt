@@ -59,12 +59,30 @@ class RidePage(act: MainActivity) : Page(act) {
     }
     private val sensorsText = Ui.text(ctx, "", 12f, Ui.MUTED).apply { gravity = Gravity.CENTER }
     private val btnRow = Ui.hbox(ctx)
-    private val btnStart: Button = Ui.button(ctx, "▶  Avvia", Ui.GREEN) { act.startRide() }
+    private val btnStart: Button = Ui.button(ctx, "▶  Avvia", Ui.GREEN) { menuShownAt = System.currentTimeMillis(); act.startRide() }
     private val btnPause: Button = Ui.button(ctx, "⏸  Pausa", Ui.CARD2) {
+        menuShownAt = System.currentTimeMillis()
         if (lastSnap.paused) RideService.resume(ctx) else RideService.pause(ctx)
     }
-    private val btnSkip: Button = Ui.button(ctx, "⏭  Fase", Ui.CARD2) { RideService.skip(ctx) }
-    private val btnStop: Button = Ui.button(ctx, "■  Fine", Ui.RED) { act.confirmStop() }
+    private val btnSkip: Button = Ui.button(ctx, "⏭  Fase", Ui.CARD2) { menuShownAt = System.currentTimeMillis(); RideService.skip(ctx) }
+    private val btnStop: Button = Ui.button(ctx, "■  Fine", Ui.RED) { menuShownAt = System.currentTimeMillis(); act.confirmStop() }
+
+    // durante l'uscita pulsanti e menu si nascondono; un tocco sullo schermo li fa ricomparire per 8 secondi
+    private val menuHint = Ui.text(ctx, "▲  tocca lo schermo per menu e pulsanti", 12f, Ui.MUTED).apply {
+        gravity = Gravity.CENTER
+        setPadding(0, Ui.dp(ctx, 6), 0, Ui.dp(ctx, 2))
+    }
+    private var menuShownAt = 0L
+    private val menuShowMs = 8_000L
+
+    private fun menuOpen() = !lastSnap.running || System.currentTimeMillis() - menuShownAt < menuShowMs
+
+    private fun applyMenu() {
+        val open = menuOpen()
+        btnRow.visibility = if (open) View.VISIBLE else View.GONE
+        menuHint.visibility = if (open) View.GONE else View.VISIBLE
+        act.setMenuVisible(open)
+    }
 
     private var lastSnap = Snapshot()
     private var flashedAt = 0L
@@ -108,6 +126,13 @@ class RidePage(act: MainActivity) : Page(act) {
             btnRow.addView(b, Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = Ui.dp(ctx, 4); marginEnd = Ui.dp(ctx, 4) })
         }
         root.addView(btnRow, Ui.lp().apply { topMargin = Ui.dp(ctx, 8) })
+        root.addView(menuHint, Ui.lp())
+        // tocco ovunque sulla pagina: mostra o nasconde menu e pulsanti
+        root.setOnClickListener {
+            if (!lastSnap.running) return@setOnClickListener
+            menuShownAt = if (menuOpen()) 0L else System.currentTimeMillis()
+            applyMenu()
+        }
     }
 
     /** Riquadro basso su una riga: "TEMPO 12:05" (tempo e distanza, meno importanti). */
@@ -259,6 +284,8 @@ class RidePage(act: MainActivity) : Page(act) {
         btnPause.text = if (s.paused) "▶  Riprendi" else "⏸  Pausa"
         btnSkip.visibility = if (s.running && s.workout != null && !s.finished) View.VISIBLE else View.GONE
         btnStop.visibility = if (s.running) View.VISIBLE else View.GONE
+        // un tocco sui pulsanti tiene aperto il menu
+        applyMenu()
     }
 
     private fun cueColor(k: Coach.Kind) = when (k) {
