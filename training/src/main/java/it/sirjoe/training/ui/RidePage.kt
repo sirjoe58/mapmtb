@@ -27,32 +27,34 @@ class RidePage(act: MainActivity) : Page(act) {
 
     // fase del programma
     private val stepBox = Ui.card(ctx, Ui.CARD)
-    private val stepTitle = Ui.text(ctx, "", 15f, Ui.MUTED, true)
-    private val stepLabel = Ui.text(ctx, "", 22f, Ui.TEXT, true)
-    private val stepTime = Ui.big(ctx, 34f).apply { gravity = Gravity.END }
-    private val stepTarget = Ui.text(ctx, "", 15f, Ui.TEXT)
+    private val stepTitle = Ui.text(ctx, "", 12f, Ui.MUTED, true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+    private val stepLabel = Ui.text(ctx, "", 17f, Ui.TEXT, true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+    private val stepTime = Ui.big(ctx, 26f).apply { gravity = Gravity.END }
+    private val stepTarget = Ui.text(ctx, "", 13f, Ui.TEXT).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END }
 
     // battito
     private val hrBox = Ui.vbox(ctx, 8)
-    private val hrLabel = Ui.text(ctx, "BATTITO", 13f, Color.WHITE, true).apply { gravity = Gravity.CENTER }
-    private val hrValue = Ui.big(ctx, 84f)
-    private val hrZone = Ui.text(ctx, "", 18f, Color.WHITE, true).apply { gravity = Gravity.CENTER }
-    private val hrAdvice = Ui.text(ctx, "", 26f, Color.WHITE, true).apply { gravity = Gravity.CENTER }
+    private val hrLabel = Ui.text(ctx, "BATTITO", 12f, Color.WHITE, true).apply { gravity = Gravity.CENTER; maxLines = 1 }
+    private val hrValue = Ui.big(ctx, 110f)
+    private val hrZone = Ui.text(ctx, "", 16f, Color.WHITE, true).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+    private val hrAdvice = Ui.text(ctx, "", 20f, Color.WHITE, true).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
 
     // altri dati
-    private val cadValue = Ui.big(ctx, 44f)
+    private val cadValue = Ui.big(ctx, 80f)
     private val cadNote = Ui.text(ctx, "", 13f, Ui.MUTED).apply { gravity = Gravity.CENTER }
     private val cadBox = tile("CADENZA", cadValue, cadNote)
-    private val speedValue = Ui.big(ctx, 44f)
+    private val speedValue = Ui.big(ctx, 80f)
     private val speedNote = Ui.text(ctx, "km/h", 13f, Ui.MUTED).apply { gravity = Gravity.CENTER }
-    private val timeValue = Ui.big(ctx, 34f)
-    private val timeNote = Ui.text(ctx, "tempo", 13f, Ui.MUTED).apply { gravity = Gravity.CENTER }
-    private val distValue = Ui.big(ctx, 34f)
-    private val distNote = Ui.text(ctx, "km", 13f, Ui.MUTED).apply { gravity = Gravity.CENTER }
+    private val timeValue = Ui.big(ctx, 22f)
+    private val timeNote = Ui.text(ctx, "", 13f, Ui.MUTED).apply { gravity = Gravity.CENTER }
+    private val distValue = Ui.big(ctx, 22f)
+    private val distNote = Ui.text(ctx, "", 13f, Ui.MUTED).apply { gravity = Gravity.CENTER }
 
     // consiglio e pulsanti
-    private val cueText = Ui.text(ctx, "", 17f, Color.WHITE, true).apply {
+    private val cueText = Ui.text(ctx, "", 15f, Color.WHITE, true).apply {
         gravity = Gravity.CENTER
+        maxLines = 2
+        ellipsize = android.text.TextUtils.TruncateAt.END
         setPadding(Ui.dp(ctx, 10), Ui.dp(ctx, 8), Ui.dp(ctx, 10), Ui.dp(ctx, 8))
     }
     private val sensorsText = Ui.text(ctx, "", 12f, Ui.MUTED).apply { gravity = Gravity.CENTER }
@@ -81,23 +83,23 @@ class RidePage(act: MainActivity) : Page(act) {
 
         // battito: il riquadro più grande
         hrBox.gravity = Gravity.CENTER
-        hrAdvice.maxLines = 2
+        
         hrBox.addView(hrLabel, Ui.lp())
         Ui.autoFit(hrValue, 84f)
         hrBox.addView(hrValue, Ui.lp(h = 0, weight = 1f))
         hrBox.addView(hrZone, Ui.lp())
         hrBox.addView(hrAdvice, Ui.lp())
-        root.addView(hrBox, Ui.lp(h = 0, weight = 1.3f).apply { topMargin = Ui.dp(ctx, 8) })
+        root.addView(hrBox, Ui.lp(h = 0, weight = 1f).apply { topMargin = Ui.dp(ctx, 8) })
 
         val row1 = Ui.hbox(ctx)
         row1.addView(cadBox, Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
         row1.addView(tile("VELOCITÀ", speedValue, speedNote), Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply { marginStart = Ui.dp(ctx, 8) })
-        root.addView(row1, Ui.lp(h = 0, weight = 1.0f).apply { topMargin = Ui.dp(ctx, 8) })
+        root.addView(row1, Ui.lp(h = 0, weight = 0.9f).apply { topMargin = Ui.dp(ctx, 8) })
 
         val row2 = Ui.hbox(ctx)
-        row2.addView(tile("TEMPO", timeValue, timeNote), Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
-        row2.addView(tile("DISTANZA", distValue, distNote), Ui.lp(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply { marginStart = Ui.dp(ctx, 8) })
-        root.addView(row2, Ui.lp(h = 0, weight = 0.75f).apply { topMargin = Ui.dp(ctx, 8) })
+        row2.addView(strip("TEMPO", timeValue, timeNote), Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        row2.addView(strip("KM", distValue, distNote), Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = Ui.dp(ctx, 8) })
+        root.addView(row2, Ui.lp().apply { topMargin = Ui.dp(ctx, 8) })
 
         root.addView(cueText, Ui.lp().apply { topMargin = Ui.dp(ctx, 8) })
         root.addView(sensorsText, Ui.lp().apply { topMargin = Ui.dp(ctx, 4) })
@@ -106,6 +108,21 @@ class RidePage(act: MainActivity) : Page(act) {
             btnRow.addView(b, Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = Ui.dp(ctx, 4); marginEnd = Ui.dp(ctx, 4) })
         }
         root.addView(btnRow, Ui.lp().apply { topMargin = Ui.dp(ctx, 8) })
+    }
+
+    /** Riquadro basso su una riga: "TEMPO 12:05" (tempo e distanza, meno importanti). */
+    private fun strip(label: String, value: TextView, note: TextView): LinearLayout {
+        val t = Ui.hbox(ctx)
+        t.background = Ui.rounded(Ui.CARD, Ui.dp(ctx, 10).toFloat())
+        t.gravity = Gravity.CENTER
+        t.setPadding(Ui.dp(ctx, 8), Ui.dp(ctx, 4), Ui.dp(ctx, 8), Ui.dp(ctx, 4))
+        t.addView(Ui.text(ctx, label, 11f, Ui.MUTED, true).apply { maxLines = 1 })
+        t.addView(value, Ui.lp(ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = Ui.dp(ctx, 8) })
+        note.maxLines = 1
+        note.textSize = 11f
+        note.ellipsize = android.text.TextUtils.TruncateAt.END
+        t.addView(note, Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = Ui.dp(ctx, 6) })
+        return t
     }
 
     @Suppress("DEPRECATION")
@@ -211,9 +228,9 @@ class RidePage(act: MainActivity) : Page(act) {
         speedValue.text = s.kmh?.let { String.format(Locale.ITALY, "%.1f", it) } ?: "--"
         speedNote.text = if (s.running && !s.gpsOk) "km/h · GPS in attesa" else "km/h"
         timeValue.text = Coach.clock(s.seconds)
-        timeNote.text = if (s.paused) "IN PAUSA" else "tempo"
+        timeNote.text = if (s.paused) "IN PAUSA" else ""
         distValue.text = String.format(Locale.ITALY, "%.2f", s.distanceM / 1000)
-        distNote.text = if (s.running && s.seconds > 60) String.format(Locale.ITALY, "km · media %.1f km/h", s.avgKmh) else "km"
+        distNote.text = if (s.running && s.seconds > 60) String.format(Locale.ITALY, "media %.1f km/h", s.avgKmh) else ""
 
         // ---- ultimo consiglio (visibile 15 secondi) e lampeggio colorato
         val cue = s.lastCue
@@ -232,7 +249,9 @@ class RidePage(act: MainActivity) : Page(act) {
 
         val hs = Sensors.status[Prefs.HR]
         val cs = Sensors.status[Prefs.CAD]
-        sensorsText.text = if (s.running) "Fascia: ${hs ?: "—"}  ·  Cadenza: ${cs ?: "—"}" else ""
+        // stato dei sensori solo se manca un dato (così non ruba spazio ai numeri)
+        sensorsText.text = if (s.running && (hr == null || cad == null)) "Fascia: ${hs ?: "—"}  ·  Cadenza: ${cs ?: "—"}" else ""
+        sensorsText.visibility = if (sensorsText.text.isEmpty()) View.GONE else View.VISIBLE
 
         // ---- pulsanti
         btnStart.visibility = if (s.running) View.GONE else View.VISIBLE
