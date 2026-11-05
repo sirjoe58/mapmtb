@@ -65,6 +65,7 @@ jobs:
         with:
           name: SirJoeTraining-v${{ env.VERSION }}
           path: SirJoeTraining-v${{ env.VERSION }}.apk
+          retention-days: 7
 
       - name: Controlla se la versione è già pubblicata
         if: github.ref == 'refs/heads/main'

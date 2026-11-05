@@ -75,6 +75,7 @@ jobs:
         with:
           name: SirJoeMTB-v${{ env.VERSION }}
           path: SirJoeMTB-v${{ env.VERSION }}.apk
+          retention-days: 7
 
       - name: Controlla se la versione è già pubblicata
         if: github.ref == 'refs/heads/main'
