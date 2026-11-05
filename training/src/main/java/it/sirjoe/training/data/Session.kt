@@ -28,7 +28,8 @@ data class Summary(
     val maxHrSeen: Int?,
     val avgCad: Int?,
     val avgKmh: Double,
-    val zoneSeconds: IntArray
+    val zoneSeconds: IntArray,
+    val kcal: Int = 0
 ) {
     fun zonePct(z: Int): Int {
         val tot = zoneSeconds.sum()
@@ -48,7 +49,9 @@ class Session(
     val samples: List<Sample>,
     val distanceM: Double,
     /** secondi effettivi (senza le pause) */
-    val activeSeconds: Int
+    val activeSeconds: Int,
+    /** calorie stimate */
+    val kcal: Double = 0.0
 ) {
 
     fun summary(): Summary {
@@ -65,7 +68,8 @@ class Session(
             maxHrSeen = hrs.maxOrNull(),
             avgCad = if (cads.isEmpty()) null else cads.average().roundToInt(),
             avgKmh = if (sec > 0) distanceM / sec * 3.6 else 0.0,
-            zoneSeconds = zones
+            zoneSeconds = zones,
+            kcal = kcal.roundToInt()
         )
     }
 
@@ -97,6 +101,7 @@ class Session(
             .put("avgHr", s.avgHr ?: JSONObject.NULL)
             .put("maxHrSeen", s.maxHrSeen ?: JSONObject.NULL)
             .put("avgCad", s.avgCad ?: JSONObject.NULL)
+            .put("kcal", s.kcal)
             .put("zoneSeconds", JSONArray().apply { s.zoneSeconds.forEach { put(it) } })
             .put("cols", JSONArray(listOf("t", "hr", "cad", "kmh", "lat", "lon", "ele")))
             .put("samples", arr)
@@ -160,7 +165,8 @@ class Session(
                 maxHr = o.optInt("maxHr", 160),
                 samples = list,
                 distanceM = o.optDouble("distanceM", 0.0),
-                activeSeconds = o.optInt("seconds", list.size)
+                activeSeconds = o.optInt("seconds", list.size),
+                kcal = o.optDouble("kcal", 0.0)
             )
         }
     }

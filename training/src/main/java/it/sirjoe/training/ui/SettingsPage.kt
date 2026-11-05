@@ -1,6 +1,7 @@
 package it.sirjoe.training.ui
 
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.CompoundButton
 import android.widget.ScrollView
 import android.widget.TextView
@@ -31,7 +32,7 @@ class SettingsPage(act: MainActivity) : Page(act) {
         col.addView(Ui.title(ctx, "Profilo"))
         val p = Ui.card(ctx)
         p.addView(profileText)
-        Ui.add(p, Ui.button(ctx, "Imposta età e FC max") { profileDialog() }, 10)
+        Ui.add(p, Ui.button(ctx, "Imposta età, FC max e peso") { profileDialog() }, 10)
         p.addView(Ui.text(ctx, "\nLa FC max migliore è quella misurata (test da sforzo, visita medico-sportiva o il valore più alto visto col Garmin). " +
             "Se non la conosci l'app la stima dall'età, ma la stima può sbagliare anche di 10-15 battiti.", 13f, Ui.MUTED))
         col.addView(p, Ui.lp())
@@ -85,6 +86,12 @@ class SettingsPage(act: MainActivity) : Page(act) {
         val box = Ui.vbox(ctx, 16)
         val age = Ui.numberInput(ctx, Prefs.age(ctx), "Età (anni)")
         val max = Ui.numberInput(ctx, Prefs.maxHr(ctx), "FC max (vuoto = stima dall'età)")
+        val weight = Ui.numberInput(ctx, Prefs.weight(ctx), "Peso (kg) per le calorie")
+        val sex = android.widget.RadioGroup(ctx).apply { orientation = LinearLayout.HORIZONTAL }
+        val rbM = android.widget.RadioButton(ctx).apply { text = "Uomo"; id = View.generateViewId() }
+        val rbF = android.widget.RadioButton(ctx).apply { text = "Donna"; id = View.generateViewId() }
+        sex.addView(rbM); sex.addView(rbF)
+        sex.check(if (Prefs.male(ctx)) rbM.id else rbF.id)
         val hint = Ui.text(ctx, "", 13f, Ui.MUTED)
         fun refreshHint() {
             val a = age.text.toString().toIntOrNull()
@@ -101,6 +108,9 @@ class SettingsPage(act: MainActivity) : Page(act) {
         Ui.add(box, Ui.text(ctx, "Frequenza cardiaca massima", 13f, Ui.MUTED), 10)
         box.addView(max)
         box.addView(hint)
+        Ui.add(box, Ui.text(ctx, "Peso e sesso (per stimare le calorie)", 13f, Ui.MUTED), 10)
+        box.addView(weight)
+        box.addView(sex)
         val dlg = AlertDialog.Builder(ctx)
             .setTitle("Profilo")
             .setView(box)
@@ -109,6 +119,9 @@ class SettingsPage(act: MainActivity) : Page(act) {
                 val m = max.text.toString().toIntOrNull() ?: 0
                 Prefs.setAge(ctx, if (a in 10..100) a else 0)
                 Prefs.setMaxHr(ctx, if (m in 100..230) m else 0)
+                val kg = weight.text.toString().toIntOrNull() ?: 0
+                Prefs.setWeight(ctx, if (kg in 30..250) kg else 0)
+                Prefs.setMale(ctx, sex.checkedRadioButtonId == rbM.id)
                 if (m != 0 && m !in 100..230) act.toast("FC max non valida (100-230): uso la stima")
                 onShow()
             }
@@ -153,7 +166,8 @@ class SettingsPage(act: MainActivity) : Page(act) {
         val age = Prefs.age(ctx)
         profileText.text = (if (age > 0) "Età: $age anni\n" else "Età: non impostata\n") +
             "FC max: $maxHr" + (if (Prefs.maxHr(ctx) == 0) " (stima)" else " (impostata)") +
-            "\nZona 2 (fondo lento): ${Zones.bpmLo(2, maxHr)}–${Zones.bpmHi(2, maxHr)} battiti"
+            "\nZona 2 (fondo lento): ${Zones.bpmLo(2, maxHr)}–${Zones.bpmHi(2, maxHr)} battiti" +
+            "\nPeso: " + (if (Prefs.weight(ctx) > 0) "${Prefs.weight(ctx)} kg" else "non impostato (calorie calcolate su 75 kg)")
         hrText.text = sensorText(Prefs.HR)
         cadText.text = sensorText(Prefs.CAD)
         val plugin = AntSensors.installed(ctx, AntSensors.PLUGIN_PKG)

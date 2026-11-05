@@ -87,7 +87,7 @@ class LinkServer {
   /** programmi di allenamento e profilo offerti a SirJoe Training: { workouts, maxHr, age } */
   setTraining(t) {
     const w = (t && Array.isArray(t.workouts)) ? t.workouts : [];
-    this.training = { workouts: w, maxHr: Number(t && t.maxHr) || 0, age: Number(t && t.age) || 0 };
+    this.training = { workouts: w, maxHr: Number(t && t.maxHr) || 0, age: Number(t && t.age) || 0, weight: Number(t && t.weight) || 0 };
   }
 
   _send(res, code, body, type = 'application/json; charset=utf-8') {
@@ -293,7 +293,7 @@ LinkServer.prototype.listSessions = function () {
         const j = JSON.parse(fs.readFileSync(p, 'utf8'));
         return {
           file: f, name: j.name || f, start: j.start || 0, seconds: j.seconds || 0, distanceM: j.distanceM || 0,
-          avgHr: j.avgHr, maxHrSeen: j.maxHrSeen, avgCad: j.avgCad, workout: j.workout, zoneSeconds: j.zoneSeconds || []
+          avgHr: j.avgHr, maxHrSeen: j.maxHrSeen, avgCad: j.avgCad, kcal: j.kcal, workout: j.workout, zoneSeconds: j.zoneSeconds || []
         };
       } catch (e) { return null; }
     })

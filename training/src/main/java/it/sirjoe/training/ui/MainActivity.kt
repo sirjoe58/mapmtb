@@ -99,6 +99,12 @@ class MainActivity : AppCompatActivity() {
             androidx.core.view.WindowInsetsCompat.CONSUMED
         }
 
+        // prova dello schermo con dati finti (adb: am start … --ez demo true [--es workout dim-4])
+        if (intent.getBooleanExtra("demo", false)) {
+            show(0)
+            if (!RideState.now.running) RideService.start(this, intent.getStringExtra("workout"), demo = true)
+            return
+        }
         show(if (RideState.now.running) 0 else Prefs.int(this, "last_page", 0))
         if (!Prefs.bool(this, "accepted", false)) showDisclaimer(firstRun = true)
         else askBasicPermissions()

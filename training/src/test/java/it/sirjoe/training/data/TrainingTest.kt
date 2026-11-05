@@ -197,6 +197,22 @@ class TrainingTest {
         assertEquals(120 * 60, list[7].totalSeconds)
     }
 
+    // ------------------------------------------------------------ calorie
+
+    @Test
+    fun calorie_un_ora_in_zona_2() {
+        // uomo 68 anni, 80 kg, 110 battiti per un'ora: circa 500-600 kcal (Keytel)
+        val h = (0 until 3600).sumOf { Calories.perSecond(110, 20f, true, 80, 68, true) }
+        assertTrue("kcal $h", h in 450.0..650.0)
+        // senza fascia, 20 km/h: 8 MET → 672 kcal in un'ora con 80 kg
+        val v = (0 until 3600).sumOf { Calories.perSecond(null, 20f, true, 80, 68, true) }
+        assertEquals(672.0, v, 1.0)
+        // fermi senza fascia: pochissimo
+        assertTrue(Calories.perSecond(null, 0f, false, 80, 68, true) * 3600 < 100)
+        val s = Session("x", null, 160, listOf(Sample(1L, hr = 100)), 0.0, 1, 12.6)
+        assertEquals(13, Session.fromJson(org.json.JSONObject(s.toJson().toString())).summary().kcal)
+    }
+
     // ------------------------------------------------------------ sensori Bluetooth
 
     @Test
