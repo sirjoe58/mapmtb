@@ -28,6 +28,13 @@ object Prefs {
         return if (a in 10..100) Zones.estimateMax(a) else 160
     }
 
+    /** peso in kg (0 = non impostato: per le calorie si usa 75) */
+    fun weight(ctx: Context) = int(ctx, "weight", 0)
+    fun setWeight(ctx: Context, v: Int) = putInt(ctx, "weight", v)
+    fun effectiveWeight(ctx: Context) = weight(ctx).takeIf { it in 30..250 } ?: 75
+    fun male(ctx: Context) = bool(ctx, "male", true)
+    fun setMale(ctx: Context, v: Boolean) = putBool(ctx, "male", v)
+
     // ---- avvisi
     fun voice(ctx: Context) = bool(ctx, "cue_voice", true)
     fun beep(ctx: Context) = bool(ctx, "cue_beep", true)

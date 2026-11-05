@@ -22,6 +22,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import it.sirjoe.training.R
+import it.sirjoe.training.data.Calories
 import it.sirjoe.training.data.Coach
 import it.sirjoe.training.data.Prefs
 import it.sirjoe.training.data.Sample
@@ -47,17 +48,19 @@ class RideService : Service() {
         private const val ACTION_STOP = "stop"
         private const val ACTION_DISCARD = "discard"
         private const val EXTRA_WORKOUT = "workout"
+        private const val EXTRA_DEMO = "demo"
 
         /** Nome dell'ultima uscita salvata (per il messaggio nella pagina). */
         @Volatile var lastSaved: String? = null
 
-        private fun send(ctx: Context, action: String, workoutId: String? = null) {
+        private fun send(ctx: Context, action: String, workoutId: String? = null, demo: Boolean = false) {
             val i = Intent(ctx, RideService::class.java).setAction(action)
             if (workoutId != null) i.putExtra(EXTRA_WORKOUT, workoutId)
+            if (demo) i.putExtra(EXTRA_DEMO, true)
             if (action == ACTION_START) ContextCompat.startForegroundService(ctx, i) else ctx.startService(i)
         }
 
-        fun start(ctx: Context, workoutId: String?) = send(ctx, ACTION_START, workoutId)
+        fun start(ctx: Context, workoutId: String?, demo: Boolean = false) = send(ctx, ACTION_START, workoutId, demo)
         fun pause(ctx: Context) = send(ctx, ACTION_PAUSE)
         fun resume(ctx: Context) = send(ctx, ACTION_RESUME)
         fun skip(ctx: Context) = send(ctx, ACTION_SKIP)
@@ -79,6 +82,13 @@ class RideService : Service() {
     private val samples = ArrayList<Sample>()
     private val zoneSeconds = IntArray(5)
 
+    private var kcal = 0.0
+    private var weight = 75
+    private var age = 0
+    private var male = true
+    /** prova: dati finti (per controllare lo schermo senza sensori, es. nell'emulatore) */
+    private var demo = false
+
     private var lastFix: Location? = null
     private var lastFixAt = 0L
     private var lastCounted: Location? = null
@@ -89,7 +99,7 @@ class RideService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_START -> if (!running) begin(intent.getStringExtra(EXTRA_WORKOUT))
+            ACTION_START -> if (!running) begin(intent.getStringExtra(EXTRA_WORKOUT), intent.getBooleanExtra(EXTRA_DEMO, false))
             ACTION_PAUSE -> if (running && !paused) {
                 paused = true
                 alerts?.say("Pausa.")
@@ -109,8 +119,13 @@ class RideService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun begin(workoutId: String?) {
+    private fun begin(workoutId: String?, demoMode: Boolean = false) {
         startInForeground()
+        demo = demoMode
+        kcal = 0.0
+        weight = Prefs.effectiveWeight(this)
+        age = Prefs.age(this)
+        male = Prefs.male(this)
         running = true
         paused = false
         seconds = 0
@@ -149,19 +164,27 @@ class RideService : Service() {
     }
 
     private fun tick() {
+        if (demo && !paused) {
+            Sensors.pushHr(118 + (seconds / 7) % 14)
+            Sensors.pushCad(84 + seconds % 5)
+            distance += 6.0
+        }
         val hr = Sensors.currentHr()
         val cad = Sensors.currentCad()
         val now = System.currentTimeMillis()
         val fix = lastFix?.takeIf { now - lastFixAt < 5_000 }
+        val kmh = if (demo) 21.6f else fix?.takeIf { it.hasSpeed() }?.speed?.times(3.6f)
         if (!paused) {
             seconds++
+            val moving = (kmh ?: 0f) > 3f || (cad ?: 0) > 0
+            kcal += Calories.perSecond(hr, kmh, moving, weight, age, male)
             if (hr != null) zoneSeconds[Zones.zoneOf(hr, maxHr) - 1]++
             samples += Sample(
                 t = now,
                 lat = fix?.latitude, lon = fix?.longitude,
                 ele = fix?.takeIf { it.hasAltitude() }?.altitude,
                 hr = hr, cad = cad,
-                kmh = fix?.takeIf { it.hasSpeed() }?.speed?.times(3.6f)
+                kmh = kmh
             )
         }
         coach?.tick(hr, cad, paused)?.forEach { cue(it) }
@@ -186,12 +209,13 @@ class RideService : Service() {
                 paused = paused,
                 seconds = seconds,
                 distanceM = distance,
-                kmh = fix?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
+                kcal = kcal,
+                kmh = if (demo) 21.6f else fix?.takeIf { it.hasSpeed() }?.speed?.times(3.6f),
                 avgKmh = if (seconds > 0) distance / seconds * 3.6 else 0.0,
                 hr = Sensors.currentHr(),
                 cad = Sensors.currentCad(),
                 maxHr = maxHr,
-                gpsOk = fix != null,
+                gpsOk = demo || fix != null,
                 workout = c?.workout,
                 stepIndex = c?.stepIndex ?: 0,
                 step = c?.step,
@@ -216,10 +240,10 @@ class RideService : Service() {
         main.removeCallbacksAndMessages(null)
         stopGps()
         Sensors.stop()
-        if (save && samples.size >= 30) {
+        if (save && !demo && samples.size >= 30) {
             val w = coach?.workout
             val name = Session.defaultName(samples.first().t, w?.name)
-            val s = Session(name, w?.name, maxHr, ArrayList(samples), distance, seconds)
+            val s = Session(name, w?.name, maxHr, ArrayList(samples), distance, seconds, kcal)
             try {
                 Storage.saveSession(this, s)
                 lastSaved = name

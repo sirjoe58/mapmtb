@@ -150,6 +150,7 @@ class SessionsPage(act: MainActivity) : Page(act) {
                     Prefs.setMaxHr(ctx, r.maxHr); extra += "FC max ${r.maxHr}"
                 }
                 if (r.age in 10..100) Prefs.setAge(ctx, r.age)
+                if (r.weight in 30..250) Prefs.setWeight(ctx, r.weight)
                 log((if (sent > 0) "✔ $sent programmi inviati al PC\n" else "") +
                     "✔ ${r.workouts.size} programmi dal PC" + if (extra.isNotEmpty()) " · " + extra.joinToString() else "")
                 act.toast("Programmi aggiornati: li trovi nella pagina Allenamento")
@@ -212,6 +213,7 @@ class SessionsPage(act: MainActivity) : Page(act) {
             s.avgHr?.let { parts += "media $it bpm" }
             s.maxHrSeen?.let { parts += "max $it" }
             s.avgCad?.let { parts += "cadenza $it" }
+            if (s.kcal > 0) parts += "${s.kcal} kcal"
             Ui.add(c, Ui.text(ctx, parts.joinToString("  ·  "), 15f, Ui.TEXT), 4)
             if (s.zoneSeconds.sum() > 0) {
                 Ui.add(c, zoneBar(s.zoneSeconds), 8)

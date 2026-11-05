@@ -70,7 +70,7 @@ const Training = {
   offer() {
     if (window.sirjoe && window.sirjoe.link && window.sirjoe.link.training) window.sirjoe.link.training(this.payload());
   },
-  profile() { return store.get('trProfile', { age: 0, maxHr: 0 }); },
+  profile() { return store.get('trProfile', { age: 0, maxHr: 0, weight: 0 }); },
   maxHr() {
     const p = this.profile();
     if (p.maxHr >= 100 && p.maxHr <= 230) return p.maxHr;
@@ -81,7 +81,7 @@ const Training = {
   /** quello che il telefono scarica con SirJoe Link */
   payload() {
     const p = this.profile();
-    return { workouts: this.workouts(), maxHr: p.maxHr || 0, age: p.age || 0 };
+    return { workouts: this.workouts(), maxHr: p.maxHr || 0, age: p.age || 0, weight: p.weight || 0 };
   },
 
   total(w) { return (w.steps || []).reduce((a, s) => a + (Number(s.sec) || 0), 0); },
@@ -101,6 +101,7 @@ const Training = {
     const p = this.profile();
     $('trAge').value = p.age || '';
     $('trMax').value = p.maxHr || '';
+    $('trWeight').value = p.weight || '';
     const max = this.maxHr();
     $('trMaxInfo').textContent = (p.maxHr ? 'FC max impostata: ' : p.age ? 'FC max stimata dall\'età: ' : 'FC max non impostata, uso ') + max +
       (p.maxHr ? '' : ' (meglio quella misurata: test da sforzo o valore più alto visto col Garmin)');
@@ -111,7 +112,8 @@ const Training = {
   saveProfile() {
     const age = parseInt($('trAge').value, 10) || 0;
     const maxHr = parseInt($('trMax').value, 10) || 0;
-    store.set('trProfile', { age: age >= 10 && age <= 100 ? age : 0, maxHr: maxHr >= 100 && maxHr <= 230 ? maxHr : 0 });
+    const weight = parseInt($('trWeight').value, 10) || 0;
+    store.set('trProfile', { age: age >= 10 && age <= 100 ? age : 0, maxHr: maxHr >= 100 && maxHr <= 230 ? maxHr : 0, weight: weight >= 30 && weight <= 250 ? weight : 0 });
     this.offer();
     this.renderProfile();
     this.renderList();
@@ -388,7 +390,7 @@ const Training = {
       li.innerHTML = `<span class="grow"><b></b><small></small>${bar}</span>`;
       li.querySelector('b').textContent = r.name;
       li.querySelector('small').textContent = new Date(r.start).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) +
-        ' · ' + mmss(r.seconds) + (r.distanceM ? ' · ' + Fmt.km(r.distanceM) + ' km' : '') + (r.avgHr ? ' · ' + r.avgHr + ' bpm' : '');
+        ' · ' + mmss(r.seconds) + (r.distanceM ? ' · ' + Fmt.km(r.distanceM) + ' km' : '') + (r.avgHr ? ' · ' + r.avgHr + ' bpm' : '') + (r.kcal ? ' · ' + r.kcal + ' kcal' : '');
       li.addEventListener('click', () => this.openSession(r.file));
       ul.appendChild(li);
     }
@@ -407,6 +409,7 @@ const Training = {
     $('sesAvgHr').textContent = j.avgHr || '--';
     $('sesMaxHr').textContent = j.maxHrSeen || '--';
     $('sesCad').textContent = j.avgCad || '--';
+    $('sesKcal').textContent = j.kcal || '--';
     $('sesSpeed').textContent = j.seconds ? ((j.distanceM || 0) / j.seconds * 3.6).toFixed(1).replace('.', ',') : '--';
     const zs = j.zoneSeconds || [];
     const tot = zs.reduce((a, b) => a + b, 0) || 1;
@@ -500,6 +503,7 @@ const Training = {
 
   $('trAge').addEventListener('change', () => Training.saveProfile());
   $('trMax').addEventListener('change', () => Training.saveProfile());
+  $('trWeight').addEventListener('change', () => Training.saveProfile());
   $('trNew').addEventListener('click', () => Training.edit(null));
   $('trTemplates').addEventListener('click', () => Training.showPlans());
   $('trImport').addEventListener('click', () => $('trImportFile').click());

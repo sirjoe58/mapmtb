@@ -12,8 +12,8 @@ android {
         applicationId = "it.sirjoe.training"
         minSdk = 23
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.1.3"
+        versionCode = 6
+        versionName = "1.2.0"
     }
 
     // stessa chiave di SirJoe MTB: ogni nuova versione si installa sopra la precedente

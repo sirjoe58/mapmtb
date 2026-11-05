@@ -26,7 +26,7 @@ object LinkClient {
             .appendQueryParameter("t", token).appendQueryParameter("n", name).build().toString()
     }
 
-    data class FromPc(val workouts: List<Workout>, val maxHr: Int, val age: Int)
+    data class FromPc(val workouts: List<Workout>, val maxHr: Int, val age: Int, val weight: Int = 0)
 
     class LinkError(message: String, val unreachable: Boolean) : Exception(message)
 
@@ -105,7 +105,8 @@ object LinkClient {
         FromPc(
             workouts = WorkoutJson.listFrom(j.optJSONArray("workouts"), fromPc = true),
             maxHr = j.optInt("maxHr", 0),
-            age = j.optInt("age", 0)
+            age = j.optInt("age", 0),
+            weight = j.optInt("weight", 0)
         )
     }
 

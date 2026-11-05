@@ -12,6 +12,7 @@ data class Snapshot(
     val paused: Boolean = false,
     val seconds: Int = 0,
     val distanceM: Double = 0.0,
+    val kcal: Double = 0.0,
     val kmh: Float? = null,
     val avgKmh: Double = 0.0,
     val hr: Int? = null,

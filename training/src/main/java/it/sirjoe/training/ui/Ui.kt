@@ -50,7 +50,8 @@ object Ui {
             if (bold) setTypeface(typeface, Typeface.BOLD)
         }
 
-    fun big(ctx: Context, size: Float): TextView = TextView(ctx).apply {
+    /** Numero grande (AppCompatTextView: si rimpicciolisce da solo anche su Android 6-7). */
+    fun big(ctx: Context, size: Float): TextView = androidx.appcompat.widget.AppCompatTextView(ctx).apply {
         textSize = size
         setTextColor(TEXT)
         typeface = font(ctx)
