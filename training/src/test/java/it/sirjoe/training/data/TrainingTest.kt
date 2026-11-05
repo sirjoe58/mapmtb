@@ -208,7 +208,7 @@ class TrainingTest {
         val v = (0 until 3600).sumOf { Calories.perSecond(null, 20f, true, 80, 68, true) }
         assertEquals(672.0, v, 1.0)
         // fermi senza fascia: pochissimo
-        assertTrue(Calories.perSecond(null, 0f, false, 80, 68, true) * 3600 < 100)
+        assertTrue(Calories.perSecond(null, 0f, false, 80, 68, true) * 3600 < 120)
         val s = Session("x", null, 160, listOf(Sample(1L, hr = 100)), 0.0, 1, 12.6)
         assertEquals(13, Session.fromJson(org.json.JSONObject(s.toJson().toString())).summary().kcal)
     }

@@ -92,7 +92,7 @@ Strava permette il caricamento solo tramite un'"applicazione API" personale, gra
 
 Client ID e Secret restano solo sul telefono. Strava accetta come attività solo le uscite registrate (con orari); i percorsi creati a mano si condividono come file GPX.
 
-## SirJoe MTB Planner per Windows e Mac
+## SirJoe MTB Planner per Windows
 
 Nella cartella `desktop/` c'è il programma per PC con cui preparare percorsi e segnaposto da mandare all'app:
 

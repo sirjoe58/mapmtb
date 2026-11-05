@@ -62,6 +62,7 @@ jobs:
         with:
           name: SirJoe-MTB-Videotutorial
           path: tools/tutorial/out/SirJoe-MTB-Videotutorial.mp4
+          retention-days: 7
 
       - name: Pubblica in Releases
         uses: softprops/action-gh-release@v2
