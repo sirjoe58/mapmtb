@@ -242,6 +242,43 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /**
+     * Pulsante Esci: chiude l'app. Se c'è un'uscita in corso chiede prima se salvarla.
+     * I sensori vengono scollegati e la registrazione fermata.
+     */
+    fun confirmExit() {
+        if (!RideState.now.running) {
+            exitApp(); return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Chiudere l'app?")
+            .setMessage("C'è un'uscita in corso. Cosa vuoi fare?")
+            .setPositiveButton("Salva ed esci") { _, _ ->
+                RideService.stop(this)
+                container.postDelayed({
+                    RideService.lastSaved?.let { toast("Salvata: $it") } ?: toast("Uscita troppo breve: non salvata")
+                    exitApp()
+                }, 900)
+            }
+            .setNeutralButton("Annulla", null)
+            .setNegativeButton("Esci senza salvare") { _, _ ->
+                AlertDialog.Builder(this)
+                    .setMessage("Uscire senza salvare? L'uscita verrà persa.")
+                    .setPositiveButton("Esci") { _, _ ->
+                        RideService.discard(this)
+                        container.postDelayed({ exitApp() }, 500)
+                    }
+                    .setNegativeButton("No", null)
+                    .show()
+            }
+            .show()
+    }
+
+    private fun exitApp() {
+        Sensors.stop()
+        finishAndRemoveTask()
+    }
+
     // ------------------------------------------------------------ QR del PC
 
     fun scanQr(cb: (String?) -> Unit) {

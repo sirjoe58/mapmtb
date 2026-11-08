@@ -25,7 +25,7 @@ run() { # nome dimensione densità programma
   else
     adb shell am start -n $PKG/.ui.MainActivity --ez demo true
   fi
-  shot "$name-1-partenza" 6            # menu ancora aperto? (deve essere chiuso: avvio senza tocco)
+  shot "$name-1-partenza" 6
   shot "$name-2-in-corsa" 12
   # tocco al centro: menu e pulsanti compaiono
   read W H < <(echo "$size" | tr 'x' ' ')
