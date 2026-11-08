@@ -28,6 +28,10 @@ class RidePage(act: MainActivity) : Page(act) {
     private val root = Ui.vbox(ctx, 8)
     override val view: View = root
 
+    // ---- orologio, sempre visibile sopra al battito (su fondo scuro, non cambia col colore della zona)
+    private val clock = Ui.big(ctx, 34f)
+    private val clockFmt = java.text.SimpleDateFormat("HH:mm", Locale.ITALY)
+
     // ---- striscia in alto: fase del programma oppure ultimo avviso (una o due righe)
     private val topLine = Ui.text(ctx, "", 15f, Ui.TEXT, true).apply {
         maxLines = 2
@@ -66,6 +70,7 @@ class RidePage(act: MainActivity) : Page(act) {
     }
     private val btnSkip: Button = Ui.button(ctx, "⏭  Fase", Ui.CARD2) { keepOpen(); RideService.skip(ctx) }
     private val btnStop: Button = Ui.button(ctx, "■  Fine", Ui.RED) { keepOpen(); act.confirmStop() }
+    private val btnExit: Button = Ui.button(ctx, "✕  Esci", Ui.CARD2) { keepOpen(); act.confirmExit() }
     private val menuHint = small("▲  tocca lo schermo per menu e pulsanti", Ui.MUTED).apply {
         setPadding(0, Ui.dp(ctx, 4), 0, 0)
     }
@@ -76,7 +81,8 @@ class RidePage(act: MainActivity) : Page(act) {
     private val menuShowMs = 8_000L
 
     init {
-        root.addView(topLine, Ui.lp())
+        root.addView(clock, Ui.lp())
+        root.addView(topLine, Ui.lp().apply { topMargin = Ui.dp(ctx, 4) })
 
         hrBox.gravity = Gravity.CENTER
         hrBox.setPadding(Ui.dp(ctx, 6), Ui.dp(ctx, 4), Ui.dp(ctx, 6), Ui.dp(ctx, 6))
@@ -98,7 +104,11 @@ class RidePage(act: MainActivity) : Page(act) {
         root.addView(row2, Ui.lp(h = 0, weight = 0.38f).apply { topMargin = Ui.dp(ctx, 6) })
 
         root.addView(sensorsText, Ui.lp().apply { topMargin = Ui.dp(ctx, 4) })
-        for (b in listOf(btnStart, btnPause, btnSkip, btnStop)) {
+        for (b in listOf(btnStart, btnPause, btnSkip, btnStop, btnExit)) {
+            // fino a 4 pulsanti in una riga: testo su una riga sola anche su schermi stretti
+            b.textSize = 14f
+            b.maxLines = 1
+            b.setPadding(Ui.dp(ctx, 4), 0, Ui.dp(ctx, 4), 0)
             btnRow.addView(b, Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = Ui.dp(ctx, 3); marginEnd = Ui.dp(ctx, 3) })
         }
         root.addView(btnRow, Ui.lp().apply { topMargin = Ui.dp(ctx, 6) })
@@ -142,6 +152,7 @@ class RidePage(act: MainActivity) : Page(act) {
     override fun onSnapshot(s: Snapshot) {
         lastSnap = s
         val open = menuOpen()
+        clock.text = clockFmt.format(java.util.Date())
         val maxHr = if (s.running) s.maxHr else Prefs.effectiveMaxHr(ctx)
         // valori dei sensori anche prima di partire (per controllare che arrivino)
         val hr = if (s.running) s.hr else Sensors.currentHr()
