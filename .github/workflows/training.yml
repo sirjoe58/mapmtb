@@ -20,6 +20,19 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Prepara la chiave di firma (dai Secrets)
+        env:
+          KS_B64: ${{ secrets.MTB_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.MTB_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KS_B64" ] || [ -z "$KS_PASS" ]; then
+            echo "::error::Mancano i Secrets MTB_KEYSTORE_B64 e MTB_KEYSTORE_PASSWORD"; exit 1
+          fi
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/sirjoe.jks"
+          echo "SIRJOE_KEYSTORE_FILE=$RUNNER_TEMP/sirjoe.jks" >> "$GITHUB_ENV"
+          echo "::add-mask::$KS_PASS"
+          echo "SIRJOE_KEYSTORE_PASSWORD=$KS_PASS" >> "$GITHUB_ENV"
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
