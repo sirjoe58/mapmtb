@@ -110,3 +110,9 @@ jobs:
             APK da installare: **SirJoeMTB-v${{ env.VERSION }}.apk** (qui sotto, in Assets).
             Si installa sopra la versione precedente: tracce, mappe e impostazioni restano.
           files: SirJoeMTB-v${{ env.VERSION }}.apk
+
+      - name: Tiene solo le ultime 2 versioni di ogni app
+        if: success() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash tools/pulizia-release.sh "$GITHUB_REPOSITORY"

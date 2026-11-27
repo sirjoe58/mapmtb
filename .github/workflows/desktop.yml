@@ -91,3 +91,10 @@ jobs:
             - **SirJoe-MTB-Planner-${{ env.VERSION }}-setup.exe**: lo installa con icona nel menu Start.
             Al primo avvio Windows può mostrare "Windows ha protetto il PC": clic su *Ulteriori informazioni* → *Esegui comunque*.
           files: pacchetti/*
+
+      - name: Tiene solo le ultime 2 versioni di ogni app
+        if: success() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: .
+        run: bash tools/pulizia-release.sh "$GITHUB_REPOSITORY"
