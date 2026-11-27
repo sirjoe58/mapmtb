@@ -15,3 +15,7 @@
 tools/tutorial/node_modules/
 tools/tutorial/out/
 /training/build/
+
+# Chiavi di firma: mai nel repository
+*.jks
+*.keystore

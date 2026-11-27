@@ -18,11 +18,20 @@ android {
 
     // stessa chiave di SirJoe MTB: ogni nuova versione si installa sopra la precedente
     signingConfigs {
+        // La chiave di firma NON sta nel codice: arriva dai Secrets di GitHub
+        // (MTB_KEYSTORE_B64 / MTB_KEYSTORE_PASSWORD) tramite variabili d'ambiente.
         create("sirjoe") {
-            storeFile = rootProject.file("keystore/sirjoe.jks")
-            storePassword = "sirjoe-mtb"
-            keyAlias = "sirjoe"
-            keyPassword = "sirjoe-mtb"
+            val ks = System.getenv("SIRJOE_KEYSTORE_FILE")
+            val pw = System.getenv("SIRJOE_KEYSTORE_PASSWORD")
+            if (ks != null && pw != null) {
+                storeFile = file(ks)
+                storePassword = pw
+                keyAlias = "sirjoe"
+                keyPassword = pw
+            } else {
+                // Senza Secrets (prove in locale) si usa la chiave di debug standard.
+                initWith(getByName("debug"))
+            }
         }
     }
 
